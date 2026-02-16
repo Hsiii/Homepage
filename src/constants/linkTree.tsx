@@ -1,9 +1,9 @@
-import { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import {
     BookOpenText,
     Brush,
     CodeXml,
-    Gamepad2,
+    // Gamepad2,
     LayoutGrid,
     MessagesSquare,
     MonitorPlay,
@@ -39,12 +39,7 @@ export const linkTree: CategoryData[] = [
         icon: <MonitorPlay className='icon' />,
         links: ['YouTube', 'Anigamer', 'Spotify', 'Utaten', 'Dam'],
     },
-    {
-        category: 'Game',
-        icon: <Gamepad2 className='icon' />,
-        links: ['Tetr.io', 'maimai'],
-    },
-
+    // { category: 'Game', icon: <Gamepad2 className='icon' />, links: ['Tetr.io', 'maimai'], },
     {
         category: 'Dev',
         icon: <CodeXml className='icon' />,
