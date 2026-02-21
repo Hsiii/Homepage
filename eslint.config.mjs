@@ -5,6 +5,10 @@ export default defineConfig(
     ...completeConfigBase,
 
     {
+        ignores: ['public/theme-init.js'],
+    },
+
+    {
         rules: {
             '@stylistic/quotes': 'off',
             '@typescript-eslint/consistent-type-definitions': 'off',

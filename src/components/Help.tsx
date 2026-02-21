@@ -14,18 +14,16 @@ import 'components/Help.css';
 export const Help: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [isMouseMode, setIsMouseMode] = useState(true);
-    const [isDarkMode, setIsDarkMode] = useState(false);
+    const [isDarkMode, setIsDarkMode] = useState(
+        () => globalThis.document.documentElement.dataset.theme === 'dark'
+    );
     const helpRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const root = globalThis.document.documentElement;
-        const savedTheme = globalThis.localStorage.getItem('theme');
-        const shouldUseDark =
-            savedTheme === 'dark' ||
-            (savedTheme === null &&
-                globalThis.matchMedia('(prefers-color-scheme: dark)').matches);
-        root.dataset.theme = shouldUseDark ? 'dark' : 'light';
-        setIsDarkMode(shouldUseDark);
+        const isDark = root.dataset.theme === 'dark';
+        root.style.colorScheme = isDark ? 'dark' : 'light';
+        setIsDarkMode(isDark);
     }, []);
 
     useEffect(() => {
@@ -60,6 +58,7 @@ export const Help: React.FC = () => {
 
         const applyTheme = () => {
             root.dataset.theme = nextDarkMode ? 'dark' : 'light';
+            root.style.colorScheme = nextDarkMode ? 'dark' : 'light';
             globalThis.localStorage.setItem(
                 'theme',
                 nextDarkMode ? 'dark' : 'light'
