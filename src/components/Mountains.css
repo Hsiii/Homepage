@@ -38,6 +38,7 @@
     &.parallax-back {
         --move-speed: 6;
     }
+
     &.parallax-mid {
         --move-speed: 5;
     }
@@ -47,12 +48,25 @@
     animation-timing-function: ease-out, linear;
     animation-timeline: auto, scroll(root);
     animation-range: auto, exit;
+    animation-fill-mode: forwards;
+}
+
+:root[data-theme='dark'] .mountains img {
+    --init-saturation: 2;
+    --init-brightness: 0.2;
+    --tone-brightness: 0.5;
+    --tone-saturation: 1.5;
 }
 
 @keyframes rise-mountain {
     from {
-        filter: brightness(var(--init-brightness))
-            saturate(var(--init-saturation));
+        filter: brightness(var(--init-brightness, 1))
+            saturate(var(--init-saturation, 1));
+    }
+
+    to {
+        filter: brightness(var(--tone-brightness, 1))
+            saturate(var(--tone-saturation, 1));
     }
 }
 

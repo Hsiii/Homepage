@@ -62,13 +62,13 @@
     --clr-sky-4: hsl(214, 62%, 30%);
 
     --clr-search-button: hsl(282, 28%, 30%);
-    --clr-search-button-light: hsl(0, 0%, 96%);
+    --clr-search-button-light: hsl(0, 0%, 88%);
     --clr-search-field-bg: var(--clr-search-button-light);
     --clr-search-field-bg-active: var(--clr-search-button-light);
-    --clr-search-field-text: var(--clr-neutral-dark);
-    --clr-search-field-placeholder: var(--clr-neutral-dark);
-    --clr-search-icon: var(--clr-neutral-dark);
-    --clr-search-icon-active: var(--clr-neutral-dark);
+    --clr-search-field-text: var(--clr-sky-4);
+    --clr-search-field-placeholder: var(--clr-sky-4);
+    --clr-search-icon: var(--clr-sky-4);
+    --clr-search-icon-active: var(--clr-sky-4);
 
     --clr-disabled: hsl(0, 0%, 58%);
     --clr-text: hsl(218, 21%, 86%);
