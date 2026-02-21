@@ -9,7 +9,6 @@
 }
 
 .trigger {
-    --clr-trigger: #52a5;
     position: absolute;
     left: 0;
     padding-left: var(--indicator-gap);

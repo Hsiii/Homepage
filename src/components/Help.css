@@ -9,7 +9,13 @@
     align-items: flex-end;
     gap: 0.5rem;
 }
+.help-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
 
+.theme-icon-btn,
 .help-icon-btn {
     background: transparent;
     color: var(--clr-primary-alpha);
@@ -18,16 +24,22 @@
     border-radius: 50%;
     display: grid;
     place-items: center;
+    transition: color 0.1s ease-out;
 
     &:hover {
         color: var(--clr-primary);
     }
 
-    &:has(~ .open) {
-        background-color: var(--clr-neutral-light-alpha);
+    &:focus-visible {
+        outline: 2px solid var(--clr-primary-alpha);
+        outline-offset: 2px;
     }
 
     animation: rise-show var(--rise-show-time) ease-out;
+}
+
+.help:has(.help-dialog.open) .help-icon-btn {
+    background-color: var(--clr-neutral-light-alpha);
 }
 
 .help-dialog {

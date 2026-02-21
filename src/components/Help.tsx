@@ -3,8 +3,10 @@ import {
     Bookmark,
     HelpCircle,
     Keyboard,
+    Moon,
     MousePointerClick,
     Search,
+    Sun,
 } from 'lucide-react';
 
 import 'components/Help.css';
@@ -12,7 +14,17 @@ import 'components/Help.css';
 export const Help: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [isMouseMode, setIsMouseMode] = useState(true);
+    const [isDarkMode, setIsDarkMode] = useState(
+        () => globalThis.document.documentElement.dataset.theme === 'dark'
+    );
     const helpRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const root = globalThis.document.documentElement;
+        const isDark = root.dataset.theme === 'dark';
+        root.style.colorScheme = isDark ? 'dark' : 'light';
+        setIsDarkMode(isDark);
+    }, []);
 
     useEffect(() => {
         const onClickOutside = (e: MouseEvent) => {
@@ -29,18 +41,74 @@ export const Help: React.FC = () => {
         };
     }, [isOpen]);
 
+    const toggleTheme = (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.stopPropagation();
+        const root = globalThis.document.documentElement;
+        const nextDarkMode = !isDarkMode;
+
+        const { clientX, clientY } = e;
+        const maxRadius = Math.hypot(
+            Math.max(clientX, globalThis.innerWidth - clientX),
+            Math.max(clientY, globalThis.innerHeight - clientY)
+        );
+
+        root.style.setProperty('--theme-transition-x', `${clientX}px`);
+        root.style.setProperty('--theme-transition-y', `${clientY}px`);
+        root.style.setProperty('--theme-transition-end', `${maxRadius}px`);
+
+        const applyTheme = () => {
+            root.dataset.theme = nextDarkMode ? 'dark' : 'light';
+            root.style.colorScheme = nextDarkMode ? 'dark' : 'light';
+            globalThis.localStorage.setItem(
+                'theme',
+                nextDarkMode ? 'dark' : 'light'
+            );
+            setIsDarkMode(nextDarkMode);
+        };
+
+        if ('startViewTransition' in globalThis.document) {
+            (
+                globalThis.document as Document & {
+                    startViewTransition: (
+                        callback: () => void
+                    ) => ViewTransition;
+                }
+            ).startViewTransition(applyTheme);
+            return;
+        }
+
+        applyTheme();
+    };
+
     return (
         <div className='help' ref={helpRef}>
-            <button
-                className='help-icon-btn'
-                aria-label='Help'
-                onClick={(e) => {
-                    e.stopPropagation();
-                    setIsOpen(!isOpen);
-                }}
-            >
-                <HelpCircle className='icon' size={24} />
-            </button>
+            <div className='help-actions'>
+                <button
+                    className='theme-icon-btn'
+                    aria-label={
+                        isDarkMode
+                            ? 'Switch to light mode'
+                            : 'Switch to dark mode'
+                    }
+                    onClick={toggleTheme}
+                >
+                    {isDarkMode ? (
+                        <Moon className='icon' />
+                    ) : (
+                        <Sun className='icon' />
+                    )}
+                </button>
+                <button
+                    className='help-icon-btn'
+                    aria-label='Help'
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setIsOpen(!isOpen);
+                    }}
+                >
+                    <HelpCircle className='icon' />
+                </button>
+            </div>
 
             <div className={`help-dialog ${isOpen ? 'open' : ''}`}>
                 <div className='help-content'>

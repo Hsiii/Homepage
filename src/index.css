@@ -38,3 +38,27 @@ body {
 
     line-height: 1.5;
 }
+
+@supports (view-transition-name: root) {
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+        animation: none;
+    }
+
+    ::view-transition-new(root) {
+        clip-path: circle(
+            0 at var(--theme-transition-x, 50vw) var(--theme-transition-y, 50vh)
+        );
+        animation: theme-circle-reveal 0.6s ease-in forwards;
+    }
+
+    @keyframes theme-circle-reveal {
+        to {
+            clip-path: circle(
+                var(--theme-transition-end, 150vmax) at
+                    var(--theme-transition-x, 50vw)
+                    var(--theme-transition-y, 50vh)
+            );
+        }
+    }
+}
