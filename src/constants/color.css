@@ -2,50 +2,80 @@
     accent-color: var(--clr-primary);
     ::selection {
         background-color: var(--clr-primary-alpha);
-        color: var(--clr-neutral-light);
+        color: var(--clr-on-dark);
     }
 
-    --clr-primary:
-    hsl(275, 72%, 68%);
-    --clr-primary-alpha:
-    hsla(275, 72%, 68%, .8);
-    --clr-primary-alpha-2:
-    hsla(275, 72%, 68%, .3);
-    --clr-secondary:
-    hsl(249, 50%, 60%);
-    --clr-secondary-alpha:
-    hsla(249, 50%, 60%, .8);
-    --clr-secondary-alpha-2:
-    hsla(249, 50%, 60%, .3);
-    --clr-neutral:
-    hsl(249, 25%, 37%);
-    --clr-neutral-light:
-    #fff;
-    --clr-neutral-light-alpha:
-    #fff6;
-    --clr-neutral-dark:
-    hsl(0, 0%, 13%);
+    --clr-primary: hsl(275, 72%, 68%);
+    --clr-primary-alpha: hsla(275, 72%, 68%, 0.8);
+    --clr-primary-alpha-2: hsla(275, 72%, 68%, 0.3);
+    --clr-secondary: hsl(249, 50%, 60%);
+    --clr-secondary-alpha: hsla(249, 50%, 60%, 0.8);
+    --clr-secondary-alpha-2: hsla(249, 50%, 60%, 0.3);
 
-    --clr-sky-1:
-    hsl(249, 25%, 37%);
-    --clr-sky-2:
-    hsl(269, 22%, 55%); 
-    --clr-sky-3:
-    hsl(316, 42%, 82%); 
-    --clr-sky-4:
-    hsl(185, 38%, 94%);
+    --clr-neutral: hsl(249, 25%, 37%);
+    --clr-neutral-light: #fff;
+    --clr-neutral-light-alpha: #fff6;
+    --clr-neutral-dark: hsl(0, 0%, 13%);
+    --clr-on-dark: #fff;
 
-    --clr-search-button:
-    hsl(316, 47%, 64%);
-    --clr-search-button-light:
-    hsl(316, 47%, 80%);
+    --clr-sky-1: hsl(249, 25%, 37%);
+    --clr-sky-2: hsl(269, 22%, 55%);
+    --clr-sky-3: hsl(316, 42%, 82%);
+    --clr-sky-4: hsl(185, 38%, 94%);
 
-    --clr-disabled:
-    #757575;
-    --clr-text: 
-    #777;
-    --clr-text-alpha:
-    hsla(0, 0%, 13%, .5);
-    --clr-text-alpha-2:
-    hsla(0, 0%, 13%, .05);
+    --clr-search-button: hsl(316, 47%, 64%);
+    --clr-search-button-light: hsl(316, 47%, 80%);
+    --clr-search-field-bg: var(--clr-search-button-light);
+    --clr-search-field-bg-active: var(--clr-neutral-light);
+    --clr-search-field-text: var(--clr-text);
+    --clr-search-field-placeholder: var(--clr-text);
+    --clr-search-icon: var(--clr-on-dark);
+    --clr-search-icon-active: var(--clr-disabled);
+
+    --clr-disabled: #757575;
+    --clr-text: #777;
+    --clr-text-alpha: hsla(0, 0%, 13%, 0.5);
+    --clr-text-alpha-2: hsla(0, 0%, 13%, 0.05);
+
+    --clr-overlay: #0005;
+    --clr-trigger: #52a5;
+    --clr-footer-bg: hsl(0, 0%, 13%);
+}
+
+:root[data-theme='dark'] {
+    --clr-primary: hsl(275, 74%, 72%);
+    --clr-primary-alpha: hsla(275, 74%, 72%, 0.8);
+    --clr-primary-alpha-2: hsla(275, 74%, 72%, 0.3);
+    --clr-secondary: hsl(246, 64%, 72%);
+    --clr-secondary-alpha: hsla(246, 64%, 72%, 0.8);
+    --clr-secondary-alpha-2: hsla(246, 64%, 72%, 0.3);
+
+    --clr-neutral: hsl(226, 26%, 80%);
+    --clr-neutral-light: hsl(228, 19%, 16%);
+    --clr-neutral-light-alpha: hsla(228, 19%, 20%, 0.72);
+    --clr-neutral-dark: hsl(226, 26%, 9%);
+    --clr-on-dark: hsl(220, 24%, 93%);
+
+    --clr-sky-1: hsl(225, 42%, 4%);
+    --clr-sky-2: hsl(224, 46%, 10%);
+    --clr-sky-3: hsl(220, 54%, 18%);
+    --clr-sky-4: hsl(214, 62%, 30%);
+
+    --clr-search-button: hsl(282, 28%, 30%);
+    --clr-search-button-light: hsl(0, 0%, 96%);
+    --clr-search-field-bg: var(--clr-search-button-light);
+    --clr-search-field-bg-active: var(--clr-search-button-light);
+    --clr-search-field-text: var(--clr-neutral-dark);
+    --clr-search-field-placeholder: var(--clr-neutral-dark);
+    --clr-search-icon: var(--clr-neutral-dark);
+    --clr-search-icon-active: var(--clr-neutral-dark);
+
+    --clr-disabled: hsl(0, 0%, 58%);
+    --clr-text: hsl(218, 21%, 86%);
+    --clr-text-alpha: hsla(218, 21%, 86%, 0.72);
+    --clr-text-alpha-2: hsla(218, 21%, 86%, 0.12);
+
+    --clr-overlay: #0008;
+    --clr-trigger: var(--clr-primary-alpha);
+    --clr-footer-bg: hsl(226, 26%, 9%);
 }

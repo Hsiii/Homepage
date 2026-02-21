@@ -1,14 +1,14 @@
 footer {
     height: calc(10rem);
 
-    background-color: var(--clr-neutral-dark);
+    background-color: var(--clr-footer-bg);
 
     display: grid;
     place-items: center;
 
     a {
         text-decoration: none;
-        color: var(--clr-neutral-light);
+        color: var(--clr-on-dark);
         filter: brightness(0.8);
         transition: 0.2s;
 

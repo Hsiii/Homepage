@@ -1,7 +1,7 @@
 .mobile-warning-overlay {
     position: fixed;
     inset: 0;
-    background-color: #0005;
+    background-color: var(--clr-overlay);
     z-index: 10000;
     display: grid;
     place-items: center;
@@ -28,7 +28,7 @@
     border: none;
     border-radius: 0.5rem;
     background-color: var(--clr-primary);
-    color: var(--clr-neutral-light);
+    color: var(--clr-on-dark);
     font: var(--fontBoldMd);
 
     cursor: pointer;
