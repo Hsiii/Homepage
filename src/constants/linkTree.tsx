@@ -63,10 +63,11 @@ export const linkTree: CategoryData[] = [
         icon: <Brush className='icon' />,
         links: [
             'Pinterest',
+            'Pose Ref',
             'Pixiv',
             'Line of Action',
             'Quickposes',
-            'Hololive',
+            'Hololive Ref',
         ],
     },
     {

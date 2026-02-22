@@ -43,6 +43,7 @@ export const links: Record<string, string> = {
     'Past Exam':
         'https://drive.google.com/drive/folders/1zoRayCwbnTJIZ_WJSXRyR0Z5-BThec8X',
     'Pinterest': 'https://www.pinterest.com/',
+    'Pose Ref': 'https://pt.pinterest.com/kloezzs/poses/1/',
     'Pixiv': 'https://www.pixiv.net/',
     'Presentation': 'https://hsiii.github.io/Presentation',
     'Quickposes': 'https://quickposes.com/en/gestures/timed',
