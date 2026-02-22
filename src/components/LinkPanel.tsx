@@ -33,9 +33,13 @@ export const LinkPanel: React.FC<LinkPanelProps> = ({
     const [windowHeight, setWindowHeight] = useState(globalThis.innerHeight);
 
     useEffect(() => {
-        const onResize = () => setWindowHeight(globalThis.innerHeight);
+        const onResize = () => {
+            setWindowHeight(globalThis.innerHeight);
+        };
         globalThis.addEventListener('resize', onResize);
-        return () => globalThis.removeEventListener('resize', onResize);
+        return () => {
+            globalThis.removeEventListener('resize', onResize);
+        };
     }, []);
 
     const panelPaddings = useMemo(() => {

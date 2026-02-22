@@ -1,6 +1,6 @@
 .cover {
     --rise-time: 1.5s;
-    --rise-show-time: 1.75s;
+    --rise-show-duration: 1.75s;
     height: 100vh;
     height: 100svh;
 }
@@ -39,7 +39,7 @@
 
     letter-spacing: 0.25rem;
 
-    animation: rise-show var(--rise-show-time) ease-in;
+    animation: rise-show var(--rise-show-duration) ease-in;
 
     z-index: 1;
 }
@@ -122,7 +122,7 @@
     .icon {
         color: var(--clr-search-icon);
         transition: var(--expand-duration);
-        animation: rise-show var(--rise-show-time) ease-in 1;
+        animation: rise-show var(--rise-show-duration) ease-in 1;
     }
 
     .search:hover &,
