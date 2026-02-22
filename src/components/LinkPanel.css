@@ -75,8 +75,8 @@
     .panel {
         position: absolute;
         inset: 0;
-        background-color: var(--clr-neutral-light-alpha);
-        border: 1px solid var(--clr-neutral-light-alpha);
+        background-color: var(--clr-panel-bg);
+        border: 1px solid var(--clr-panel-border);
         border-left: none;
         backdrop-filter: blur(0.75rem);
         z-index: 9;
@@ -186,8 +186,8 @@
         height: inherit;
         position: absolute;
         left: -100%;
-        background-color: var(--clr-neutral-light-alpha);
-        border: 1px solid var(--clr-neutral-light-alpha);
+        background-color: var(--clr-panel-bg);
+        border: 1px solid var(--clr-panel-border);
         border-left: none;
         backdrop-filter: blur(0.75rem);
         z-index: 9;

@@ -36,6 +36,8 @@
     --clr-text: #777;
     --clr-text-alpha: hsla(0, 0%, 13%, 0.5);
     --clr-text-alpha-2: hsla(0, 0%, 13%, 0.05);
+    --clr-panel-bg: var(--clr-neutral-light-alpha);
+    --clr-panel-border: var(--clr-neutral-light-alpha);
 
     --clr-overlay: #0005;
     --clr-trigger: #52a5;
@@ -74,6 +76,8 @@
     --clr-text: hsl(218, 21%, 86%);
     --clr-text-alpha: hsla(218, 21%, 86%, 0.72);
     --clr-text-alpha-2: hsla(218, 21%, 86%, 0.12);
+    --clr-panel-bg: hsla(228, 19%, 14%, 0.78);
+    --clr-panel-border: hsla(262, 69%, 74%, 0.24);
 
     --clr-overlay: #0008;
     --clr-trigger: var(--clr-primary-alpha);
