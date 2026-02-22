@@ -49,6 +49,8 @@
     &.hidden {
         translate: calc(-1 * (var(--indicator-gap) + var(--indicator-width)));
     }
+
+    animation: rise-show var(--rise-show-time) ease-out;
 }
 
 .link-tree {
