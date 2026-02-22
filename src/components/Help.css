@@ -35,7 +35,7 @@
         outline-offset: 2px;
     }
 
-    animation: rise-show var(--rise-show-time) ease-out;
+    animation: rise-show var(--rise-show-duration) ease-out;
 }
 
 .help:has(.help-dialog.open) .help-icon-btn {
