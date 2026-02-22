@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useThemeTransition } from 'hooks';
 import {
     Bookmark,
     HelpCircle,
@@ -14,17 +15,8 @@ import 'components/Help.css';
 export const Help: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [isMouseMode, setIsMouseMode] = useState(true);
-    const [isDarkMode, setIsDarkMode] = useState(
-        () => globalThis.document.documentElement.dataset.theme === 'dark'
-    );
+    const { isDarkMode, toggleTheme } = useThemeTransition();
     const helpRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        const root = globalThis.document.documentElement;
-        const isDark = root.dataset.theme === 'dark';
-        root.style.colorScheme = isDark ? 'dark' : 'light';
-        setIsDarkMode(isDark);
-    }, []);
 
     useEffect(() => {
         const onClickOutside = (e: MouseEvent) => {
@@ -40,45 +32,6 @@ export const Help: React.FC = () => {
             globalThis.document.removeEventListener('click', onClickOutside);
         };
     }, [isOpen]);
-
-    const toggleTheme = (e: React.MouseEvent<HTMLButtonElement>) => {
-        e.stopPropagation();
-        const root = globalThis.document.documentElement;
-        const nextDarkMode = !isDarkMode;
-
-        const { clientX, clientY } = e;
-        const maxRadius = Math.hypot(
-            Math.max(clientX, globalThis.innerWidth - clientX),
-            Math.max(clientY, globalThis.innerHeight - clientY)
-        );
-
-        root.style.setProperty('--theme-transition-x', `${clientX}px`);
-        root.style.setProperty('--theme-transition-y', `${clientY}px`);
-        root.style.setProperty('--theme-transition-end', `${maxRadius}px`);
-
-        const applyTheme = () => {
-            root.dataset.theme = nextDarkMode ? 'dark' : 'light';
-            root.style.colorScheme = nextDarkMode ? 'dark' : 'light';
-            globalThis.localStorage.setItem(
-                'theme',
-                nextDarkMode ? 'dark' : 'light'
-            );
-            setIsDarkMode(nextDarkMode);
-        };
-
-        if ('startViewTransition' in globalThis.document) {
-            (
-                globalThis.document as Document & {
-                    startViewTransition: (
-                        callback: () => void
-                    ) => ViewTransition;
-                }
-            ).startViewTransition(applyTheme);
-            return;
-        }
-
-        applyTheme();
-    };
 
     return (
         <div className='help' ref={helpRef}>
