@@ -89,7 +89,8 @@ export const Cover: React.FC = () => {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (match?.link !== undefined && match.link in links) {
-            globalThis.location.href = links[match.link];
+            globalThis.location.href =
+                links[match.link as keyof typeof links];
         }
     };
 
