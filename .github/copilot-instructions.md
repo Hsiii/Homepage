@@ -12,3 +12,8 @@
 - Always check the front-end design skill when the task is front-end related.
 - Always use global style variables for colors, fonts, and spacing
 - Always use global string constants for text.
+
+## Dev
+
+- Always fixes lint errors after making changes.
+- Always directly read the editor for lint error status, never use commands.
