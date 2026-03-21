@@ -3,7 +3,7 @@
 My browser homepage built with <a href="https://react.dev/">React</a> and <a href="https://vercel.com/">Vercel</a>.
 Beyond allowing for endless customization, it serves as a universal default tab — providing access to my bookmarks on any machine or browser, no more migration pain for me.
 
-![Homepage](https://raw.githubusercontent.com/Hsiii/homepage/gh-pages/assets/demo.webp)
+![Homepage](https://raw.githubusercontent.com/Hsiii/homepage/main/public/assets/demo.webp)
 
 ## Installation (requires [Node.js](https://nodejs.org/) 20.x)
 
