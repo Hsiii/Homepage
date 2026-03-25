@@ -7,7 +7,6 @@
 }
 
 .trigger {
-    --clr-trigger: var(--clr-neutral-light-alpha);
     position: absolute;
     left: 0;
     padding-left: var(--indicator-gap);
@@ -28,15 +27,15 @@
     .indicator {
         width: 0.25rem;
         height: 14rem;
-        background-color: var(--clr-trigger);
         border-radius: 0.3rem;
+        mix-blend-mode: difference;
+        background-color: var(--clr-primary);
     }
 
     .icon {
         position: absolute;
         left: 1rem;
         color: transparent;
-        fill: var(--clr-trigger);
     }
 
     &:has(+ .link-tree.expanded) {
