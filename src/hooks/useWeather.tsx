@@ -48,6 +48,8 @@ const BASE_API_URL = import.meta.env.DEV
     : '/api/weather';
 const CACHE_KEY = 'weather_cache';
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+const WEATHER_INIT_TIMEOUT = 1000;
+const WEATHER_INIT_FALLBACK_DELAY = 200;
 
 export const useWeather = (): {
     weather: WeatherData | undefined;
@@ -148,9 +150,33 @@ export const useWeather = (): {
             }
         };
 
-        initWeather().catch((error: unknown) => {
-            console.error('Failed to fetch weather:', error);
-        });
+        const runInitWeather = () => {
+            initWeather().catch((error: unknown) => {
+                console.error('Failed to fetch weather:', error);
+            });
+        };
+
+        if ('requestIdleCallback' in globalThis) {
+            const idleHandle = globalThis.requestIdleCallback(runInitWeather, {
+                timeout: WEATHER_INIT_TIMEOUT,
+            });
+
+            return () => {
+                globalThis.cancelIdleCallback(idleHandle);
+            };
+        }
+
+        const timeoutHandle = globalThis.setTimeout(
+            () => {
+                runInitWeather();
+            },
+            WEATHER_INIT_FALLBACK_DELAY,
+            undefined
+        );
+
+        return () => {
+            globalThis.clearTimeout(timeoutHandle);
+        };
     }, [fetchWeatherByCurrentLocation, fetchWeatherByDefaultLocation]);
 
     return {
