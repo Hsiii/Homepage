@@ -24,7 +24,22 @@
             rel="stylesheet"
         />
         <title>Hsi | Homepage</title>
-        <script src="/theme-init.js"></script>
+        <script>
+            try {
+                const root = document.documentElement;
+                const savedTheme = localStorage.getItem('theme');
+                const isDark =
+                    savedTheme === 'dark' ||
+                    (savedTheme === null &&
+                        matchMedia('(prefers-color-scheme: dark)').matches);
+
+                root.dataset.theme = isDark ? 'dark' : 'light';
+                root.style.colorScheme = isDark ? 'dark' : 'light';
+            } catch {
+                document.documentElement.dataset.theme = 'light';
+                document.documentElement.style.colorScheme = 'light';
+            }
+        </script>
         <script type="module" src="/src/index.tsx"></script>
     </head>
     <body>
