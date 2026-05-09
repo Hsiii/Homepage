@@ -7,6 +7,7 @@ import {
     LayoutGrid,
     MessagesSquare,
     MonitorPlay,
+    PenTool,
     ToolCase,
 } from 'lucide-react';
 
@@ -45,17 +46,17 @@ export const linkTree: CategoryData[] = [
         links: [
             'GitHub',
             'Crx',
-            'Figma',
             'Vercel',
             'Supabase',
             'Lucide',
-            'Font',
-            'Coolor',
-            'Haikei',
-            'Motion',
             'LeetCode',
             'SSTM',
         ],
+    },
+    {
+        category: 'Design',
+        icon: <PenTool className='icon' />,
+        links: ['Figma', 'Font', 'Coolor', 'Haikei', 'Motion'],
     },
     {
         category: 'Art',
