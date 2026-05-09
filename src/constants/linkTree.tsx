@@ -45,6 +45,7 @@ export const linkTree: CategoryData[] = [
         links: [
             'GitHub',
             'Crx',
+            'Figma',
             'Vercel',
             'Supabase',
             'Lucide',
