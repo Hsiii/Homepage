@@ -41,6 +41,8 @@ interface SearchIndex {
 
 export const Cover: React.FC = () => {
     const inputRef = useRef<HTMLInputElement>(null);
+    const inputFocusedRef = useRef(false);
+    const pendingInputRef = useRef('');
     const searchIndexRef = useRef<SearchIndex | undefined>(undefined);
     const searchIndexLoaderRef = useRef<Promise<SearchIndex> | undefined>(
         undefined
@@ -50,6 +52,24 @@ export const Cover: React.FC = () => {
     const [inputFocused, setInputFocused] = useState(false);
     const [searchValue, setSearchValue] = useState('');
     const [match, setMatch] = useState<LinkItem | undefined>(undefined);
+
+    const syncSearchValue = useCallback((nextValue: string) => {
+        if (inputRef.current && inputRef.current.value !== nextValue) {
+            inputRef.current.value = nextValue;
+        }
+
+        setSearchValue(nextValue);
+    }, []);
+
+    const flushPendingInput = useCallback(() => {
+        if (pendingInputRef.current === '') {
+            return;
+        }
+
+        const nextValue = `${inputRef.current?.value ?? searchValue}${pendingInputRef.current}`;
+        pendingInputRef.current = '';
+        syncSearchValue(nextValue);
+    }, [searchValue, syncSearchValue]);
 
     const flattenedLinks = useMemo<LinkItem[]>(
         () =>
@@ -112,25 +132,47 @@ export const Cover: React.FC = () => {
     }, [loadSearchIndex, searchValue]);
 
     useEffect(() => {
+        inputFocusedRef.current = inputFocused;
+    }, [inputFocused]);
+
+    useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === ' ' && !inputFocused) {
+            const isPrintableKey =
+                e.key.length === 1 && !e.altKey && !e.ctrlKey && !e.metaKey;
+
+            if (e.key === 'Escape' && inputFocusedRef.current) {
+                e.preventDefault();
+                pendingInputRef.current = '';
+                syncSearchValue('');
+                inputRef.current?.blur();
+                return;
+            }
+
+            if (inputFocusedRef.current) {
+                return;
+            }
+
+            if (e.key === ' ') {
                 e.preventDefault();
                 inputRef.current?.focus();
+                return;
             }
-            if (e.key === 'Escape' && inputFocused) {
-                e.preventDefault();
-                if (inputRef.current) {
-                    inputRef.current.value = '';
-                    inputRef.current.blur();
-                }
+
+            if (!isPrintableKey) {
+                return;
             }
+
+            e.preventDefault();
+            pendingInputRef.current += e.key;
+            inputRef.current?.focus();
+            flushPendingInput();
         };
 
         globalThis.addEventListener('keydown', handleKeyDown);
         return () => {
             globalThis.removeEventListener('keydown', handleKeyDown);
         };
-    }, [inputFocused]);
+    }, [flushPendingInput, syncSearchValue]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -146,12 +188,20 @@ export const Cover: React.FC = () => {
     };
 
     const handleSearchBlur = () => {
+        inputFocusedRef.current = false;
+        pendingInputRef.current = '';
         setInputFocused(false);
-        setSearchValue('');
+        syncSearchValue('');
         setMatch(undefined);
-        if (inputRef.current) {
-            inputRef.current.value = '';
-        }
+    };
+
+    const handleSearchFocus = () => {
+        inputFocusedRef.current = true;
+        setInputFocused(true);
+        flushPendingInput();
+        loadSearchIndex().catch((error: unknown) => {
+            console.error('Failed to preload search index:', error);
+        });
     };
 
     return (
@@ -174,18 +224,11 @@ export const Cover: React.FC = () => {
                             placeholder='Search bookmarks'
                             autoComplete='off'
                             ref={inputRef}
+                            value={searchValue}
                             onChange={(e) => {
                                 setSearchValue(e.target.value);
                             }}
-                            onFocus={() => {
-                                setInputFocused(true);
-                                loadSearchIndex().catch((error: unknown) => {
-                                    console.error(
-                                        'Failed to preload search index:',
-                                        error
-                                    );
-                                });
-                            }}
+                            onFocus={handleSearchFocus}
                             onBlur={handleSearchBlur}
                         />
                     </form>
