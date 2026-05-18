@@ -31,8 +31,15 @@ interface LinkItem {
     link: string;
 }
 
+interface CategoryItem {
+    category: number;
+    categoryName: string;
+}
+
+type SearchItem = LinkItem | CategoryItem;
+
 interface SearchResult {
-    item: LinkItem;
+    item: SearchItem;
 }
 
 interface SearchIndex {
@@ -69,16 +76,24 @@ export const Cover: React.FC = () => {
     const { hideLinks } = useHideLinks();
     const [inputFocused, setInputFocused] = useState(false);
     const [searchValue, setSearchValue] = useState('');
-    const [match, setMatch] = useState<LinkItem | undefined>(undefined);
+    const [match, setMatch] = useState<SearchItem | undefined>(undefined);
 
-    const flattenedLinks = useMemo<LinkItem[]>(
+    const flattenedSearchItems = useMemo<SearchItem[]>(
         () =>
-            linkTree.flatMap((category, categoryIndex: number) =>
-                category.links.map((link: string) => ({
-                    link,
-                    category: categoryIndex + 1,
-                }))
-            ),
+            linkTree.flatMap((category, categoryIndex: number) => {
+                const categoryId = categoryIndex + 1;
+
+                return [
+                    {
+                        category: categoryId,
+                        categoryName: category.category,
+                    },
+                    ...category.links.map((link: string) => ({
+                        link,
+                        category: categoryId,
+                    })),
+                ];
+            }),
         []
     );
 
@@ -89,8 +104,8 @@ export const Cover: React.FC = () => {
 
         searchIndexLoaderRef.current ??= import('fuse.js').then(
             ({ default: Fuse }) => {
-                const searchIndex = new Fuse(flattenedLinks, {
-                    keys: ['link'],
+                const searchIndex = new Fuse(flattenedSearchItems, {
+                    keys: ['link', 'categoryName'],
                     threshold: 0.4,
                 });
 
@@ -169,7 +184,7 @@ export const Cover: React.FC = () => {
             return;
         }
 
-        if (match?.link !== undefined && match.link in links) {
+        if ('link' in (match ?? {}) && match.link in links) {
             globalThis.location.href = links[match.link as keyof typeof links];
         }
     };
@@ -231,7 +246,9 @@ export const Cover: React.FC = () => {
                 <LinkPanel
                     hidden={hideLinks}
                     isSearchNav={inputFocused}
-                    highlightedLink={match?.link}
+                    highlightedLink={
+                        'link' in (match ?? {}) ? match.link : undefined
+                    }
                     highlightedCategory={match?.category}
                     onClearSearch={handleClearSearch}
                 />

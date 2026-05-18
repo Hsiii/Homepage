@@ -74,7 +74,7 @@ export const LinkPanel: React.FC<LinkPanelProps> = ({
             onTouchStart={startMouseNav}
             onMouseOut={endMouseNav}
             aria-hidden={hidden}
-            aria-expanded={isKeyboardNav}
+            aria-expanded={isExpanded}
         >
             <div className={`trigger ${hidden && 'hidden'}`}>
                 <div className='indicator' />
