@@ -56,19 +56,30 @@ export const linkTree: CategoryData[] = [
     {
         category: 'Design',
         icon: <PenTool className='icon' />,
-        links: ['Figma', 'Font', 'Coolor', 'Haikei', 'Motion'],
+        links: [
+            'Figma',
+            'Font',
+            'Coliss',
+            'wordmark',
+            'Coolor',
+            'WebGradients',
+            'Haikei',
+            'Motion',
+        ],
     },
     {
         category: 'Art',
         icon: <Brush className='icon' />,
         links: [
             'Pinterest',
+            'Pixiv',
             'Head Ref',
             'Pose Ref',
             'Line of Action',
             'Quickposes',
+            'Resource Boy',
+            'Texturelabs',
             'Hololive Ref',
-            'Pixiv',
         ],
     },
     {

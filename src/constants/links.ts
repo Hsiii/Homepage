@@ -4,6 +4,7 @@ export const links = {
     'Anigamer': 'https://ani.gamer.com.tw/',
     'Calendar': 'https://calendar.google.com/calendar/u/0/r',
     'ChatGPT': 'https://chat.openai.com/',
+    'Coliss': 'https://coliss.com/articles/freebies/japanese-free-fonts.html',
     'Coolor': 'https://coolors.co/',
     'Dam': 'https://www.clubdam.com/',
     'DB': 'https://nthu-datalab.github.io/db/',
@@ -50,6 +51,7 @@ export const links = {
     'Pose Ref': 'https://pt.pinterest.com/kloezzs/poses/1/',
     'Pixiv': 'https://www.pixiv.net/',
     'Quickposes': 'https://quickposes.com/en/gestures/timed',
+    'Resource Boy': 'https://resourceboy.com/',
     'SSTM': 'https://docs.sessatakuma.dev/doc/',
     'SSTM dev': 'http://localhost:8080/',
     'Sheet': 'https://docs.google.com/spreadsheets/u/0/',
@@ -58,6 +60,7 @@ export const links = {
     'Squoosh': 'https://squoosh.app/',
     'TUCaN':
         'https://www.tucan.tu-darmstadt.de/scripts/mgrqispi.dll?APPNAME=CampusNet&PRGNAME=ACTION&ARGUMENTS=-A6-VkjuH-iRdxtcbUbsSwYyOYZhdqMJDQOCdoK1J-iuohpKVkbk4j6SVfVmPt6fAJu43JVC19q10MMNNT8aOL6-3RWt~L4wVJFuXwGJWSs1kEU6ibMllhU1rWF2sWLrm8XoUsylSK1Mvzv5Z2IPE1U7W6mT90jfDTFoBroshCATeT562F-9B27YdtR27UBEhDGh-GOXqGeeU7PHU_',
+    'Texturelabs': 'https://texturelabs.org/',
     'Tetr.io': 'https://tetr.io',
     'Train':
         'https://tip.railway.gov.tw/tra-tip-web/tip/tip001/tip112/gobytime',
@@ -68,6 +71,8 @@ export const links = {
     'Vercel': 'https://vercel.com/',
     'Supabase': 'https://supabase.com/dashboard/org/csgiyguemdbvpbvaprgx',
     'Vue dev': 'http://localhost:5173/',
+    'WebGradients': 'https://webgradients.com/',
+    'wordmark': 'https://wordmark.it/',
     'YouTube': 'https://www.youtube.com/',
     'ccxp': 'https://www.ccxp.nthu.edu.tw/ccxp/INQUIRE/',
     'eeclass': 'https://eeclass.nthu.edu.tw/',
