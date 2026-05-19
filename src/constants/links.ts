@@ -41,7 +41,7 @@ export const links = {
     'Motion': 'https://motion.zajno.com/',
     'NMSL': 'https://nmsl.cs.nthu.edu.tw/cs5262-schedule-2024/',
     'NotebookLM': 'https://notebooklm.google.com/',
-    'OJAD': 'https://www.gavo.t.u-tokyo.ac.jp/ojad/phrasing/',
+    'AkuMa': 'https://accent-marker.sessatakuma.dev/',
     'Overleaf': 'https://www.overleaf.com/project',
     'PCRD Pickup': 'https://forum.gamer.com.tw/C.php?bsn=30861&snA=27653',
     'PCRD PvP': 'https://pcrdfans.com/battle',

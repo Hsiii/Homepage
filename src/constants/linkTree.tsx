@@ -85,7 +85,7 @@ export const linkTree: CategoryData[] = [
     {
         category: 'Tools',
         icon: <ToolCase className='icon' />,
-        links: ['HackMD', 'Squoosh', 'OJAD', 'Train'],
+        links: ['HackMD', 'Squoosh', 'AkuMa', 'Train'],
     },
     {
         category: 'GSuite',
