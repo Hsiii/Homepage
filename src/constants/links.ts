@@ -22,6 +22,7 @@ export const links = {
     'Gemini': 'https://gemini.google.com/app',
     'GitHub': 'https://github.com/',
     'Crx': 'https://chrome.google.com/webstore/devconsole/',
+    'Moz Add-on': 'https://addons.mozilla.org/en-US/developers/addons',
     'DBHW': 'https://shwu10.cs.nthu.edu.tw/users/sign_in',
     'Gmail': 'https://mail.google.com/mail/u/0/#inbox',
     'Group': 'https://groups.google.com/u/0/g/nmsl-all/c/AsGZhi2lT5s',
