@@ -6,6 +6,7 @@ export const links = {
     'ChatGPT': 'https://chat.openai.com/',
     'Coliss': 'https://coliss.com/articles/freebies/japanese-free-fonts.html',
     'Coolor': 'https://coolors.co/',
+    'Cloudflare': 'https://dash.cloudflare.com/',
     'Dam': 'https://www.clubdam.com/',
     'DB': 'https://nthu-datalab.github.io/db/',
     'Discord': 'https://discord.com/channels/@me',

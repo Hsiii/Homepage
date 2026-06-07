@@ -49,6 +49,7 @@ export const linkTree: CategoryData[] = [
             'Moz Add-on',
             'Vercel',
             'Supabase',
+            'Cloudflare',
             'Lucide',
             'LeetCode',
             'SSTM',
