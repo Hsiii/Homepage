@@ -1,5 +1,6 @@
 export const links = {
     'Svgl': 'svgl.app',
+    'Search Console': 'https://search.google.com/search-console/welcome',
     'Awwwards': 'https://www.awwwards.com/',
     'AQI TW': 'https://airtw.moenv.gov.tw/',
     'Algo Ans': 'https://walkccc.me/CLRS/',

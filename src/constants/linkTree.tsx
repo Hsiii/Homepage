@@ -51,6 +51,7 @@ export const linkTree: CategoryData[] = [
             'Supabase',
             'Crx',
             'Moz Add-on',
+            'Search Console',
             'LeetCode',
         ],
     },
