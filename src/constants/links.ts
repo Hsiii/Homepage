@@ -1,4 +1,6 @@
 export const links = {
+    'Svgl': 'svgl.app',
+    'Awwwards': 'https://www.awwwards.com/',
     'AQI TW': 'https://airtw.moenv.gov.tw/',
     'Algo Ans': 'https://walkccc.me/CLRS/',
     'Anigamer': 'https://ani.gamer.com.tw/',
@@ -12,6 +14,7 @@ export const links = {
     'Discord': 'https://discord.com/channels/@me',
     'Doc': 'https://docs.google.com/document/u/0/',
     'Drive': 'https://drive.google.com/drive/u/0/home',
+    'Repomux': 'https://repomux.hsichen.dev/',
     'Expatrio':
         'https://www.expatrio.com/xp/?utm_campaign=TXN%20CN%20Simplified&utm_medium=email&_hsenc=p2ANqtz-99Eu_URxi74qOvo4YBjK-gUGWWkcIQasPBDZzR9gD9Tjrlg8EB8weZ4JmCEieO12pWo7zbHXc5os3y9CkQmRMTP_QCjg&_hsmi=265426476&utm_content=265426476&utm_source=hs_automation#/login?redirect_url=https%3A%2F%2Fwww.expatrio.com%2Fxp%2F%3Futm_campaign%3DTXN%2520CN%2520Simplified%26utm_medium%3Demail%26_hsenc%3Dp2ANqtz-99Eu_URxi74qOvo4YBjK-gUGWWkcIQasPBDZzR9gD9Tjrlg8EB8weZ4JmCEieO12pWo7zbHXc5os3y9CkQmRMTP_QCjg%26_hsmi%3D265426476%26utm_content%3D265426476%26utm_source%3Dhs_automation%23%2Flogin',
     'Facebook': 'https://zh-tw.facebook.com/',
