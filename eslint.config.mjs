@@ -1,5 +1,6 @@
 import { completeConfigBase } from 'eslint-config-complete';
 import { defineConfig } from 'eslint/config';
+import sortKeys from 'eslint-plugin-sort-keys';
 
 export default defineConfig(
     ...completeConfigBase,
@@ -12,6 +13,23 @@ export default defineConfig(
         files: ['**/*.d.ts'],
         rules: {
             'import-x/no-default-export': 'off',
+        },
+    },
+
+    {
+        files: ['src/constants/links.ts'],
+        plugins: {
+            'sort-keys': sortKeys,
+        },
+        rules: {
+            'sort-keys/sort-keys-fix': [
+                'error',
+                'asc',
+                {
+                    caseSensitive: false,
+                    natural: true,
+                },
+            ],
         },
     },
 
