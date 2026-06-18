@@ -212,16 +212,27 @@ export const useBookmarkSearch = (): {
 
         updateSearchSuggestionsPosition();
 
-        let animationFrame = globalThis.requestAnimationFrame(
-            function trackSearchPosition() {
-                updateSearchSuggestionsPosition();
-                animationFrame =
-                    globalThis.requestAnimationFrame(trackSearchPosition);
-            }
+        const resizeObserver = new ResizeObserver(
+            updateSearchSuggestionsPosition
         );
+        if (searchFormRef.current) {
+            resizeObserver.observe(searchFormRef.current);
+        }
+        globalThis.addEventListener('resize', updateSearchSuggestionsPosition);
+        globalThis.addEventListener('scroll', updateSearchSuggestionsPosition, {
+            passive: true,
+        });
 
         return () => {
-            globalThis.cancelAnimationFrame(animationFrame);
+            resizeObserver.disconnect();
+            globalThis.removeEventListener(
+                'resize',
+                updateSearchSuggestionsPosition
+            );
+            globalThis.removeEventListener(
+                'scroll',
+                updateSearchSuggestionsPosition
+            );
         };
     }, [hasSearchSuggestions, updateSearchSuggestionsPosition]);
 
