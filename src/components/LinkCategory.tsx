@@ -2,7 +2,6 @@ import React, { Fragment } from 'react';
 
 import { links } from '@/constants/links';
 import type { CategoryData } from '@/constants/linkTree';
-import { LinkTreeItem } from './LinkTreeItem';
 
 interface LinkCategoryProps {
     categoryData: CategoryData;
@@ -31,22 +30,25 @@ export const LinkCategory: React.FC<LinkCategoryProps> = ({
         index + 1 > 9 ||
         !keyboardNavEnabled;
 
-    const categoryModifiers = [
+    const categoryClassName = [
+        'category',
         isCategorySelected && 'selected',
         isMouseNav && 'hoverEffective',
-    ];
+    ]
+        .filter(Boolean)
+        .join(' ');
 
     return (
         <Fragment>
-            <LinkTreeItem
-                className='category'
-                icon={categoryData.icon}
-                hotkey={index + 1}
-                isHotkeyHidden={isCategoryHotkeyHidden}
-                modifiers={categoryModifiers}
-            >
-                {categoryData.category}
-            </LinkTreeItem>
+            <div className={categoryClassName}>
+                {categoryData.icon}
+                <code
+                    className={`hint ${isCategoryHotkeyHidden ? 'hidden' : ''}`}
+                >
+                    [{index + 1}]
+                </code>
+                <span>{categoryData.category}</span>
+            </div>
             <div
                 className={`links ${isMouseNav ? 'hoverEffective' : ''}`}
                 style={{ '--padding': padding } as React.CSSProperties}
@@ -64,25 +66,31 @@ export const LinkCategory: React.FC<LinkCategoryProps> = ({
                         isDisabled ||
                         !keyboardNavEnabled;
 
-                    const linkModifiers = [
+                    const linkClassName = [
+                        'link',
                         isDisabled && 'disabled',
                         isMouseNav && 'hoverEffective',
                         isHighlighted && 'highlighted',
-                    ];
+                    ]
+                        .filter(Boolean)
+                        .join(' ');
 
                     return (
-                        <LinkTreeItem
+                        <a
                             key={link}
-                            as='a'
                             id={link}
                             href={links[link]}
-                            className='link'
-                            hotkey={j + 1}
-                            isHotkeyHidden={isLinkHotkeyHidden}
-                            modifiers={linkModifiers}
+                            className={linkClassName}
                         >
-                            {link}
-                        </LinkTreeItem>
+                            <code
+                                className={`hint ${
+                                    isLinkHotkeyHidden ? 'hidden' : ''
+                                }`}
+                            >
+                                [{j + 1}]
+                            </code>
+                            <span>{link}</span>
+                        </a>
                     );
                 })}
             </div>
