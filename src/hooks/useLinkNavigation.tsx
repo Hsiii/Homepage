@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { links } from '@/constants/links.ts';
 import { linkTree } from '@/constants/linkTree.tsx';
@@ -105,7 +105,7 @@ export const useLinkNavigation = (
         };
     }, [isKeyboardNav, isMouseNav, selectedCategory, isSearchNav]);
 
-    const startMouseNav = () => {
+    const startMouseNav = useCallback(() => {
         // Clear any pending exit timeout.
         if (hoverExitTimeoutRef.current) {
             clearTimeout(hoverExitTimeoutRef.current);
@@ -115,16 +115,16 @@ export const useLinkNavigation = (
         setIsKeyboardNav(false);
         setSelectedCategory(0);
         onClearSearch();
-    };
+    }, [onClearSearch]);
 
-    const endMouseNav = () => {
+    const endMouseNav = useCallback(() => {
         // Add 150ms delay before removing hover state This prevents the panel from flashing when
         // there are minor gaps during animation.
         hoverExitTimeoutRef.current = setTimeout(() => {
             setIsMouseNav(false);
             hoverExitTimeoutRef.current = undefined;
         }, 150);
-    };
+    }, []);
 
     return {
         selectedCategory,
