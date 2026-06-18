@@ -3,12 +3,14 @@ import React, {
     Suspense,
     useCallback,
     useEffect,
+    useId,
     useMemo,
     useRef,
     useState,
 } from 'react';
 import { Search } from 'lucide-react';
 
+import type { LinkName } from '@/constants/links';
 import { links } from '@/constants/links';
 import { linkTree } from '@/constants/linkTree';
 import { useHideLinks } from '@/hooks/useHideLinks';
@@ -28,26 +30,20 @@ const LinkPanel = lazy(
 
 interface LinkItem {
     category: number;
-    link: string;
+    link: LinkName;
 }
-
-interface CategoryItem {
-    category: number;
-    categoryName: string;
-}
-
-type SearchItem = LinkItem | CategoryItem;
 
 interface SearchResult {
-    item: SearchItem;
+    item: LinkItem;
+    score?: number;
 }
 
 interface SearchIndex {
     search: (query: string) => SearchResult[];
 }
 
-const isLinkItem = (item: SearchItem | undefined): item is LinkItem =>
-    item !== undefined && 'link' in item;
+const maxSearchResults = 4;
+const secondaryResultScoreLimit = 0.25;
 
 const chillLinks = [
     'Instagram',
@@ -69,8 +65,28 @@ const openChillLinks = () => {
     }
 };
 
+const getSearchResults = (results: readonly SearchResult[]): LinkItem[] => {
+    if (results.length === 0) {
+        return [];
+    }
+
+    const [primaryResult, ...secondaryResults] = results;
+    const strongSecondaryResults = secondaryResults.filter(
+        ({ score }) => score !== undefined && score <= secondaryResultScoreLimit
+    );
+
+    return [
+        primaryResult,
+        ...strongSecondaryResults.slice(0, maxSearchResults - 1),
+    ].map(({ item }) => item);
+};
+
+const getGoogleSearchUrl = (value: string): string =>
+    `https://www.google.com/search?q=${encodeURIComponent(value.trim())}`;
+
 export const Cover: React.FC = () => {
     const inputRef = useRef<HTMLInputElement>(null);
+    const searchSuggestionsId = useId();
     const searchIndexRef = useRef<SearchIndex | undefined>(undefined);
     const searchIndexLoaderRef = useRef<Promise<SearchIndex> | undefined>(
         undefined
@@ -79,23 +95,22 @@ export const Cover: React.FC = () => {
     const { hideLinks } = useHideLinks();
     const [inputFocused, setInputFocused] = useState(false);
     const [searchValue, setSearchValue] = useState('');
-    const [match, setMatch] = useState<SearchItem | undefined>(undefined);
+    const [searchResults, setSearchResults] = useState<LinkItem[]>([]);
+    const [selectedSearchResultIndex, setSelectedSearchResultIndex] =
+        useState(0);
 
-    const flattenedSearchItems = useMemo<SearchItem[]>(
+    const selectedSearchResult = searchResults.at(selectedSearchResultIndex);
+    const alternativeSearchResults = searchResults.slice(1);
+
+    const flattenedSearchItems = useMemo<LinkItem[]>(
         () =>
             linkTree.flatMap((category, categoryIndex: number) => {
                 const categoryId = categoryIndex + 1;
 
-                return [
-                    {
-                        category: categoryId,
-                        categoryName: category.category,
-                    },
-                    ...category.links.map((link: string) => ({
-                        link,
-                        category: categoryId,
-                    })),
-                ];
+                return category.links.map((link) => ({
+                    link,
+                    category: categoryId,
+                }));
             }),
         []
     );
@@ -108,7 +123,8 @@ export const Cover: React.FC = () => {
         searchIndexLoaderRef.current ??= import('fuse.js').then(
             ({ default: Fuse }) => {
                 const searchIndex = new Fuse(flattenedSearchItems, {
-                    keys: ['link', 'categoryName'],
+                    includeScore: true,
+                    keys: ['link'],
                     threshold: 0.4,
                 });
 
@@ -121,8 +137,11 @@ export const Cover: React.FC = () => {
     }, [flattenedSearchItems]);
 
     useEffect(() => {
-        if (searchValue === '') {
-            setMatch(undefined);
+        const query = searchValue.trim();
+
+        if (query === '') {
+            setSearchResults([]);
+            setSelectedSearchResultIndex(0);
             return undefined;
         }
 
@@ -134,13 +153,14 @@ export const Cover: React.FC = () => {
                     return undefined;
                 }
 
-                const results = searchIndex.search(searchValue);
-                setMatch(results[0]?.item);
+                setSearchResults(getSearchResults(searchIndex.search(query)));
+                setSelectedSearchResultIndex(0);
             })
             .catch((error: unknown) => {
                 console.error('Failed to load search index:', error);
                 if (!isCancelled) {
-                    setMatch(undefined);
+                    setSearchResults([]);
+                    setSelectedSearchResultIndex(0);
                 }
             });
 
@@ -149,6 +169,18 @@ export const Cover: React.FC = () => {
         };
     }, [loadSearchIndex, searchValue]);
 
+    const navigateToSearchResult = useCallback((result?: LinkItem) => {
+        if (result) {
+            globalThis.location.href = links[result.link];
+        }
+    }, []);
+
+    const searchGoogle = useCallback((value: string) => {
+        if (value.trim() !== '') {
+            globalThis.location.href = getGoogleSearchUrl(value);
+        }
+    }, []);
+
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === ' ' && !inputFocused) {
@@ -156,21 +188,54 @@ export const Cover: React.FC = () => {
                 inputRef.current?.focus();
             }
 
-            if (e.key === 'Escape' && inputFocused) {
-                e.preventDefault();
-                if (inputRef.current) {
-                    inputRef.current.value = '';
-                    inputRef.current.blur();
-                }
+            if (!inputFocused) {
+                return;
             }
 
-            if (
-                e.key === 'Enter' &&
-                inputFocused &&
-                isChillSearch(searchValue)
-            ) {
+            if (e.key === 'ArrowDown' && searchResults.length > 1) {
+                e.preventDefault();
+                setSelectedSearchResultIndex(
+                    (index) => (index + 1) % searchResults.length
+                );
+                return;
+            }
+
+            if (e.key === 'ArrowUp' && searchResults.length > 1) {
+                e.preventDefault();
+                setSelectedSearchResultIndex(
+                    (index) =>
+                        (index - 1 + searchResults.length) %
+                        searchResults.length
+                );
+                return;
+            }
+
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                setSearchValue('');
+                inputRef.current?.blur();
+                return;
+            }
+
+            if (e.key !== 'Enter') {
+                return;
+            }
+
+            if (e.metaKey || e.ctrlKey) {
+                e.preventDefault();
+                searchGoogle(searchValue);
+                return;
+            }
+
+            if (isChillSearch(searchValue)) {
                 e.preventDefault();
                 openChillLinks();
+                return;
+            }
+
+            if (selectedSearchResult) {
+                e.preventDefault();
+                navigateToSearchResult(selectedSearchResult);
             }
         };
 
@@ -178,7 +243,14 @@ export const Cover: React.FC = () => {
         return () => {
             globalThis.removeEventListener('keydown', handleKeyDown);
         };
-    }, [inputFocused, searchValue]);
+    }, [
+        inputFocused,
+        navigateToSearchResult,
+        searchGoogle,
+        searchResults.length,
+        searchValue,
+        selectedSearchResult,
+    ]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -187,9 +259,7 @@ export const Cover: React.FC = () => {
             return;
         }
 
-        if (isLinkItem(match) && match.link in links) {
-            globalThis.location.href = links[match.link as keyof typeof links];
-        }
+        navigateToSearchResult(selectedSearchResult);
     };
 
     const handleClearSearch = () => {
@@ -201,10 +271,8 @@ export const Cover: React.FC = () => {
     const handleSearchBlur = () => {
         setInputFocused(false);
         setSearchValue('');
-        setMatch(undefined);
-        if (inputRef.current) {
-            inputRef.current.value = '';
-        }
+        setSearchResults([]);
+        setSelectedSearchResultIndex(0);
     };
 
     return (
@@ -226,7 +294,15 @@ export const Cover: React.FC = () => {
                             type='text'
                             placeholder='Search bookmarks'
                             autoComplete='off'
+                            value={searchValue}
                             ref={inputRef}
+                            aria-controls={
+                                alternativeSearchResults.length > 0
+                                    ? searchSuggestionsId
+                                    : undefined
+                            }
+                            aria-expanded={alternativeSearchResults.length > 0}
+                            aria-autocomplete='list'
                             onChange={(e) => {
                                 setSearchValue(e.target.value);
                             }}
@@ -242,6 +318,44 @@ export const Cover: React.FC = () => {
                             onBlur={handleSearchBlur}
                         />
                     </form>
+                    {alternativeSearchResults.length > 0 ? (
+                        <div
+                            className='search-suggestions'
+                            id={searchSuggestionsId}
+                            role='listbox'
+                            aria-label='Other bookmark matches'
+                        >
+                            {alternativeSearchResults.map((result, index) => {
+                                const resultIndex = index + 1;
+                                const isSelected =
+                                    selectedSearchResultIndex === resultIndex;
+
+                                return (
+                                    <button
+                                        key={result.link}
+                                        className={`search-suggestion ${isSelected ? 'selected' : ''}`}
+                                        id={`${searchSuggestionsId}-${resultIndex}`}
+                                        type='button'
+                                        role='option'
+                                        aria-selected={isSelected}
+                                        onMouseDown={(event) => {
+                                            event.preventDefault();
+                                        }}
+                                        onMouseEnter={() => {
+                                            setSelectedSearchResultIndex(
+                                                resultIndex
+                                            );
+                                        }}
+                                        onClick={() => {
+                                            navigateToSearchResult(result);
+                                        }}
+                                    >
+                                        or <span>{result.link}</span>?
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    ) : undefined}
                 </div>
             </div>
 
@@ -249,8 +363,8 @@ export const Cover: React.FC = () => {
                 <LinkPanel
                     hidden={hideLinks}
                     isSearchNav={inputFocused}
-                    highlightedLink={isLinkItem(match) ? match.link : undefined}
-                    highlightedCategory={match?.category}
+                    highlightedLink={selectedSearchResult?.link}
+                    highlightedCategory={selectedSearchResult?.category}
                     onClearSearch={handleClearSearch}
                 />
             </Suspense>

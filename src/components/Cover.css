@@ -48,9 +48,16 @@
 .search {
     --height: 3rem;
     --expand-duration: 0.25s;
+    --suggestion-gap: 0.5rem;
+    --suggestion-item-gap: 0.25rem;
+    --suggestion-min-height: 2rem;
+    --suggestion-padding-block: 0.25rem;
+    --suggestion-padding-inline: 0.75rem;
+    --suggestion-radius: 0.5rem;
 
+    position: relative;
     border-radius: calc(var(--height) / 2);
-    overflow: hidden;
+    overflow: visible;
 
     animation: rise var(--rise-time) ease-out 1 forwards;
 
@@ -68,6 +75,8 @@
     display: flex;
     align-items: center;
     background-color: var(--clr-search-field-bg);
+    border-radius: calc(var(--height) / 2);
+    overflow: hidden;
     transition: calc(var(--expand-duration) * 2);
     cursor: text;
 
@@ -107,6 +116,46 @@
     &::placeholder {
         color: var(--clr-search-field-placeholder);
         opacity: 0;
+    }
+}
+
+.search-suggestions {
+    position: absolute;
+    top: calc(100% + var(--suggestion-gap));
+    inset-inline: 0;
+
+    display: flex;
+    flex-direction: column;
+    gap: var(--suggestion-item-gap);
+
+    z-index: 3;
+}
+
+.search-suggestion {
+    min-height: var(--suggestion-min-height);
+    padding: var(--suggestion-padding-block) var(--suggestion-padding-inline);
+    border: 1px solid var(--clr-search-suggestion-border);
+    border-radius: var(--suggestion-radius);
+    background-color: var(--clr-search-suggestion-bg);
+    color: var(--clr-search-suggestion-text);
+    backdrop-filter: blur(0.75rem);
+    cursor: pointer;
+    font: var(--fontBaseMd);
+    text-align: center;
+    transition:
+        background-color 0.1s ease-out,
+        color 0.1s ease-out;
+
+    &.selected,
+    &:hover,
+    &:focus-visible {
+        background-color: var(--clr-search-suggestion-bg-active);
+        color: var(--clr-search-suggestion-text-active);
+        outline: none;
+    }
+
+    span {
+        font: var(--fontBoldMd);
     }
 }
 
