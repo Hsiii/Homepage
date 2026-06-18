@@ -9,10 +9,13 @@ export const useTime = (): Time => {
 
     useEffect(() => {
         const update = () => {
-            const d = new Date();
-            const hours = d.getHours().toString().padStart(2, '0');
-            const minutes = d.getMinutes().toString().padStart(2, '0');
-            setTime(`${hours}:${minutes}`);
+            setTime(
+                new Date().toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    hour12: false,
+                    minute: '2-digit',
+                })
+            );
         };
 
         requestAnimationFrame(update);
