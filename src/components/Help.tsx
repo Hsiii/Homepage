@@ -30,11 +30,12 @@ export const Help: React.FC = () => {
     }, []);
 
     useEffect(() => {
+        if (!isOpen) {
+            return undefined;
+        }
+
         const onClickOutside = (e: MouseEvent) => {
-            if (
-                isOpen &&
-                helpRef.current?.contains(e.target as Node) === false
-            ) {
+            if (helpRef.current?.contains(e.target as Node) === false) {
                 setIsOpen(false);
             }
         };

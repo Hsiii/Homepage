@@ -48,11 +48,12 @@ export const ThemeColorPicker: React.FC = () => {
     const colorPickerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
+        if (!isOpen) {
+            return undefined;
+        }
+
         const onClickOutside = (e: MouseEvent) => {
-            if (
-                isOpen &&
-                colorPickerRef.current?.contains(e.target as Node) === false
-            ) {
+            if (colorPickerRef.current?.contains(e.target as Node) === false) {
                 setIsOpen(false);
             }
         };
