@@ -98,8 +98,13 @@
 :root[data-theme='dark'] {
     --theme-primary-saturation: 74%;
     --theme-primary-lightness: 72%;
+    --theme-secondary-hue: 246;
     --theme-secondary-saturation: 64%;
     --theme-secondary-lightness: 72%;
+    --theme-sky-hue-1: 225;
+    --theme-sky-hue-2: 224;
+    --theme-sky-hue-3: 220;
+    --theme-sky-hue-4: 214;
 
     --clr-neutral: hsl(226, 26%, 80%);
     --clr-neutral-light: hsl(228, 19%, 16%);
