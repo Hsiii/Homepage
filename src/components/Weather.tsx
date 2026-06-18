@@ -1,17 +1,29 @@
-import { RefreshCw } from 'lucide-react';
+import {
+    Cloud,
+    CloudDrizzle,
+    CloudLightning,
+    CloudRain,
+    CloudSnow,
+    RefreshCw,
+    Sun,
+} from 'lucide-react';
 
 import './Weather.css';
 
 import { useWeather } from '@/hooks/useWeather';
 
+const weatherIcons = {
+    Thunderstorm: <CloudLightning size={20} />,
+    Drizzle: <CloudDrizzle size={20} />,
+    Rain: <CloudRain size={20} />,
+    Snow: <CloudSnow size={20} />,
+    Clear: <Sun size={20} />,
+    Clouds: <Cloud size={20} />,
+};
+
 export const Weather: React.FC = () => {
-    const {
-        weather,
-        weatherIcon,
-        isLoading,
-        isCached,
-        fetchWeatherByCurrentLocation,
-    } = useWeather();
+    const { weather, isLoading, isCached, fetchWeatherByCurrentLocation } =
+        useWeather();
 
     const date = new Date();
     const dateStr = date.toLocaleDateString('en-US', {
@@ -25,7 +37,11 @@ export const Weather: React.FC = () => {
             <div className='weather-container'>
                 <span className='weather-date'>{dateStr}</span>
                 <span className='weather-info'>
-                    {weatherIcon}
+                    {weather.weatherType in weatherIcons
+                        ? weatherIcons[
+                              weather.weatherType as keyof typeof weatherIcons
+                          ]
+                        : weatherIcons.Clouds}
                     {Math.round(weather.temp)}°C
                     {!isCached && (
                         <button

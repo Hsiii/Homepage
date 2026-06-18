@@ -1,13 +1,4 @@
-import type { JSX } from 'react';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import {
-    Cloud,
-    CloudDrizzle,
-    CloudLightning,
-    CloudRain,
-    CloudSnow,
-    Sun,
-} from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 
 // The weather type returned by the OpenWeatherMap API.
 export type WeatherData = {
@@ -20,24 +11,6 @@ interface CachedWeather {
     timestamp: number;
     isDefault?: boolean;
 }
-
-enum WeatherType {
-    Thunderstorm = 'Thunderstorm',
-    Drizzle = 'Drizzle',
-    Rain = 'Rain',
-    Snow = 'Snow',
-    Clear = 'Clear',
-    Clouds = 'Clouds',
-}
-
-const weatherIcons: Record<WeatherType, JSX.Element> = {
-    [WeatherType.Thunderstorm]: <CloudLightning size={20} />,
-    [WeatherType.Drizzle]: <CloudDrizzle size={20} />,
-    [WeatherType.Rain]: <CloudRain size={20} />,
-    [WeatherType.Snow]: <CloudSnow size={20} />,
-    [WeatherType.Clear]: <Sun size={20} />,
-    [WeatherType.Clouds]: <Cloud size={20} />,
-};
 
 // Taipei Coordinates
 const DEFAULT_LAT = 25.033;
@@ -53,7 +26,6 @@ const WEATHER_INIT_FALLBACK_DELAY = 200;
 
 export const useWeather = (): {
     weather: WeatherData | undefined;
-    weatherIcon: JSX.Element | undefined;
     isLoading: boolean;
     isCached: boolean;
     fetchWeatherByCurrentLocation: () => void;
@@ -75,10 +47,6 @@ export const useWeather = (): {
     const isCached =
         cachedWeather !== undefined && cachedWeather.isDefault !== true;
     const weather = cachedWeather?.data;
-    const correspondingWeatherIcon = weather
-        ? weatherIcons[weather.weatherType as WeatherType]
-        : undefined;
-    const weatherIcon = correspondingWeatherIcon ?? <Cloud size={20} />;
     const [isLoading, setIsLoading] = useState(false);
 
     const updateCache = useCallback((data: WeatherData, isDefault: boolean) => {
@@ -123,15 +91,11 @@ export const useWeather = (): {
         }, fetchWeatherByDefaultLocation);
     }, [fetchWeather, fetchWeatherByDefaultLocation]);
 
-    const cachedWeatherRef = useRef(cachedWeather);
-    cachedWeatherRef.current = cachedWeather;
-
     useEffect(() => {
         const initWeather = async () => {
-            const cached = cachedWeatherRef.current;
             const isCacheValid =
-                cached !== undefined &&
-                Date.now() - cached.timestamp < CACHE_TTL;
+                cachedWeather !== undefined &&
+                Date.now() - cachedWeather.timestamp < CACHE_TTL;
             if (isCacheValid) {
                 return;
             }
@@ -177,11 +141,14 @@ export const useWeather = (): {
         return () => {
             globalThis.clearTimeout(timeoutHandle);
         };
-    }, [fetchWeatherByCurrentLocation, fetchWeatherByDefaultLocation]);
+    }, [
+        cachedWeather,
+        fetchWeatherByCurrentLocation,
+        fetchWeatherByDefaultLocation,
+    ]);
 
     return {
         weather,
-        weatherIcon,
         isLoading,
         isCached,
         fetchWeatherByCurrentLocation,
