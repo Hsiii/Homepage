@@ -8,6 +8,8 @@ import { LinkCategory } from './LinkCategory';
 
 import './LinkPanel.css';
 
+const mobileBookmarkQuery = '(width < 600px)';
+
 interface LinkPanelProps {
     hidden: boolean;
     isSearchNav: boolean;
@@ -33,6 +35,9 @@ export const LinkPanel: React.FC<LinkPanelProps> = ({
     } = useLinkNavigation(isSearchNav, onClearSearch, highlightedCategory);
 
     const [windowHeight, setWindowHeight] = useState(globalThis.innerHeight);
+    const [isMobileViewport, setIsMobileViewport] = useState(
+        () => globalThis.matchMedia(mobileBookmarkQuery).matches
+    );
     const [isMobileOpen, setIsMobileOpen] = useState(false);
     const [mobileSwipeOffset, setMobileSwipeOffset] = useState(0);
     const isExpanded = isKeyboardNav ? true : selectedCategory !== 0;
@@ -53,10 +58,23 @@ export const LinkPanel: React.FC<LinkPanelProps> = ({
     }, []);
 
     useEffect(() => {
-        if (isSearchNav) {
+        const mediaQuery = globalThis.matchMedia(mobileBookmarkQuery);
+        const onChange = () => {
+            setIsMobileViewport(mediaQuery.matches);
+        };
+
+        onChange();
+        mediaQuery.addEventListener('change', onChange);
+        return () => {
+            mediaQuery.removeEventListener('change', onChange);
+        };
+    }, []);
+
+    useEffect(() => {
+        if (isSearchNav || !isMobileViewport) {
             closeMobilePanel();
         }
-    }, [closeMobilePanel, isSearchNav]);
+    }, [closeMobilePanel, isMobileViewport, isSearchNav]);
 
     const panelPaddings = useMemo(() => {
         const remToPx = 16;
@@ -94,84 +112,92 @@ export const LinkPanel: React.FC<LinkPanelProps> = ({
             onMouseMove={startMouseNav}
             onMouseOut={endMouseNav}
             aria-hidden={hidden}
-            aria-expanded={isExpanded || isMobileOpen}
+            aria-expanded={isExpanded || (isMobileViewport && isMobileOpen)}
         >
-            <button
-                className={`mobile-bookmark-button ${hidden ? 'hidden' : ''}`}
-                type='button'
-                aria-label='Open bookmarks'
-                onClick={() => {
-                    onClearSearch();
-                    setIsMobileOpen(true);
-                }}
-            >
-                <Bookmark className='icon' size={24} />
-            </button>
-            <div
-                className={`mobile-bookmark-page ${isMobileOpen ? 'open' : ''}`}
-                style={
-                    {
-                        '--mobile-swipe-offset': `${mobileSwipeOffset}px`,
-                    } as React.CSSProperties
-                }
-                aria-hidden={!isMobileOpen}
-                onTouchStart={(event) => {
-                    swipeStartXRef.current = event.touches[0].clientX;
-                    setMobileSwipeOffset(0);
-                }}
-                onTouchMove={(event) => {
-                    const startX = swipeStartXRef.current;
-                    if (startX === undefined) {
-                        return;
-                    }
-                    const currentX = event.touches[0].clientX;
-                    setMobileSwipeOffset(Math.max(0, currentX - startX));
-                }}
-                onTouchEnd={() => {
-                    if (mobileSwipeOffset >= 72) {
-                        closeMobilePanel();
-                        return;
-                    }
-                    setMobileSwipeOffset(0);
-                    swipeStartXRef.current = undefined;
-                }}
-            >
-                <div className='mobile-bookmark-header'>
+            {isMobileViewport && (
+                <>
                     <button
-                        className='mobile-bookmark-back'
+                        className={`mobile-bookmark-button ${hidden ? 'hidden' : ''}`}
                         type='button'
-                        aria-label='Close bookmarks'
-                        onClick={closeMobilePanel}
+                        aria-label='Open bookmarks'
+                        onClick={() => {
+                            onClearSearch();
+                            setIsMobileOpen(true);
+                        }}
                     >
-                        <ChevronLeft className='icon' size={24} />
+                        <Bookmark className='icon' size={24} />
                     </button>
-                    <span>Bookmarks</span>
-                </div>
-                <div className='mobile-bookmark-list'>
-                    {linkTree.map((categoryData) => (
-                        <section
-                            className='mobile-bookmark-category'
-                            key={categoryData.category}
-                        >
-                            <div className='mobile-bookmark-category-title'>
-                                {categoryData.icon}
-                                <span>{categoryData.category}</span>
-                            </div>
-                            <div className='mobile-bookmark-links'>
-                                {categoryData.links.map((link) => (
-                                    <a
-                                        className='mobile-bookmark-link'
-                                        href={links[link]}
-                                        key={link}
-                                    >
-                                        {link}
-                                    </a>
-                                ))}
-                            </div>
-                        </section>
-                    ))}
-                </div>
-            </div>
+                    <div
+                        className={`mobile-bookmark-page ${
+                            isMobileOpen ? 'open' : ''
+                        }`}
+                        style={
+                            {
+                                '--mobile-swipe-offset': `${mobileSwipeOffset}px`,
+                            } as React.CSSProperties
+                        }
+                        aria-hidden={!isMobileOpen}
+                        onTouchStart={(event) => {
+                            swipeStartXRef.current = event.touches[0].clientX;
+                            setMobileSwipeOffset(0);
+                        }}
+                        onTouchMove={(event) => {
+                            const startX = swipeStartXRef.current;
+                            if (startX === undefined) {
+                                return;
+                            }
+                            const currentX = event.touches[0].clientX;
+                            setMobileSwipeOffset(
+                                Math.max(0, currentX - startX)
+                            );
+                        }}
+                        onTouchEnd={() => {
+                            if (mobileSwipeOffset >= 72) {
+                                closeMobilePanel();
+                                return;
+                            }
+                            setMobileSwipeOffset(0);
+                            swipeStartXRef.current = undefined;
+                        }}
+                    >
+                        <div className='mobile-bookmark-header'>
+                            <button
+                                className='mobile-bookmark-back'
+                                type='button'
+                                aria-label='Close bookmarks'
+                                onClick={closeMobilePanel}
+                            >
+                                <ChevronLeft className='icon' size={24} />
+                            </button>
+                            <span>Bookmarks</span>
+                        </div>
+                        <div className='mobile-bookmark-list'>
+                            {linkTree.map((categoryData) => (
+                                <section
+                                    className='mobile-bookmark-category'
+                                    key={categoryData.category}
+                                >
+                                    <div className='mobile-bookmark-category-title'>
+                                        {categoryData.icon}
+                                        <span>{categoryData.category}</span>
+                                    </div>
+                                    <div className='mobile-bookmark-links'>
+                                        {categoryData.links.map((link) => (
+                                            <a
+                                                className='mobile-bookmark-link'
+                                                href={links[link]}
+                                                key={link}
+                                            >
+                                                {link}
+                                            </a>
+                                        ))}
+                                    </div>
+                                </section>
+                            ))}
+                        </div>
+                    </div>
+                </>
+            )}
             <div className={`trigger ${hidden && 'hidden'}`}>
                 <div className='indicator' />
                 <Bookmark className='icon' />
