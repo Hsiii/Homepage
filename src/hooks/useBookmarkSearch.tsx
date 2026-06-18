@@ -28,18 +28,6 @@ import {
 
 const defaultMotionTrackingMs = 2000;
 
-const isAppleKeyboardPlatform = (): boolean => {
-    const userAgent = globalThis.navigator.userAgent.toLowerCase();
-
-    return (
-        userAgent.includes('macintosh') ||
-        userAgent.includes('mac os') ||
-        userAgent.includes('iphone') ||
-        userAgent.includes('ipad') ||
-        userAgent.includes('ipod')
-    );
-};
-
 const getMaxCssTime = (value: string): number =>
     Math.max(
         ...value.split(',').map((part) => {
@@ -69,7 +57,6 @@ const getElementMotionDuration = (element: HTMLElement): number => {
 export const useBookmarkSearch = (): {
     clearSearch: () => void;
     focusSearchInput: () => void;
-    googleSearchHotkeyLabel: string;
     googleSearchResultIndex: number;
     handleSearchBlur: () => void;
     handleSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -101,10 +88,6 @@ export const useBookmarkSearch = (): {
     const searchIndexRef = useRef<SearchIndex | undefined>(undefined);
     const searchIndexLoaderRef = useRef<Promise<SearchIndex> | undefined>(
         undefined
-    );
-    const googleSearchHotkeyLabel = useMemo(
-        () => (isAppleKeyboardPlatform() ? '⌘ ↵' : 'Ctrl ↵'),
-        []
     );
     const [inputFocused, setInputFocused] = useState(false);
     const [searchValue, setSearchValue] = useState('');
@@ -398,12 +381,6 @@ export const useBookmarkSearch = (): {
                 return;
             }
 
-            if (e.metaKey || e.ctrlKey) {
-                e.preventDefault();
-                searchGoogle(searchValue);
-                return;
-            }
-
             if (isChillSearch(searchValue)) {
                 e.preventDefault();
                 openChillLinks();
@@ -521,7 +498,6 @@ export const useBookmarkSearch = (): {
     return {
         clearSearch,
         focusSearchInput,
-        googleSearchHotkeyLabel,
         googleSearchResultIndex,
         handleSearchBlur,
         handleSearchChange,

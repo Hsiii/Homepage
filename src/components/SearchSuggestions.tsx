@@ -4,7 +4,6 @@ import { createPortal } from 'react-dom';
 import type { LinkItem, SearchSuggestionsPosition } from '@/utils/search';
 
 interface SearchSuggestionsProps {
-    googleSearchHotkeyLabel: string;
     googleSearchResultIndex: number;
     highlightedSearchResultIndex?: number;
     id: string;
@@ -18,7 +17,6 @@ interface SearchSuggestionsProps {
 }
 
 export const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
-    googleSearchHotkeyLabel,
     googleSearchResultIndex,
     highlightedSearchResultIndex,
     id,
@@ -101,11 +99,8 @@ export const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
                     <Search className='icon' size={24} />
                 </span>
                 <span className='search-suggestion-text'>
-                    Search Google for "{trimmedSearchValue}"
+                    {trimmedSearchValue}
                 </span>
-                <kbd className='search-suggestion-hotkey'>
-                    {googleSearchHotkeyLabel}
-                </kbd>
             </button>
         </div>,
         globalThis.document.body

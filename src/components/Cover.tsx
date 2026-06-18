@@ -30,7 +30,6 @@ export const Cover: React.FC = () => {
     const {
         clearSearch,
         focusSearchInput,
-        googleSearchHotkeyLabel,
         googleSearchResultIndex,
         handleSearchBlur,
         handleSearchChange,
@@ -109,7 +108,6 @@ export const Cover: React.FC = () => {
             </div>
             {hasSearchSuggestions && searchSuggestionsPosition && (
                 <SearchSuggestions
-                    googleSearchHotkeyLabel={googleSearchHotkeyLabel}
                     googleSearchResultIndex={googleSearchResultIndex}
                     highlightedSearchResultIndex={highlightedSearchResultIndex}
                     id={searchSuggestionsId}

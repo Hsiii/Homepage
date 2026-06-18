@@ -80,9 +80,6 @@
     --clr-search-suggestion-icon: var(--clr-search-suggestion-text-active);
     --clr-search-suggestion-text: var(--clr-search-field-placeholder);
     --clr-search-suggestion-text-active: var(--clr-search-field-text);
-    --clr-search-hotkey-bg: var(--clr-primary-alpha-2);
-    --clr-search-hotkey-border: var(--clr-primary-alpha);
-    --clr-search-hotkey-text: var(--clr-search-suggestion-text-active);
 
     --clr-disabled: #757575;
     --clr-text: #777;
@@ -132,9 +129,6 @@
     --clr-search-suggestion-icon: var(--clr-search-suggestion-text-active);
     --clr-search-suggestion-text: var(--clr-search-field-placeholder);
     --clr-search-suggestion-text-active: var(--clr-search-field-text);
-    --clr-search-hotkey-bg: var(--clr-secondary-alpha-2);
-    --clr-search-hotkey-border: var(--clr-secondary-alpha);
-    --clr-search-hotkey-text: var(--clr-search-suggestion-text-active);
 
     --clr-disabled: hsl(0, 0%, 58%);
     --clr-text: hsl(218, 21%, 86%);
