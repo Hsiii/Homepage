@@ -28,6 +28,7 @@
             try {
                 const root = document.documentElement;
                 const savedTheme = localStorage.getItem('theme');
+                const savedThemeColor = localStorage.getItem('theme-color');
                 const isDark =
                     savedTheme === 'dark' ||
                     (savedTheme === null &&
@@ -35,6 +36,11 @@
 
                 root.dataset.theme = isDark ? 'dark' : 'light';
                 root.style.colorScheme = isDark ? 'dark' : 'light';
+                if (
+                    ['rose', 'amber', 'mint', 'azure'].includes(savedThemeColor)
+                ) {
+                    root.dataset.themeColor = savedThemeColor;
+                }
             } catch {
                 document.documentElement.dataset.theme = 'light';
                 document.documentElement.style.colorScheme = 'light';

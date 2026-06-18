@@ -66,7 +66,8 @@
 
     to {
         filter: brightness(var(--tone-brightness, 1))
-            saturate(var(--tone-saturation, 1));
+            saturate(var(--tone-saturation, 1))
+            hue-rotate(var(--mountain-hue-rotate));
     }
 }
 
