@@ -152,8 +152,6 @@ export const Cover: React.FC = () => {
     const [inputFocused, setInputFocused] = useState(false);
     const [searchValue, setSearchValue] = useState('');
     const [searchResults, setSearchResults] = useState<LinkItem[]>([]);
-    const [selectedSearchResultIndex, setSelectedSearchResultIndex] =
-        useState(0);
     const [highlightedSearchResultIndex, setHighlightedSearchResultIndex] =
         useState<number | undefined>(undefined);
     const [autocompleteEnabled, setAutocompleteEnabled] = useState(true);
@@ -164,10 +162,18 @@ export const Cover: React.FC = () => {
         SearchSuggestionsPosition | undefined
     >(undefined);
 
-    const selectedSearchResult = searchResults.at(selectedSearchResultIndex);
     const trimmedSearchValue = searchValue.trim();
     const hasSearchQuery = trimmedSearchValue !== '';
     const hasSearchSuggestions = hasSearchQuery;
+    const googleSearchResultIndex = searchResults.length;
+    const searchNavigationItemCount = hasSearchQuery
+        ? searchResults.length + 1
+        : 0;
+    const selectedSearchResult =
+        highlightedSearchResultIndex === undefined ||
+        highlightedSearchResultIndex >= searchResults.length
+            ? undefined
+            : searchResults[highlightedSearchResultIndex];
     const searchInputValue = getSearchInputValue(
         searchValue,
         selectedSearchResult,
@@ -213,7 +219,6 @@ export const Cover: React.FC = () => {
 
         if (query === '') {
             setSearchResults([]);
-            setSelectedSearchResultIndex(0);
             setHighlightedSearchResultIndex(undefined);
             return undefined;
         }
@@ -231,7 +236,6 @@ export const Cover: React.FC = () => {
                 );
 
                 setSearchResults(nextSearchResults);
-                setSelectedSearchResultIndex(0);
                 setHighlightedSearchResultIndex(
                     nextSearchResults.length > 0 ? 0 : undefined
                 );
@@ -240,7 +244,6 @@ export const Cover: React.FC = () => {
                 console.error('Failed to load search index:', error);
                 if (!isCancelled) {
                     setSearchResults([]);
-                    setSelectedSearchResultIndex(0);
                     setHighlightedSearchResultIndex(undefined);
                 }
             });
@@ -343,30 +346,28 @@ export const Cover: React.FC = () => {
 
     const handleSearchKeyDown = useCallback(
         (e: React.KeyboardEvent<HTMLInputElement>) => {
-            if (e.key === 'ArrowDown' && searchResults.length > 0) {
+            if (e.key === 'ArrowDown' && searchNavigationItemCount > 0) {
                 e.preventDefault();
                 setAutocompleteEnabled(true);
                 setHighlightedSearchResultIndex((index) => {
                     const nextIndex =
                         index === undefined
                             ? 0
-                            : (index + 1) % searchResults.length;
-                    setSelectedSearchResultIndex(nextIndex);
+                            : (index + 1) % searchNavigationItemCount;
                     return nextIndex;
                 });
                 return;
             }
 
-            if (e.key === 'ArrowUp' && searchResults.length > 0) {
+            if (e.key === 'ArrowUp' && searchNavigationItemCount > 0) {
                 e.preventDefault();
                 setAutocompleteEnabled(true);
                 setHighlightedSearchResultIndex((index) => {
                     const nextIndex =
                         index === undefined
-                            ? searchResults.length - 1
-                            : (index - 1 + searchResults.length) %
-                              searchResults.length;
-                    setSelectedSearchResultIndex(nextIndex);
+                            ? searchNavigationItemCount - 1
+                            : (index - 1 + searchNavigationItemCount) %
+                              searchNavigationItemCount;
                     return nextIndex;
                 });
                 return;
@@ -396,14 +397,30 @@ export const Cover: React.FC = () => {
                 return;
             }
 
+            if (highlightedSearchResultIndex === googleSearchResultIndex) {
+                e.preventDefault();
+                searchGoogle(searchValue);
+                return;
+            }
+
             if (selectedSearchResult) {
                 e.preventDefault();
                 navigateToSearchResult(selectedSearchResult);
+                return;
+            }
+
+            if (hasSearchQuery) {
+                e.preventDefault();
+                searchGoogle(searchValue);
             }
         },
         [
+            googleSearchResultIndex,
+            hasSearchQuery,
+            highlightedSearchResultIndex,
             navigateToSearchResult,
             searchGoogle,
+            searchNavigationItemCount,
             searchResults.length,
             searchValue,
             selectedSearchResult,
@@ -449,7 +466,6 @@ export const Cover: React.FC = () => {
         setAutocompleteEnabled(true);
         setSearchValue('');
         setSearchResults([]);
-        setSelectedSearchResultIndex(0);
         setHighlightedSearchResultIndex(undefined);
     };
 
@@ -489,14 +505,12 @@ export const Cover: React.FC = () => {
                                       setHighlightedSearchResultIndex(
                                           resultIndex
                                       );
-                                      setSelectedSearchResultIndex(resultIndex);
                                   }}
                                   onPointerMove={() => {
                                       setAutocompleteEnabled(true);
                                       setHighlightedSearchResultIndex(
                                           resultIndex
                                       );
-                                      setSelectedSearchResultIndex(resultIndex);
                                   }}
                                   onClick={() => {
                                       navigateToSearchResult(result);
@@ -512,15 +526,30 @@ export const Cover: React.FC = () => {
                           );
                       })}
                       <button
-                          className='search-suggestion google-search-suggestion'
+                          className={`search-suggestion google-search-suggestion ${
+                              highlightedSearchResultIndex ===
+                              googleSearchResultIndex
+                                  ? 'selected'
+                                  : ''
+                          }`}
                           type='button'
                           role='option'
-                          aria-selected={false}
+                          aria-selected={
+                              highlightedSearchResultIndex ===
+                              googleSearchResultIndex
+                          }
                           onMouseDown={(event) => {
                               event.preventDefault();
                           }}
+                          onFocus={() => {
+                              setHighlightedSearchResultIndex(
+                                  googleSearchResultIndex
+                              );
+                          }}
                           onPointerMove={() => {
-                              setHighlightedSearchResultIndex(undefined);
+                              setHighlightedSearchResultIndex(
+                                  googleSearchResultIndex
+                              );
                           }}
                           onClick={() => {
                               searchGoogle(searchValue);
