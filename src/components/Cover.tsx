@@ -224,9 +224,15 @@ export const Cover: React.FC = () => {
                     return undefined;
                 }
 
-                setSearchResults(getSearchResults(searchIndex.search(query)));
+                const nextSearchResults = getSearchResults(
+                    searchIndex.search(query)
+                );
+
+                setSearchResults(nextSearchResults);
                 setSelectedSearchResultIndex(0);
-                setHighlightedSearchResultIndex(undefined);
+                setHighlightedSearchResultIndex(
+                    nextSearchResults.length > 0 ? 0 : undefined
+                );
             })
             .catch((error: unknown) => {
                 console.error('Failed to load search index:', error);
