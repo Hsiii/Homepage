@@ -45,6 +45,8 @@ html[data-animation-mode='skip'] .search-icon .icon,
 html[data-animation-mode='skip'] .theme-icon-btn,
 html[data-animation-mode='skip'] .help-icon-btn,
 html[data-animation-mode='skip'] .weather-container,
+html[data-animation-mode='skip'] .mountains,
+html[data-animation-mode='skip'] .mountains img,
 html[data-animation-mode='skip'] .trigger {
     animation: none !important;
 }
