@@ -9,8 +9,7 @@ import React, {
     useRef,
     useState,
 } from 'react';
-import { Bookmark, Search } from 'lucide-react';
-import { createPortal } from 'react-dom';
+import { Search } from 'lucide-react';
 
 import { links } from '@/constants/links';
 import { useHideLinks } from '@/hooks/useHideLinks';
@@ -32,6 +31,7 @@ import {
 } from '@/utils/search';
 import { Controls } from './Controls';
 import { Mountains } from './Mountains';
+import { SearchSuggestions } from './SearchSuggestions';
 import { Weather } from './Weather';
 
 import './Cover.css';
@@ -382,106 +382,14 @@ export const Cover: React.FC = () => {
         setHighlightedSearchResultIndex(undefined);
     };
 
-    const searchSuggestions =
-        hasSearchSuggestions && searchSuggestionsPosition
-            ? createPortal(
-                  <div
-                      className='search-suggestions'
-                      id={searchSuggestionsId}
-                      role='listbox'
-                      aria-label='Other bookmark matches'
-                      style={
-                          {
-                              '--suggestion-left': `${searchSuggestionsPosition.left}px`,
-                              '--suggestion-top': `${searchSuggestionsPosition.top}px`,
-                              '--suggestion-width': `${searchSuggestionsPosition.width}px`,
-                          } as React.CSSProperties
-                      }
-                  >
-                      {searchResults.map((result, resultIndex) => {
-                          const isSelected =
-                              highlightedSearchResultIndex === resultIndex;
+    const highlightSearchResult = useCallback((resultIndex: number) => {
+        setAutocompleteEnabled(true);
+        setHighlightedSearchResultIndex(resultIndex);
+    }, []);
 
-                          return (
-                              <button
-                                  key={result.link}
-                                  className={`search-suggestion ${isSelected ? 'selected' : ''}`}
-                                  id={`${searchSuggestionsId}-${resultIndex}`}
-                                  type='button'
-                                  role='option'
-                                  aria-selected={isSelected}
-                                  onMouseDown={(event) => {
-                                      event.preventDefault();
-                                  }}
-                                  onFocus={() => {
-                                      setAutocompleteEnabled(true);
-                                      setHighlightedSearchResultIndex(
-                                          resultIndex
-                                      );
-                                  }}
-                                  onPointerMove={() => {
-                                      setAutocompleteEnabled(true);
-                                      setHighlightedSearchResultIndex(
-                                          resultIndex
-                                      );
-                                  }}
-                                  onClick={() => {
-                                      navigateToSearchResult(result);
-                                  }}
-                              >
-                                  <span className='search-suggestion-icon'>
-                                      <Bookmark className='icon' size={24} />
-                                  </span>
-                                  <span className='search-suggestion-text'>
-                                      {result.link}
-                                  </span>
-                              </button>
-                          );
-                      })}
-                      <button
-                          className={`search-suggestion google-search-suggestion ${
-                              highlightedSearchResultIndex ===
-                              googleSearchResultIndex
-                                  ? 'selected'
-                                  : ''
-                          }`}
-                          type='button'
-                          role='option'
-                          aria-selected={
-                              highlightedSearchResultIndex ===
-                              googleSearchResultIndex
-                          }
-                          onMouseDown={(event) => {
-                              event.preventDefault();
-                          }}
-                          onFocus={() => {
-                              setHighlightedSearchResultIndex(
-                                  googleSearchResultIndex
-                              );
-                          }}
-                          onPointerMove={() => {
-                              setHighlightedSearchResultIndex(
-                                  googleSearchResultIndex
-                              );
-                          }}
-                          onClick={() => {
-                              searchGoogle(searchValue);
-                          }}
-                      >
-                          <span className='search-suggestion-icon'>
-                              <Search className='icon' size={24} />
-                          </span>
-                          <span className='search-suggestion-text'>
-                              Search Google for "{trimmedSearchValue}"
-                          </span>
-                          <kbd className='search-suggestion-hotkey'>
-                              {googleSearchHotkeyLabel}
-                          </kbd>
-                      </button>
-                  </div>,
-                  globalThis.document.body
-              )
-            : undefined;
+    const highlightGoogleSearch = useCallback(() => {
+        setHighlightedSearchResultIndex(googleSearchResultIndex);
+    }, [googleSearchResultIndex]);
 
     return (
         <section className='cover'>
@@ -553,7 +461,23 @@ export const Cover: React.FC = () => {
                     </form>
                 </div>
             </div>
-            {searchSuggestions}
+            {hasSearchSuggestions && searchSuggestionsPosition && (
+                <SearchSuggestions
+                    googleSearchHotkeyLabel={googleSearchHotkeyLabel}
+                    googleSearchResultIndex={googleSearchResultIndex}
+                    highlightedSearchResultIndex={highlightedSearchResultIndex}
+                    id={searchSuggestionsId}
+                    onHighlightGoogleSearch={highlightGoogleSearch}
+                    onHighlightSearchResult={highlightSearchResult}
+                    onSearchGoogle={() => {
+                        searchGoogle(searchValue);
+                    }}
+                    onSelectSearchResult={navigateToSearchResult}
+                    position={searchSuggestionsPosition}
+                    searchResults={searchResults}
+                    trimmedSearchValue={trimmedSearchValue}
+                />
+            )}
 
             <Suspense fallback={undefined}>
                 <LinkPanel
