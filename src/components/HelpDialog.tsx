@@ -40,7 +40,8 @@ export const HelpDialog: React.FC<HelpDialogProps> = ({
                 <div className='help-desc-text'>
                     {isMouseMode ? (
                         <p className='key-info'>
-                            Access bookmark panel on the left.
+                            Open bookmarks from the bookmark button. Swipe right
+                            or use back to close.
                         </p>
                     ) : (
                         <>
@@ -66,7 +67,10 @@ export const HelpDialog: React.FC<HelpDialogProps> = ({
                 </div>
                 <div className='help-desc-text'>
                     {isMouseMode ? (
-                        <p className='key-info'>Search bookmarks directly.</p>
+                        <p className='key-info'>
+                            Search bookmarks directly, or use the Google row for
+                            web search.
+                        </p>
                     ) : (
                         <>
                             <div className='key-info'>

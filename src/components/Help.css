@@ -58,6 +58,9 @@
         top: 4rem;
         inset-inline: 1rem;
         width: auto;
+        max-height: calc(100svh - 5rem);
+        overflow-y: auto;
+        border: 1px solid var(--clr-panel-border);
     }
 }
 
@@ -107,7 +110,7 @@
     display: flex;
     align-items: center;
     gap: 1rem;
-    height: 84px;
+    min-height: 5.25rem;
 }
 
 .icon-container {
@@ -117,6 +120,7 @@
     border-radius: 50%;
     display: grid;
     place-items: center;
+    flex-shrink: 0;
 }
 
 .help-desc-text {
@@ -165,5 +169,30 @@
 @media (width < 600px) {
     .help-switch {
         display: none;
+    }
+
+    .help-dialog {
+        border-radius: 0.75rem;
+    }
+
+    .help-desc-list {
+        gap: 0.5rem;
+        padding: 0.75rem;
+    }
+
+    .help-desc-item {
+        align-items: flex-start;
+        gap: 0.75rem;
+        min-height: auto;
+        padding: 0.5rem;
+    }
+
+    .icon-container {
+        padding: 0.75rem;
+    }
+
+    .key-info {
+        grid-template-columns: 1fr;
+        gap: 0.25rem;
     }
 }
