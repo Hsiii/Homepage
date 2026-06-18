@@ -58,6 +58,11 @@
     animation: rise-show var(--rise-show-duration) ease-out;
 }
 
+.link-panel.search-nav .trigger,
+.link-panel.search-nav .link-tree {
+    display: none;
+}
+
 @media (width < 600px) {
     .mobile-bookmark-button {
         position: fixed;
@@ -90,10 +95,6 @@
         }
     }
 
-    .link-panel.search-nav .mobile-bookmark-button {
-        display: none;
-    }
-
     .mobile-bookmark-page {
         position: fixed;
         inset: 0;
@@ -115,10 +116,6 @@
         &.open {
             transform: translateX(var(--mobile-swipe-offset));
         }
-    }
-
-    .link-panel.search-nav .mobile-bookmark-page {
-        display: none;
     }
 
     .mobile-bookmark-header {
