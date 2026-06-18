@@ -197,11 +197,6 @@
             color: var(--clr-disabled);
         }
     }
-
-    .trigger,
-    .link-tree {
-        display: none;
-    }
 }
 
 .link-tree {
@@ -403,5 +398,13 @@
 
     @media (width < 32rem) {
         opacity: 0;
+    }
+}
+
+@media (width < 600px) {
+    .link-panel .trigger,
+    .link-panel .link-tree {
+        display: none;
+        pointer-events: none;
     }
 }
