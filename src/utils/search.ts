@@ -1,19 +1,9 @@
 import type { LinkName } from '@/constants/links';
-import { links } from '@/constants/links';
 import { linkTree } from '@/constants/linkTree';
 
 export interface LinkItem {
     category: number;
     link: LinkName;
-}
-
-export interface SearchResult {
-    item: LinkItem;
-    score?: number;
-}
-
-export interface SearchIndex {
-    search: (query: string) => SearchResult[];
 }
 
 export interface SearchSuggestionsPosition {
@@ -22,45 +12,12 @@ export interface SearchSuggestionsPosition {
     width: number;
 }
 
-export interface SearchCommand {
-    label: string;
-    searchValue: string;
-}
-
 export interface ChillLink {
     link: LinkName;
     url: string;
 }
 
-export interface OpenChillLinksResult {
-    blockedLinks: ChillLink[];
-}
-
 const maxSearchResults = 4;
-const secondaryResultScoreLimit = 0.25;
-
-export const chillCommand = {
-    label: '/chill',
-    searchValue: '/chill',
-} as const satisfies SearchCommand;
-
-const chillLinks = [
-    'Instagram',
-    'Messenger',
-    'Twitter',
-    'Facebook',
-    'GitHub',
-    'Crx',
-    'YouTube',
-    'Anigamer',
-    'Supercell Store',
-] as const satisfies readonly LinkName[];
-
-export const getChillLinks = (): ChillLink[] =>
-    chillLinks.map((link) => ({
-        link,
-        url: links[link],
-    }));
 
 export const getSearchItems = (): LinkItem[] =>
     linkTree.flatMap((category, categoryIndex) => {
@@ -73,49 +30,74 @@ export const getSearchItems = (): LinkItem[] =>
     });
 
 export const isChillSearch = (value: string): boolean =>
-    value.trim().toLowerCase() === chillCommand.searchValue;
+    value.trim().toLowerCase() === '/chill';
 
 export const isSlashCommandSearch = (value: string): boolean =>
     value.trim().startsWith('/');
 
-export const openChillLinks = (): OpenChillLinksResult => {
-    const blockedLinks: ChillLink[] = [];
+const getSearchScore = (link: LinkName, query: string): number | undefined => {
+    const normalizedLink = link.toLowerCase();
+    const normalizedQuery = query.toLowerCase();
+    const includesIndex = normalizedLink.indexOf(normalizedQuery);
 
-    for (const chillLink of getChillLinks()) {
-        const openedTab = globalThis.open(chillLink.url, '_blank');
-        if (openedTab) {
-            openedTab.opener = undefined;
-            continue;
+    if (normalizedLink === normalizedQuery) {
+        return 0;
+    }
+
+    if (normalizedLink.startsWith(normalizedQuery)) {
+        return 1 + normalizedLink.length / 100;
+    }
+
+    const wordStartIndex = normalizedLink
+        .split(/\s+/)
+        .findIndex((word) => word.startsWith(normalizedQuery));
+
+    if (wordStartIndex !== -1) {
+        return 2 + wordStartIndex / 100;
+    }
+
+    if (includesIndex !== -1) {
+        return 3 + includesIndex / 100;
+    }
+
+    let queryIndex = 0;
+    for (const char of normalizedLink) {
+        if (char === normalizedQuery[queryIndex]) {
+            queryIndex++;
         }
-
-        blockedLinks.push(chillLink);
     }
 
-    if (blockedLinks.length === 0) {
-        globalThis.requestAnimationFrame(() => {
-            Reflect.apply(globalThis.close, globalThis, []);
-        });
+    if (queryIndex === normalizedQuery.length) {
+        return 4 + normalizedLink.length / 100;
     }
 
-    return { blockedLinks };
+    return undefined;
 };
 
 export const getSearchResults = (
-    results: readonly SearchResult[]
+    items: readonly LinkItem[],
+    query: string
 ): LinkItem[] => {
-    if (results.length === 0) {
+    const trimmedQuery = query.trim();
+    if (trimmedQuery === '') {
         return [];
     }
 
-    const [primaryResult, ...secondaryResults] = results;
-    const strongSecondaryResults = secondaryResults.filter(
-        ({ score }) => score !== undefined && score <= secondaryResultScoreLimit
-    );
-
-    return [
-        primaryResult,
-        ...strongSecondaryResults.slice(0, maxSearchResults - 1),
-    ].map(({ item }) => item);
+    return items
+        .map((item) => ({
+            item,
+            score: getSearchScore(item.link, trimmedQuery),
+        }))
+        .filter(
+            (result): result is { item: LinkItem; score: number } =>
+                result.score !== undefined
+        )
+        .toSorted(
+            (a, b) =>
+                a.score - b.score || a.item.link.localeCompare(b.item.link)
+        )
+        .slice(0, maxSearchResults)
+        .map(({ item }) => item);
 };
 
 export const getGoogleSearchUrl = (value: string): string =>

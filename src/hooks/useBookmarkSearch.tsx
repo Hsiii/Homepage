@@ -9,11 +9,11 @@ import {
 } from 'react';
 import type React from 'react';
 
+import type { LinkName } from '@/constants/links';
 import { links } from '@/constants/links';
 import type {
     ChillLink,
     LinkItem,
-    SearchIndex,
     SearchSuggestionsPosition,
 } from '@/utils/search';
 import {
@@ -25,10 +25,21 @@ import {
     isChillSearch,
     isSameSearchSuggestionsPosition,
     isSlashCommandSearch,
-    openChillLinks,
 } from '@/utils/search';
 
 const defaultMotionTrackingMs = 2000;
+
+const chillLinks = [
+    'Instagram',
+    'Messenger',
+    'Twitter',
+    'Facebook',
+    'GitHub',
+    'Crx',
+    'YouTube',
+    'Anigamer',
+    'Supercell Store',
+] as const satisfies readonly LinkName[];
 
 const getMaxCssTime = (value: string): number =>
     Math.max(
@@ -92,10 +103,6 @@ export const useBookmarkSearch = (): {
     const searchFormRef = useRef<HTMLFormElement>(null);
     const searchRef = useRef<HTMLDivElement>(null);
     const searchSuggestionsId = useId();
-    const searchIndexRef = useRef<SearchIndex | undefined>(undefined);
-    const searchIndexLoaderRef = useRef<Promise<SearchIndex> | undefined>(
-        undefined
-    );
     const [inputFocused, setInputFocused] = useState(false);
     const [searchValue, setSearchValue] = useState('');
     const [searchResults, setSearchResults] = useState<LinkItem[]>([]);
@@ -136,36 +143,34 @@ export const useBookmarkSearch = (): {
     );
 
     const executeChillCommand = useCallback(() => {
-        const { blockedLinks } = openChillLinks();
+        const nextBlockedLinks: ChillLink[] = [];
 
-        setBlockedChillLinks(blockedLinks);
+        for (const link of chillLinks) {
+            const openedTab = globalThis.open(links[link], '_blank');
+            if (openedTab) {
+                openedTab.opener = undefined;
+                continue;
+            }
+
+            nextBlockedLinks.push({
+                link,
+                url: links[link],
+            });
+        }
+
+        if (nextBlockedLinks.length === 0) {
+            globalThis.requestAnimationFrame(() => {
+                Reflect.apply(globalThis.close, globalThis, []);
+            });
+        }
+
+        setBlockedChillLinks(nextBlockedLinks);
     }, []);
 
     const flattenedSearchItems = useMemo<LinkItem[]>(
         () => getSearchItems(),
         []
     );
-
-    const loadSearchIndex = useCallback(async (): Promise<SearchIndex> => {
-        if (searchIndexRef.current) {
-            return searchIndexRef.current;
-        }
-
-        searchIndexLoaderRef.current ??= import('fuse.js').then(
-            ({ default: Fuse }) => {
-                const searchIndex = new Fuse(flattenedSearchItems, {
-                    includeScore: true,
-                    keys: ['link'],
-                    threshold: 0.4,
-                });
-
-                searchIndexRef.current = searchIndex;
-                return searchIndex;
-            }
-        );
-
-        return await searchIndexLoaderRef.current;
-    }, [flattenedSearchItems]);
 
     useEffect(() => {
         const query = searchValue.trim();
@@ -182,37 +187,14 @@ export const useBookmarkSearch = (): {
             return undefined;
         }
 
-        let isCancelled = false;
+        const nextSearchResults = getSearchResults(flattenedSearchItems, query);
 
-        loadSearchIndex()
-            .then((searchIndex) => {
-                if (isCancelled) {
-                    return undefined;
-                }
-
-                const nextSearchResults = getSearchResults(
-                    searchIndex.search(query)
-                );
-
-                setSearchResults(nextSearchResults);
-                setHighlightedSearchResultIndex(
-                    nextSearchResults.length > 0 || hasChillCommand
-                        ? 0
-                        : undefined
-                );
-            })
-            .catch((error: unknown) => {
-                console.error('Failed to load search index:', error);
-                if (!isCancelled) {
-                    setSearchResults([]);
-                    setHighlightedSearchResultIndex(undefined);
-                }
-            });
-
-        return () => {
-            isCancelled = true;
-        };
-    }, [hasChillCommand, loadSearchIndex, searchValue]);
+        setSearchResults(nextSearchResults);
+        setHighlightedSearchResultIndex(
+            nextSearchResults.length > 0 || hasChillCommand ? 0 : undefined
+        );
+        return undefined;
+    }, [flattenedSearchItems, hasChillCommand, searchValue]);
 
     const updateSearchSuggestionsPosition = useCallback(() => {
         const rect =
@@ -540,10 +522,7 @@ export const useBookmarkSearch = (): {
 
     const handleSearchFocus = useCallback(() => {
         setInputFocused(true);
-        loadSearchIndex().catch((error: unknown) => {
-            console.error('Failed to preload search index:', error);
-        });
-    }, [loadSearchIndex]);
+    }, []);
 
     const highlightSearchResult = useCallback((resultIndex: number) => {
         setAutocompleteEnabled(true);

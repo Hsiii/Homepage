@@ -1,7 +1,6 @@
 import { Bookmark, Coffee, Search } from 'lucide-react';
 import { createPortal } from 'react-dom';
 
-import { chillCommand } from '@/utils/search';
 import type { LinkItem, SearchSuggestionsPosition } from '@/utils/search';
 
 interface SearchSuggestionsProps {
@@ -72,9 +71,7 @@ export const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
                     <span className='search-suggestion-icon'>
                         <Coffee className='icon' size={24} />
                     </span>
-                    <span className='search-suggestion-text'>
-                        {chillCommand.label}
-                    </span>
+                    <span className='search-suggestion-text'>/chill</span>
                 </button>
             )}
             {searchResults.map((result, resultIndex) => {
