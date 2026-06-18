@@ -312,18 +312,8 @@ export const Cover: React.FC = () => {
         }
     }, []);
 
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === ' ' && !inputFocused) {
-                e.preventDefault();
-                setInputFocused(true);
-                inputRef.current?.focus();
-            }
-
-            if (!inputFocused) {
-                return;
-            }
-
+    const handleSearchKeyDown = useCallback(
+        (e: React.KeyboardEvent<HTMLInputElement>) => {
             if (e.key === 'ArrowDown' && searchResults.length > 1) {
                 e.preventDefault();
                 setAutocompleteEnabled(true);
@@ -372,20 +362,30 @@ export const Cover: React.FC = () => {
                 e.preventDefault();
                 navigateToSearchResult(selectedSearchResult);
             }
+        },
+        [
+            navigateToSearchResult,
+            searchGoogle,
+            searchResults.length,
+            searchValue,
+            selectedSearchResult,
+        ]
+    );
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === ' ' && !inputFocused) {
+                e.preventDefault();
+                setInputFocused(true);
+                inputRef.current?.focus();
+            }
         };
 
         globalThis.addEventListener('keydown', handleKeyDown);
         return () => {
             globalThis.removeEventListener('keydown', handleKeyDown);
         };
-    }, [
-        inputFocused,
-        navigateToSearchResult,
-        searchGoogle,
-        searchResults.length,
-        searchValue,
-        selectedSearchResult,
-    ]);
+    }, [inputFocused]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -506,6 +506,7 @@ export const Cover: React.FC = () => {
                             }
                             aria-expanded={hasAlternativeSearchResults}
                             aria-autocomplete='list'
+                            onKeyDown={handleSearchKeyDown}
                             onChange={(e) => {
                                 const inputType =
                                     'inputType' in e.nativeEvent
