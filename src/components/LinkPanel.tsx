@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+    useCallback,
+    useEffect,
+    useLayoutEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
 import { Bookmark, ChevronLeft } from 'lucide-react';
 
 import { links } from '@/constants/links';
@@ -7,8 +14,6 @@ import { useLinkNavigation } from '@/hooks/useLinkNavigation';
 import { LinkCategory } from './LinkCategory';
 
 import './LinkPanel.css';
-
-const mobileBookmarkQuery = '(width < 600px)';
 
 interface LinkPanelProps {
     hidden: boolean;
@@ -25,6 +30,7 @@ export const LinkPanel: React.FC<LinkPanelProps> = ({
     highlightedCategory,
     onClearSearch,
 }) => {
+    const mobileBreakpointRef = useRef<HTMLSpanElement>(null);
     const swipeStartXRef = useRef<number | undefined>(undefined);
     const {
         selectedCategory,
@@ -35,9 +41,7 @@ export const LinkPanel: React.FC<LinkPanelProps> = ({
     } = useLinkNavigation(isSearchNav, onClearSearch, highlightedCategory);
 
     const [windowHeight, setWindowHeight] = useState(globalThis.innerHeight);
-    const [isMobileViewport, setIsMobileViewport] = useState(
-        () => globalThis.matchMedia(mobileBookmarkQuery).matches
-    );
+    const [isMobileViewport, setIsMobileViewport] = useState(false);
     const [isMobileOpen, setIsMobileOpen] = useState(false);
     const [mobileSwipeOffset, setMobileSwipeOffset] = useState(0);
     const isExpanded = isKeyboardNav ? true : selectedCategory !== 0;
@@ -57,16 +61,21 @@ export const LinkPanel: React.FC<LinkPanelProps> = ({
         };
     }, []);
 
-    useEffect(() => {
-        const mediaQuery = globalThis.matchMedia(mobileBookmarkQuery);
-        const onChange = () => {
-            setIsMobileViewport(mediaQuery.matches);
+    useLayoutEffect(() => {
+        const updateMobileViewport = () => {
+            const breakpointElement = mobileBreakpointRef.current;
+            setIsMobileViewport(
+                breakpointElement
+                    ? globalThis.getComputedStyle(breakpointElement).display !==
+                          'none'
+                    : false
+            );
         };
 
-        onChange();
-        mediaQuery.addEventListener('change', onChange);
+        updateMobileViewport();
+        globalThis.addEventListener('resize', updateMobileViewport);
         return () => {
-            mediaQuery.removeEventListener('change', onChange);
+            globalThis.removeEventListener('resize', updateMobileViewport);
         };
     }, []);
 
@@ -114,6 +123,11 @@ export const LinkPanel: React.FC<LinkPanelProps> = ({
             aria-hidden={hidden}
             aria-expanded={isExpanded || (isMobileViewport && isMobileOpen)}
         >
+            <span
+                className='mobile-bookmark-breakpoint'
+                ref={mobileBreakpointRef}
+                aria-hidden='true'
+            />
             {isMobileViewport && (
                 <>
                     <button
