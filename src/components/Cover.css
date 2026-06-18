@@ -168,6 +168,11 @@
     }
 }
 
+.command-suggestion {
+    background-color: var(--clr-primary-alpha-2);
+    color: var(--clr-search-suggestion-text-active);
+}
+
 .search-suggestion-icon {
     height: var(--suggestion-height);
     aspect-ratio: 1 / 1;

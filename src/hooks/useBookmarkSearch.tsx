@@ -57,6 +57,7 @@ const getElementMotionDuration = (element: HTMLElement): number => {
 export const useBookmarkSearch = (): {
     clearSearch: () => void;
     focusSearchInput: () => void;
+    hasChillCommand: boolean;
     googleSearchResultIndex: number;
     handleSearchBlur: () => void;
     handleSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -73,6 +74,7 @@ export const useBookmarkSearch = (): {
     searchFormRef: React.RefObject<HTMLFormElement | null>;
     searchGoogleCurrentValue: () => void;
     searchInputValue: string;
+    searchResultIndexOffset: number;
     searchRef: React.RefObject<HTMLDivElement | null>;
     searchResults: LinkItem[];
     searchSuggestionsId: string;
@@ -105,15 +107,22 @@ export const useBookmarkSearch = (): {
     const trimmedSearchValue = searchValue.trim();
     const hasSearchQuery = trimmedSearchValue !== '';
     const hasSearchSuggestions = hasSearchQuery;
-    const googleSearchResultIndex = searchResults.length;
+    const hasChillCommand = isChillSearch(searchValue);
+    const searchResultIndexOffset = hasChillCommand ? 1 : 0;
+    const chillCommandResultIndex = hasChillCommand ? 0 : undefined;
+    const googleSearchResultIndex =
+        searchResultIndexOffset + searchResults.length;
     const searchNavigationItemCount = hasSearchQuery
-        ? searchResults.length + 1
+        ? searchResultIndexOffset + searchResults.length + 1
         : 0;
     const selectedSearchResult =
         highlightedSearchResultIndex === undefined ||
-        highlightedSearchResultIndex >= searchResults.length
+        highlightedSearchResultIndex < searchResultIndexOffset ||
+        highlightedSearchResultIndex >= googleSearchResultIndex
             ? undefined
-            : searchResults[highlightedSearchResultIndex];
+            : searchResults[
+                  highlightedSearchResultIndex - searchResultIndexOffset
+              ];
     const searchInputValue = getSearchInputValue(
         searchValue,
         selectedSearchResult,
@@ -169,7 +178,9 @@ export const useBookmarkSearch = (): {
 
                 setSearchResults(nextSearchResults);
                 setHighlightedSearchResultIndex(
-                    nextSearchResults.length > 0 ? 0 : undefined
+                    nextSearchResults.length > 0 || hasChillCommand
+                        ? 0
+                        : undefined
                 );
             })
             .catch((error: unknown) => {
@@ -183,7 +194,7 @@ export const useBookmarkSearch = (): {
         return () => {
             isCancelled = true;
         };
-    }, [loadSearchIndex, searchValue]);
+    }, [hasChillCommand, loadSearchIndex, searchValue]);
 
     const updateSearchSuggestionsPosition = useCallback(() => {
         const rect =
@@ -381,7 +392,10 @@ export const useBookmarkSearch = (): {
                 return;
             }
 
-            if (isChillSearch(searchValue)) {
+            if (
+                hasChillCommand &&
+                highlightedSearchResultIndex === chillCommandResultIndex
+            ) {
                 e.preventDefault();
                 openChillLinks();
                 return;
@@ -406,6 +420,7 @@ export const useBookmarkSearch = (): {
         },
         [
             googleSearchResultIndex,
+            hasChillCommand,
             hasSearchQuery,
             highlightedSearchResultIndex,
             navigateToSearchResult,
@@ -438,7 +453,10 @@ export const useBookmarkSearch = (): {
     const handleSubmit = useCallback(
         (e: React.FormEvent) => {
             e.preventDefault();
-            if (isChillSearch(searchValue)) {
+            if (
+                hasChillCommand &&
+                highlightedSearchResultIndex === chillCommandResultIndex
+            ) {
                 openChillLinks();
                 return;
             }
@@ -450,6 +468,8 @@ export const useBookmarkSearch = (): {
         },
         [
             navigateToSearchResult,
+            hasChillCommand,
+            highlightedSearchResultIndex,
             searchGoogle,
             searchValue,
             selectedSearchResult,
@@ -498,6 +518,7 @@ export const useBookmarkSearch = (): {
     return {
         clearSearch,
         focusSearchInput,
+        hasChillCommand,
         googleSearchResultIndex,
         handleSearchBlur,
         handleSearchChange,
@@ -515,6 +536,7 @@ export const useBookmarkSearch = (): {
         searchGoogle,
         searchGoogleCurrentValue,
         searchInputValue,
+        searchResultIndexOffset,
         searchRef,
         searchResults,
         searchSuggestionsId,

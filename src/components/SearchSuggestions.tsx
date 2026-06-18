@@ -1,10 +1,12 @@
-import { Bookmark, Search } from 'lucide-react';
+import { Bookmark, Coffee, Search } from 'lucide-react';
 import { createPortal } from 'react-dom';
 
+import { chillCommand, openChillLinks } from '@/utils/search';
 import type { LinkItem, SearchSuggestionsPosition } from '@/utils/search';
 
 interface SearchSuggestionsProps {
     googleSearchResultIndex: number;
+    hasChillCommand: boolean;
     highlightedSearchResultIndex?: number;
     id: string;
     onHighlightGoogleSearch: () => void;
@@ -13,11 +15,13 @@ interface SearchSuggestionsProps {
     onSelectSearchResult: (result: LinkItem) => void;
     position: SearchSuggestionsPosition;
     searchResults: LinkItem[];
+    searchResultIndexOffset: number;
     trimmedSearchValue: string;
 }
 
 export const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
     googleSearchResultIndex,
+    hasChillCommand,
     highlightedSearchResultIndex,
     id,
     onHighlightGoogleSearch,
@@ -26,6 +30,7 @@ export const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
     onSelectSearchResult,
     position,
     searchResults,
+    searchResultIndexOffset,
     trimmedSearchValue,
 }) =>
     createPortal(
@@ -42,8 +47,40 @@ export const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
                 } as React.CSSProperties
             }
         >
+            {hasChillCommand && (
+                <button
+                    className={`search-suggestion command-suggestion ${
+                        highlightedSearchResultIndex === 0 ? 'selected' : ''
+                    }`}
+                    id={`${id}-command`}
+                    type='button'
+                    role='option'
+                    aria-selected={highlightedSearchResultIndex === 0}
+                    onMouseDown={(event) => {
+                        event.preventDefault();
+                    }}
+                    onFocus={() => {
+                        onHighlightSearchResult(0);
+                    }}
+                    onPointerMove={() => {
+                        onHighlightSearchResult(0);
+                    }}
+                    onClick={() => {
+                        openChillLinks();
+                    }}
+                >
+                    <span className='search-suggestion-icon'>
+                        <Coffee className='icon' size={24} />
+                    </span>
+                    <span className='search-suggestion-text'>
+                        {chillCommand.label}
+                    </span>
+                </button>
+            )}
             {searchResults.map((result, resultIndex) => {
-                const isSelected = highlightedSearchResultIndex === resultIndex;
+                const navigationIndex = resultIndex + searchResultIndexOffset;
+                const isSelected =
+                    highlightedSearchResultIndex === navigationIndex;
 
                 return (
                     <button
@@ -59,10 +96,10 @@ export const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
                             event.preventDefault();
                         }}
                         onFocus={() => {
-                            onHighlightSearchResult(resultIndex);
+                            onHighlightSearchResult(navigationIndex);
                         }}
                         onPointerMove={() => {
-                            onHighlightSearchResult(resultIndex);
+                            onHighlightSearchResult(navigationIndex);
                         }}
                         onClick={() => {
                             onSelectSearchResult(result);

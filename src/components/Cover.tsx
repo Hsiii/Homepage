@@ -31,6 +31,7 @@ export const Cover: React.FC = () => {
         clearSearch,
         focusSearchInput,
         googleSearchResultIndex,
+        hasChillCommand,
         handleSearchBlur,
         handleSearchChange,
         handleSearchFocus,
@@ -46,6 +47,7 @@ export const Cover: React.FC = () => {
         searchFormRef,
         searchGoogleCurrentValue,
         searchInputValue,
+        searchResultIndexOffset,
         searchRef,
         searchResults,
         searchSuggestionsId,
@@ -109,6 +111,7 @@ export const Cover: React.FC = () => {
             {hasSearchSuggestions && searchSuggestionsPosition && (
                 <SearchSuggestions
                     googleSearchResultIndex={googleSearchResultIndex}
+                    hasChillCommand={hasChillCommand}
                     highlightedSearchResultIndex={highlightedSearchResultIndex}
                     id={searchSuggestionsId}
                     onHighlightGoogleSearch={highlightGoogleSearch}
@@ -117,6 +120,7 @@ export const Cover: React.FC = () => {
                     onSelectSearchResult={navigateToSearchResult}
                     position={searchSuggestionsPosition}
                     searchResults={searchResults}
+                    searchResultIndexOffset={searchResultIndexOffset}
                     trimmedSearchValue={trimmedSearchValue}
                 />
             )}

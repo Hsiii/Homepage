@@ -22,8 +22,18 @@ export interface SearchSuggestionsPosition {
     width: number;
 }
 
+export interface SearchCommand {
+    label: string;
+    searchValue: string;
+}
+
 const maxSearchResults = 4;
 const secondaryResultScoreLimit = 0.25;
+
+export const chillCommand = {
+    label: '/chill',
+    searchValue: '/chill',
+} as const satisfies SearchCommand;
 
 const chillLinks = [
     'Instagram',
@@ -47,11 +57,11 @@ export const getSearchItems = (): LinkItem[] =>
     });
 
 export const isChillSearch = (value: string): boolean =>
-    value.trim().toLowerCase() === 'chill';
+    value.trim().toLowerCase() === chillCommand.searchValue;
 
 export const openChillLinks = (): void => {
     for (const linkName of chillLinks) {
-        globalThis.open(links[linkName], '_blank');
+        globalThis.open(links[linkName], '_blank', 'noopener,noreferrer');
     }
 };
 
