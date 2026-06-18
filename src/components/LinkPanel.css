@@ -90,6 +90,10 @@
         }
     }
 
+    .link-panel.search-nav .mobile-bookmark-button {
+        display: none;
+    }
+
     .mobile-bookmark-page {
         position: fixed;
         inset: 0;
@@ -111,6 +115,10 @@
         &.open {
             transform: translateX(var(--mobile-swipe-offset));
         }
+    }
+
+    .link-panel.search-nav .mobile-bookmark-page {
+        display: none;
     }
 
     .mobile-bookmark-header {

@@ -52,6 +52,12 @@ export const LinkPanel: React.FC<LinkPanelProps> = ({
         };
     }, []);
 
+    useEffect(() => {
+        if (isSearchNav) {
+            closeMobilePanel();
+        }
+    }, [closeMobilePanel, isSearchNav]);
+
     const panelPaddings = useMemo(() => {
         const remToPx = 16;
         const linkHeight = 3.5 * remToPx;
@@ -75,7 +81,13 @@ export const LinkPanel: React.FC<LinkPanelProps> = ({
 
     return (
         <nav
-            className={`link-panel ${isMouseNav ? 'hoverEffective' : ''}`}
+            className={[
+                'link-panel',
+                isMouseNav && 'hoverEffective',
+                isSearchNav && 'search-nav',
+            ]
+                .filter(Boolean)
+                .join(' ')}
             onMouseDown={(e) => {
                 e.preventDefault();
             }}
