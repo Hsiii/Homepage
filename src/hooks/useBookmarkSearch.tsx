@@ -26,6 +26,8 @@ import {
     openChillLinks,
 } from '@/utils/search';
 
+const defaultMotionTrackingMs = 2000;
+
 const isAppleKeyboardPlatform = (): boolean => {
     const userAgent = globalThis.navigator.userAgent.toLowerCase();
 
@@ -35,6 +37,32 @@ const isAppleKeyboardPlatform = (): boolean => {
         userAgent.includes('iphone') ||
         userAgent.includes('ipad') ||
         userAgent.includes('ipod')
+    );
+};
+
+const getMaxCssTime = (value: string): number =>
+    Math.max(
+        ...value.split(',').map((part) => {
+            const time = part.trim();
+            if (time.endsWith('ms')) {
+                return Number.parseFloat(time);
+            }
+            if (time.endsWith('s')) {
+                return Number.parseFloat(time) * 1000;
+            }
+            return 0;
+        }),
+        0
+    );
+
+const getElementMotionDuration = (element: HTMLElement): number => {
+    const style = globalThis.getComputedStyle(element);
+
+    return Math.max(
+        getMaxCssTime(style.animationDelay) +
+            getMaxCssTime(style.animationDuration),
+        getMaxCssTime(style.transitionDelay) +
+            getMaxCssTime(style.transitionDuration)
     );
 };
 
@@ -212,19 +240,68 @@ export const useBookmarkSearch = (): {
 
         updateSearchSuggestionsPosition();
 
+        const motionElements = [
+            searchRef.current,
+            searchFormRef.current,
+        ].filter((element): element is HTMLElement => element !== null);
+        let animationFrame: number | undefined;
+        let motionTrackingEndsAt = 0;
+
+        const trackMotion = () => {
+            updateSearchSuggestionsPosition();
+
+            if (performance.now() >= motionTrackingEndsAt) {
+                animationFrame = undefined;
+                return;
+            }
+
+            animationFrame = globalThis.requestAnimationFrame(trackMotion);
+        };
+
+        const startMotionTracking = () => {
+            const motionDuration =
+                Math.max(...motionElements.map(getElementMotionDuration), 0) ||
+                defaultMotionTrackingMs;
+
+            motionTrackingEndsAt = Math.max(
+                motionTrackingEndsAt,
+                performance.now() + motionDuration
+            );
+
+            animationFrame ??= globalThis.requestAnimationFrame(trackMotion);
+        };
+
         const resizeObserver = new ResizeObserver(
             updateSearchSuggestionsPosition
         );
         if (searchFormRef.current) {
             resizeObserver.observe(searchFormRef.current);
         }
+        for (const element of motionElements) {
+            element.addEventListener('animationstart', startMotionTracking);
+            element.addEventListener('transitionstart', startMotionTracking);
+        }
         globalThis.addEventListener('resize', updateSearchSuggestionsPosition);
         globalThis.addEventListener('scroll', updateSearchSuggestionsPosition, {
             passive: true,
         });
+        startMotionTracking();
 
         return () => {
+            if (animationFrame !== undefined) {
+                globalThis.cancelAnimationFrame(animationFrame);
+            }
             resizeObserver.disconnect();
+            for (const element of motionElements) {
+                element.removeEventListener(
+                    'animationstart',
+                    startMotionTracking
+                );
+                element.removeEventListener(
+                    'transitionstart',
+                    startMotionTracking
+                );
+            }
             globalThis.removeEventListener(
                 'resize',
                 updateSearchSuggestionsPosition
