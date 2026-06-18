@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { FastForward, Play } from 'lucide-react';
+import { Play, PlayOff } from 'lucide-react';
 
 const animationStorageKey = 'animation-mode';
 const skipAnimationMode = 'skip';
@@ -42,7 +42,7 @@ export const AnimationToggle: React.FC = () => {
             }}
         >
             {isSkipAnimation ? (
-                <FastForward className='icon' />
+                <PlayOff className='icon' />
             ) : (
                 <Play className='icon' />
             )}
