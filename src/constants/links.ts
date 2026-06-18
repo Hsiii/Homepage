@@ -13,8 +13,6 @@ export const links = {
     'Coolor': 'https://coolors.co/',
     'Crx': 'https://chrome.google.com/webstore/devconsole/',
     'Dam': 'https://www.clubdam.com/',
-    'DB': 'https://nthu-datalab.github.io/db/',
-    'DBHW': 'https://shwu10.cs.nthu.edu.tw/users/sign_in',
     'Discord': 'https://discord.com/channels/@me',
     'Doc': 'https://docs.google.com/document/u/0/',
     'Drive': 'https://drive.google.com/drive/u/0/home',
