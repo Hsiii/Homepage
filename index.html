@@ -36,9 +36,7 @@
 
                 root.dataset.theme = isDark ? 'dark' : 'light';
                 root.style.colorScheme = isDark ? 'dark' : 'light';
-                if (
-                    ['rose', 'amber', 'mint', 'azure'].includes(savedThemeColor)
-                ) {
+                if (savedThemeColor === 'azure') {
                     root.dataset.themeColor = savedThemeColor;
                 }
             } catch {

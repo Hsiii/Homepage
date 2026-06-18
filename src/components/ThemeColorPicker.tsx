@@ -10,18 +10,6 @@ const themeColorOptions = [
         value: 'amethyst',
     },
     {
-        label: 'Rose',
-        value: 'rose',
-    },
-    {
-        label: 'Amber',
-        value: 'amber',
-    },
-    {
-        label: 'Mint',
-        value: 'mint',
-    },
-    {
         label: 'Azure',
         value: 'azure',
     },

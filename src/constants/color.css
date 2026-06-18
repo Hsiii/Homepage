@@ -12,10 +12,7 @@
     --theme-sky-hue-4: 185;
     --mountain-hue-rotate: 0deg;
     --clr-swatch-amethyst: hsl(275, 72%, 68%);
-    --clr-swatch-rose: hsl(348, 76%, 64%);
-    --clr-swatch-amber: hsl(34, 92%, 58%);
-    --clr-swatch-mint: hsl(158, 54%, 54%);
-    --clr-swatch-azure: hsl(207, 78%, 58%);
+    --clr-swatch-azure: hsl(218, 82%, 60%);
 
     accent-color: var(--clr-primary);
     ::selection {
@@ -143,46 +140,13 @@
     --clr-footer-bg: hsl(226, 26%, 9%);
 }
 
-:root[data-theme-color='rose'] {
-    --theme-primary-hue: 348;
-    --theme-secondary-hue: 18;
-    --theme-search-hue: 348;
-    --theme-sky-hue-1: 257;
-    --theme-sky-hue-2: 313;
-    --theme-sky-hue-3: 348;
-    --theme-sky-hue-4: 28;
-    --mountain-hue-rotate: 72deg;
-}
-
-:root[data-theme-color='amber'] {
-    --theme-primary-hue: 34;
-    --theme-secondary-hue: 12;
-    --theme-search-hue: 34;
-    --theme-sky-hue-1: 224;
-    --theme-sky-hue-2: 258;
-    --theme-sky-hue-3: 22;
-    --theme-sky-hue-4: 46;
-    --mountain-hue-rotate: 128deg;
-}
-
-:root[data-theme-color='mint'] {
-    --theme-primary-hue: 158;
-    --theme-secondary-hue: 194;
-    --theme-search-hue: 158;
-    --theme-sky-hue-1: 208;
-    --theme-sky-hue-2: 176;
-    --theme-sky-hue-3: 146;
-    --theme-sky-hue-4: 88;
-    --mountain-hue-rotate: 242deg;
-}
-
 :root[data-theme-color='azure'] {
-    --theme-primary-hue: 207;
-    --theme-secondary-hue: 244;
-    --theme-search-hue: 207;
-    --theme-sky-hue-1: 221;
-    --theme-sky-hue-2: 207;
-    --theme-sky-hue-3: 190;
-    --theme-sky-hue-4: 162;
-    --mountain-hue-rotate: 292deg;
+    --theme-primary-hue: 218;
+    --theme-secondary-hue: 236;
+    --theme-search-hue: 218;
+    --theme-sky-hue-1: 226;
+    --theme-sky-hue-2: 218;
+    --theme-sky-hue-3: 212;
+    --theme-sky-hue-4: 205;
+    --mountain-hue-rotate: 308deg;
 }

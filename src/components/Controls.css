@@ -73,18 +73,6 @@
     --theme-color-option: var(--clr-swatch-amethyst);
 }
 
-.theme-color-option-rose {
-    --theme-color-option: var(--clr-swatch-rose);
-}
-
-.theme-color-option-amber {
-    --theme-color-option: var(--clr-swatch-amber);
-}
-
-.theme-color-option-mint {
-    --theme-color-option: var(--clr-swatch-mint);
-}
-
 .theme-color-option-azure {
     --theme-color-option: var(--clr-swatch-azure);
 }
