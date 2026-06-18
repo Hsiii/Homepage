@@ -415,7 +415,7 @@ export const Cover: React.FC = () => {
             if (e.key === ' ' && !inputFocused) {
                 e.preventDefault();
                 setInputFocused(true);
-                inputRef.current?.focus();
+                inputRef.current?.focus({ preventScroll: true });
             }
         };
 
@@ -562,7 +562,7 @@ export const Cover: React.FC = () => {
                         ref={searchFormRef}
                         onSubmit={handleSubmit}
                         onClick={() => {
-                            inputRef.current?.focus();
+                            inputRef.current?.focus({ preventScroll: true });
                         }}
                     >
                         <div className='search-icon'>

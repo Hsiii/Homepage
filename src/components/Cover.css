@@ -228,17 +228,6 @@
         padding-inline: 1rem;
     }
 
-    .cover-content.focused {
-        justify-content: flex-start;
-        padding-top: 4rem;
-        transition: 0.2s;
-        z-index: 1000;
-    }
-    .cover-content.focused .title,
-    .cover-content.focused .weather-container {
-        display: none;
-    }
-
     .title {
         font-size: 4rem;
         letter-spacing: 0.25rem;
