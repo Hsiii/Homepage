@@ -561,6 +561,9 @@ export const Cover: React.FC = () => {
                         className='search-form'
                         ref={searchFormRef}
                         onSubmit={handleSubmit}
+                        onClick={() => {
+                            inputRef.current?.focus();
+                        }}
                     >
                         <div className='search-icon'>
                             <Search className='icon' size={24} />
