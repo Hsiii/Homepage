@@ -443,7 +443,11 @@ export const Cover: React.FC = () => {
                                   onMouseDown={(event) => {
                                       event.preventDefault();
                                   }}
-                                  onMouseEnter={() => {
+                                  onFocus={() => {
+                                      setAutocompleteEnabled(true);
+                                      setSelectedSearchResultIndex(resultIndex);
+                                  }}
+                                  onPointerMove={() => {
                                       setAutocompleteEnabled(true);
                                       setSelectedSearchResultIndex(resultIndex);
                                   }}
