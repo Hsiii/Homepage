@@ -456,8 +456,22 @@ export const useBookmarkSearch = (): {
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === ' ' && !inputFocused) {
+            if (inputFocused) {
+                return;
+            }
+
+            if (e.key === ' ') {
                 e.preventDefault();
+                setInputFocused(true);
+                focusSearchInput();
+                return;
+            }
+
+            if (e.key === '/') {
+                e.preventDefault();
+                setAutocompleteEnabled(true);
+                setSearchValue('/');
+                setBlockedChillLinks([]);
                 setInputFocused(true);
                 focusSearchInput();
             }
