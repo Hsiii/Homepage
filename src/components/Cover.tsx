@@ -94,9 +94,10 @@ const getGoogleSearchUrl = (value: string): string =>
 
 const getSearchInputValue = (
     searchValue: string,
-    selectedSearchResult?: LinkItem
+    selectedSearchResult: LinkItem | undefined,
+    autocompleteEnabled: boolean
 ): string =>
-    searchValue.trim() !== '' && selectedSearchResult
+    autocompleteEnabled && searchValue.trim() !== '' && selectedSearchResult
         ? selectedSearchResult.link
         : searchValue;
 
@@ -139,6 +140,7 @@ export const Cover: React.FC = () => {
     const [searchResults, setSearchResults] = useState<LinkItem[]>([]);
     const [selectedSearchResultIndex, setSelectedSearchResultIndex] =
         useState(0);
+    const [autocompleteEnabled, setAutocompleteEnabled] = useState(true);
     const [searchSuggestionsPosition, setSearchSuggestionsPosition] = useState<
         SearchSuggestionsPosition | undefined
     >(undefined);
@@ -151,7 +153,8 @@ export const Cover: React.FC = () => {
     const hasAlternativeSearchResults = alternativeSearchResults.length > 0;
     const searchInputValue = getSearchInputValue(
         searchValue,
-        selectedSearchResult
+        selectedSearchResult,
+        autocompleteEnabled
     );
 
     const flattenedSearchItems = useMemo<LinkItem[]>(
@@ -276,6 +279,7 @@ export const Cover: React.FC = () => {
         const input = inputRef.current;
 
         if (
+            !autocompleteEnabled ||
             !inputFocused ||
             !input ||
             !selectedSearchResult ||
@@ -294,7 +298,7 @@ export const Cover: React.FC = () => {
             selectionStart,
             selectedSearchResult.link.length
         );
-    }, [inputFocused, searchValue, selectedSearchResult]);
+    }, [autocompleteEnabled, inputFocused, searchValue, selectedSearchResult]);
 
     const navigateToSearchResult = useCallback((result?: LinkItem) => {
         if (result) {
@@ -322,6 +326,7 @@ export const Cover: React.FC = () => {
 
             if (e.key === 'ArrowDown' && searchResults.length > 1) {
                 e.preventDefault();
+                setAutocompleteEnabled(true);
                 setSelectedSearchResultIndex(
                     (index) => (index + 1) % searchResults.length
                 );
@@ -330,6 +335,7 @@ export const Cover: React.FC = () => {
 
             if (e.key === 'ArrowUp' && searchResults.length > 1) {
                 e.preventDefault();
+                setAutocompleteEnabled(true);
                 setSelectedSearchResultIndex(
                     (index) =>
                         (index - 1 + searchResults.length) %
@@ -340,6 +346,7 @@ export const Cover: React.FC = () => {
 
             if (e.key === 'Escape') {
                 e.preventDefault();
+                setAutocompleteEnabled(true);
                 setSearchValue('');
                 inputRef.current?.blur();
                 return;
@@ -398,6 +405,7 @@ export const Cover: React.FC = () => {
 
     const handleSearchBlur = () => {
         setInputFocused(false);
+        setAutocompleteEnabled(true);
         setSearchValue('');
         setSearchResults([]);
         setSelectedSearchResultIndex(0);
@@ -436,6 +444,7 @@ export const Cover: React.FC = () => {
                                       event.preventDefault();
                                   }}
                                   onMouseEnter={() => {
+                                      setAutocompleteEnabled(true);
                                       setSelectedSearchResultIndex(resultIndex);
                                   }}
                                   onClick={() => {
@@ -493,6 +502,14 @@ export const Cover: React.FC = () => {
                             aria-expanded={hasAlternativeSearchResults}
                             aria-autocomplete='list'
                             onChange={(e) => {
+                                const inputType =
+                                    'inputType' in e.nativeEvent
+                                        ? e.nativeEvent.inputType
+                                        : '';
+
+                                setAutocompleteEnabled(
+                                    !inputType.startsWith('delete')
+                                );
                                 setSearchValue(e.target.value);
                             }}
                             onFocus={() => {
