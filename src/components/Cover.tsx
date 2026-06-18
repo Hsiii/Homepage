@@ -96,10 +96,24 @@ const getSearchInputValue = (
     searchValue: string,
     selectedSearchResult: LinkItem | undefined,
     autocompleteEnabled: boolean
-): string =>
-    autocompleteEnabled && searchValue.trim() !== '' && selectedSearchResult
-        ? selectedSearchResult.link
-        : searchValue;
+): string => {
+    if (
+        !autocompleteEnabled ||
+        searchValue.trim() === '' ||
+        !selectedSearchResult
+    ) {
+        return searchValue;
+    }
+
+    const query = searchValue.trim();
+    const selectedLink = selectedSearchResult.link;
+
+    if (selectedLink.toLowerCase().startsWith(query.toLowerCase())) {
+        return `${query}${selectedLink.slice(query.length)}`;
+    }
+
+    return selectedLink;
+};
 
 const getAutocompleteSelectionStart = (
     searchValue: string,
@@ -140,6 +154,8 @@ export const Cover: React.FC = () => {
     const [searchResults, setSearchResults] = useState<LinkItem[]>([]);
     const [selectedSearchResultIndex, setSelectedSearchResultIndex] =
         useState(0);
+    const [highlightedSearchResultIndex, setHighlightedSearchResultIndex] =
+        useState<number | undefined>(undefined);
     const [autocompleteEnabled, setAutocompleteEnabled] = useState(true);
     const [searchSuggestionsPosition, setSearchSuggestionsPosition] = useState<
         SearchSuggestionsPosition | undefined
@@ -149,8 +165,7 @@ export const Cover: React.FC = () => {
     >(undefined);
 
     const selectedSearchResult = searchResults.at(selectedSearchResultIndex);
-    const alternativeSearchResults = searchResults.slice(1);
-    const hasAlternativeSearchResults = alternativeSearchResults.length > 0;
+    const hasSearchResults = searchResults.length > 0;
     const searchInputValue = getSearchInputValue(
         searchValue,
         selectedSearchResult,
@@ -197,6 +212,7 @@ export const Cover: React.FC = () => {
         if (query === '') {
             setSearchResults([]);
             setSelectedSearchResultIndex(0);
+            setHighlightedSearchResultIndex(undefined);
             return undefined;
         }
 
@@ -210,12 +226,14 @@ export const Cover: React.FC = () => {
 
                 setSearchResults(getSearchResults(searchIndex.search(query)));
                 setSelectedSearchResultIndex(0);
+                setHighlightedSearchResultIndex(undefined);
             })
             .catch((error: unknown) => {
                 console.error('Failed to load search index:', error);
                 if (!isCancelled) {
                     setSearchResults([]);
                     setSelectedSearchResultIndex(0);
+                    setHighlightedSearchResultIndex(undefined);
                 }
             });
 
@@ -254,7 +272,7 @@ export const Cover: React.FC = () => {
     }, []);
 
     useLayoutEffect(() => {
-        if (!hasAlternativeSearchResults) {
+        if (!hasSearchResults) {
             searchSuggestionsPositionRef.current = undefined;
             setSearchSuggestionsPosition(undefined);
             return undefined;
@@ -273,7 +291,7 @@ export const Cover: React.FC = () => {
         return () => {
             globalThis.cancelAnimationFrame(animationFrame);
         };
-    }, [hasAlternativeSearchResults, updateSearchSuggestionsPosition]);
+    }, [hasSearchResults, updateSearchSuggestionsPosition]);
 
     useLayoutEffect(() => {
         const input = inputRef.current;
@@ -284,7 +302,7 @@ export const Cover: React.FC = () => {
             !input ||
             !selectedSearchResult ||
             searchValue.trim() === '' ||
-            input.value !== selectedSearchResult.link
+            input.value !== searchInputValue
         ) {
             return;
         }
@@ -294,11 +312,14 @@ export const Cover: React.FC = () => {
             selectedSearchResult
         );
 
-        input.setSelectionRange(
-            selectionStart,
-            selectedSearchResult.link.length
-        );
-    }, [autocompleteEnabled, inputFocused, searchValue, selectedSearchResult]);
+        input.setSelectionRange(selectionStart, searchInputValue.length);
+    }, [
+        autocompleteEnabled,
+        inputFocused,
+        searchInputValue,
+        searchValue,
+        selectedSearchResult,
+    ]);
 
     const navigateToSearchResult = useCallback((result?: LinkItem) => {
         if (result) {
@@ -314,23 +335,32 @@ export const Cover: React.FC = () => {
 
     const handleSearchKeyDown = useCallback(
         (e: React.KeyboardEvent<HTMLInputElement>) => {
-            if (e.key === 'ArrowDown' && searchResults.length > 1) {
+            if (e.key === 'ArrowDown' && searchResults.length > 0) {
                 e.preventDefault();
                 setAutocompleteEnabled(true);
-                setSelectedSearchResultIndex(
-                    (index) => (index + 1) % searchResults.length
-                );
+                setHighlightedSearchResultIndex((index) => {
+                    const nextIndex =
+                        index === undefined
+                            ? 0
+                            : (index + 1) % searchResults.length;
+                    setSelectedSearchResultIndex(nextIndex);
+                    return nextIndex;
+                });
                 return;
             }
 
-            if (e.key === 'ArrowUp' && searchResults.length > 1) {
+            if (e.key === 'ArrowUp' && searchResults.length > 0) {
                 e.preventDefault();
                 setAutocompleteEnabled(true);
-                setSelectedSearchResultIndex(
-                    (index) =>
-                        (index - 1 + searchResults.length) %
-                        searchResults.length
-                );
+                setHighlightedSearchResultIndex((index) => {
+                    const nextIndex =
+                        index === undefined
+                            ? searchResults.length - 1
+                            : (index - 1 + searchResults.length) %
+                              searchResults.length;
+                    setSelectedSearchResultIndex(nextIndex);
+                    return nextIndex;
+                });
                 return;
             }
 
@@ -409,10 +439,11 @@ export const Cover: React.FC = () => {
         setSearchValue('');
         setSearchResults([]);
         setSelectedSearchResultIndex(0);
+        setHighlightedSearchResultIndex(undefined);
     };
 
     const searchSuggestions =
-        hasAlternativeSearchResults && searchSuggestionsPosition
+        hasSearchResults && searchSuggestionsPosition
             ? createPortal(
                   <div
                       className='search-suggestions'
@@ -427,10 +458,9 @@ export const Cover: React.FC = () => {
                           } as React.CSSProperties
                       }
                   >
-                      {alternativeSearchResults.map((result, index) => {
-                          const resultIndex = index + 1;
+                      {searchResults.map((result, resultIndex) => {
                           const isSelected =
-                              selectedSearchResultIndex === resultIndex;
+                              highlightedSearchResultIndex === resultIndex;
 
                           return (
                               <button
@@ -445,10 +475,16 @@ export const Cover: React.FC = () => {
                                   }}
                                   onFocus={() => {
                                       setAutocompleteEnabled(true);
+                                      setHighlightedSearchResultIndex(
+                                          resultIndex
+                                      );
                                       setSelectedSearchResultIndex(resultIndex);
                                   }}
                                   onPointerMove={() => {
                                       setAutocompleteEnabled(true);
+                                      setHighlightedSearchResultIndex(
+                                          resultIndex
+                                      );
                                       setSelectedSearchResultIndex(resultIndex);
                                   }}
                                   onClick={() => {
@@ -482,7 +518,7 @@ export const Cover: React.FC = () => {
                     className={[
                         'search',
                         inputFocused && 'focused',
-                        hasAlternativeSearchResults && 'with-suggestions',
+                        hasSearchResults && 'with-suggestions',
                     ]
                         .filter(Boolean)
                         .join(' ')}
@@ -504,11 +540,11 @@ export const Cover: React.FC = () => {
                             value={searchInputValue}
                             ref={inputRef}
                             aria-controls={
-                                hasAlternativeSearchResults
+                                hasSearchResults
                                     ? searchSuggestionsId
                                     : undefined
                             }
-                            aria-expanded={hasAlternativeSearchResults}
+                            aria-expanded={hasSearchResults}
                             aria-autocomplete='list'
                             onKeyDown={handleSearchKeyDown}
                             onChange={(e) => {
