@@ -11,13 +11,15 @@
     animation: rise-show var(--rise-show-duration) ease-in;
     z-index: 1000;
 
-    margin-bottom: -2rem; /* Pull it slightly closer to title if needed */
-
     @media (width < 37.5rem) {
         font-size: var(--fs-base);
 
         gap: 0.5rem;
     }
+}
+
+.weather-container.placeholder {
+    visibility: hidden;
 }
 
 .weather-container span {

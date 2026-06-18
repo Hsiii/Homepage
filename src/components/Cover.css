@@ -24,6 +24,15 @@
     align-items: center;
 }
 
+.weather-slot {
+    --weather-slot-height: 2rem;
+
+    min-height: var(--weather-slot-height);
+    margin-bottom: calc(var(--weather-slot-height) * -1);
+    display: grid;
+    place-items: center;
+}
+
 .title {
     background-image: linear-gradient(
         to right,

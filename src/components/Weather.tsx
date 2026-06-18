@@ -32,28 +32,33 @@ export const Weather: React.FC = () => {
         weekday: 'short',
     });
 
+    const weatherIcon =
+        weather?.weatherType !== undefined &&
+        weather.weatherType in weatherIcons
+            ? weatherIcons[weather.weatherType as keyof typeof weatherIcons]
+            : weatherIcons.Clouds;
+
     return (
-        weather && (
-            <div className='weather-container'>
-                <span className='weather-date'>{dateStr}</span>
-                <span className='weather-info'>
-                    {weather.weatherType in weatherIcons
-                        ? weatherIcons[
-                              weather.weatherType as keyof typeof weatherIcons
-                          ]
-                        : weatherIcons.Clouds}
-                    {Math.round(weather.temp)}°C
-                    {!isCached && (
-                        <button
-                            className={`weather-refresh ${isLoading ? 'loading' : ''}`}
-                            onClick={fetchWeatherByCurrentLocation}
-                            title='Update with my location'
-                        >
-                            <RefreshCw size={14} />
-                        </button>
-                    )}
-                </span>
-            </div>
-        )
+        <div
+            className={`weather-container ${weather === undefined ? 'placeholder' : ''}`}
+            aria-hidden={weather === undefined}
+        >
+            <span className='weather-date'>{dateStr}</span>
+            <span className='weather-info'>
+                {weatherIcon}
+                {weather === undefined
+                    ? '--°C'
+                    : `${Math.round(weather.temp)}°C`}
+                {!isCached && weather !== undefined && (
+                    <button
+                        className={`weather-refresh ${isLoading ? 'loading' : ''}`}
+                        onClick={fetchWeatherByCurrentLocation}
+                        title='Update with my location'
+                    >
+                        <RefreshCw size={14} />
+                    </button>
+                )}
+            </span>
+        </div>
     );
 };

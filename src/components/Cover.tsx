@@ -62,9 +62,11 @@ export const Cover: React.FC = () => {
             <Controls />
             <div className={`cover-content ${inputFocused ? 'focused' : ''}`}>
                 <div className='title-container'>
-                    <Suspense fallback={undefined}>
-                        <Weather />
-                    </Suspense>
+                    <div className='weather-slot'>
+                        <Suspense fallback={undefined}>
+                            <Weather />
+                        </Suspense>
+                    </div>
                     <span className='title'>{time}</span>
                 </div>
                 <div
