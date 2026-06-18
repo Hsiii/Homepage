@@ -92,8 +92,18 @@ const getSearchResults = (results: readonly SearchResult[]): LinkItem[] => {
 const getGoogleSearchUrl = (value: string): string =>
     `https://www.google.com/search?q=${encodeURIComponent(value.trim())}`;
 
+const isSameSearchSuggestionsPosition = (
+    a: SearchSuggestionsPosition | undefined,
+    b: SearchSuggestionsPosition
+): boolean =>
+    a !== undefined &&
+    Math.abs(a.left - b.left) < 0.5 &&
+    Math.abs(a.top - b.top) < 0.5 &&
+    Math.abs(a.width - b.width) < 0.5;
+
 export const Cover: React.FC = () => {
     const inputRef = useRef<HTMLInputElement>(null);
+    const searchFormRef = useRef<HTMLFormElement>(null);
     const searchRef = useRef<HTMLDivElement>(null);
     const searchSuggestionsId = useId();
     const searchIndexRef = useRef<SearchIndex | undefined>(undefined);
@@ -108,6 +118,9 @@ export const Cover: React.FC = () => {
     const [selectedSearchResultIndex, setSelectedSearchResultIndex] =
         useState(0);
     const [searchSuggestionsPosition, setSearchSuggestionsPosition] = useState<
+        SearchSuggestionsPosition | undefined
+    >(undefined);
+    const searchSuggestionsPositionRef = useRef<
         SearchSuggestionsPosition | undefined
     >(undefined);
 
@@ -183,62 +196,53 @@ export const Cover: React.FC = () => {
     }, [loadSearchIndex, searchValue]);
 
     const updateSearchSuggestionsPosition = useCallback(() => {
-        const rect = searchRef.current?.getBoundingClientRect();
+        const rect =
+            searchFormRef.current?.getBoundingClientRect() ??
+            searchRef.current?.getBoundingClientRect();
         if (!rect) {
+            searchSuggestionsPositionRef.current = undefined;
             setSearchSuggestionsPosition(undefined);
             return;
         }
 
-        setSearchSuggestionsPosition({
+        const nextPosition = {
             left: rect.left,
             top: rect.bottom,
             width: rect.width,
-        });
+        };
+
+        if (
+            isSameSearchSuggestionsPosition(
+                searchSuggestionsPositionRef.current,
+                nextPosition
+            )
+        ) {
+            return;
+        }
+
+        searchSuggestionsPositionRef.current = nextPosition;
+        setSearchSuggestionsPosition(nextPosition);
     }, []);
 
     useLayoutEffect(() => {
         if (!hasAlternativeSearchResults) {
+            searchSuggestionsPositionRef.current = undefined;
             setSearchSuggestionsPosition(undefined);
             return undefined;
         }
 
         updateSearchSuggestionsPosition();
 
-        const animationFrame = globalThis.requestAnimationFrame(
-            updateSearchSuggestionsPosition
-        );
-        const transitionTimeout = globalThis.setTimeout(
-            updateSearchSuggestionsPosition,
-            300,
-            undefined
-        );
-        const searchElement = searchRef.current;
-
-        searchElement?.addEventListener(
-            'transitionend',
-            updateSearchSuggestionsPosition
-        );
-        globalThis.addEventListener('resize', updateSearchSuggestionsPosition);
-        globalThis.visualViewport?.addEventListener(
-            'resize',
-            updateSearchSuggestionsPosition
+        let animationFrame = globalThis.requestAnimationFrame(
+            function trackSearchPosition() {
+                updateSearchSuggestionsPosition();
+                animationFrame =
+                    globalThis.requestAnimationFrame(trackSearchPosition);
+            }
         );
 
         return () => {
             globalThis.cancelAnimationFrame(animationFrame);
-            globalThis.clearTimeout(transitionTimeout);
-            searchElement?.removeEventListener(
-                'transitionend',
-                updateSearchSuggestionsPosition
-            );
-            globalThis.removeEventListener(
-                'resize',
-                updateSearchSuggestionsPosition
-            );
-            globalThis.visualViewport?.removeEventListener(
-                'resize',
-                updateSearchSuggestionsPosition
-            );
         };
     }, [hasAlternativeSearchResults, updateSearchSuggestionsPosition]);
 
@@ -258,6 +262,7 @@ export const Cover: React.FC = () => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === ' ' && !inputFocused) {
                 e.preventDefault();
+                setInputFocused(true);
                 inputRef.current?.focus();
             }
 
@@ -405,8 +410,21 @@ export const Cover: React.FC = () => {
                     <Weather />
                     <span className='title'>{time}</span>
                 </div>
-                <div className='search' ref={searchRef}>
-                    <form className='search-form' onSubmit={handleSubmit}>
+                <div
+                    className={[
+                        'search',
+                        inputFocused && 'focused',
+                        hasAlternativeSearchResults && 'with-suggestions',
+                    ]
+                        .filter(Boolean)
+                        .join(' ')}
+                    ref={searchRef}
+                >
+                    <form
+                        className='search-form'
+                        ref={searchFormRef}
+                        onSubmit={handleSubmit}
+                    >
                         <div className='search-icon'>
                             <Search className='icon' size={24} />
                         </div>
