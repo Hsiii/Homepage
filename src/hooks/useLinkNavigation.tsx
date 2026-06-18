@@ -9,7 +9,6 @@ export const useLinkNavigation = (
     highlightedCategory?: number
 ): {
     selectedCategory: number;
-    setSelectedCategory: React.Dispatch<React.SetStateAction<number>>;
     isKeyboardNav: boolean;
     isMouseNav: boolean;
     startMouseNav: () => void;
@@ -129,7 +128,6 @@ export const useLinkNavigation = (
 
     return {
         selectedCategory,
-        setSelectedCategory,
         isKeyboardNav,
         isMouseNav,
         startMouseNav,
