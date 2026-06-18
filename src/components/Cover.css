@@ -162,6 +162,9 @@
 
     .search-suggestion-text {
         font: var(--fontBoldMd);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 }
 
@@ -219,6 +222,12 @@
 }
 
 @media (width < 600px) {
+    .cover-content {
+        height: 58svh;
+        gap: 1.5rem;
+        padding-inline: 1rem;
+    }
+
     .cover-content.focused {
         justify-content: flex-start;
         padding-top: 4rem;
@@ -228,5 +237,40 @@
     .cover-content.focused .title,
     .cover-content.focused .weather-container {
         display: none;
+    }
+
+    .title {
+        font-size: 4rem;
+        letter-spacing: 0.25rem;
+    }
+
+    .search {
+        width: min(100%, 22rem);
+    }
+
+    .search-form:focus-within,
+    .search.focused .search-form,
+    .search:hover .search-form {
+        padding-left: 0;
+        padding-right: 0.5rem;
+    }
+
+    .search-input:focus,
+    .search.focused .search-input,
+    .search:hover .search-input {
+        width: 100%;
+        max-width: none;
+    }
+
+    .search-suggestions {
+        --suggestion-gap: 0.5rem;
+        --suggestion-height: 3.5rem;
+        width: min(var(--suggestion-width), calc(100vw - 2rem));
+        left: max(1rem, var(--suggestion-left));
+    }
+
+    .search-suggestion {
+        padding-left: 0;
+        padding-right: 1rem;
     }
 }

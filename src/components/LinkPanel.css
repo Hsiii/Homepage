@@ -8,6 +8,11 @@
     --height: 100svh;
 }
 
+.mobile-bookmark-button,
+.mobile-bookmark-page {
+    display: none;
+}
+
 .trigger {
     position: absolute;
     left: 0;
@@ -51,6 +56,147 @@
     }
 
     animation: rise-show var(--rise-show-duration) ease-out;
+}
+
+@media (width < 600px) {
+    .mobile-bookmark-button {
+        position: fixed;
+        top: 1rem;
+        left: 1rem;
+        width: 2.75rem;
+        height: 2.75rem;
+        border-radius: 50%;
+        background-color: var(--clr-neutral-light-alpha);
+        color: var(--clr-primary);
+        backdrop-filter: blur(0.75rem);
+        cursor: pointer;
+        z-index: 18;
+
+        display: grid;
+        place-items: center;
+        transition:
+            opacity 0.2s ease-out,
+            translate 0.2s ease-out;
+
+        &.hidden {
+            opacity: 0;
+            pointer-events: none;
+            translate: 0 -1rem;
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--clr-primary-alpha);
+            outline-offset: 2px;
+        }
+    }
+
+    .mobile-bookmark-page {
+        position: fixed;
+        inset: 0;
+        background-color: var(--clr-neutral-light);
+        color: var(--clr-text);
+        z-index: 40;
+        padding: 1rem;
+        padding-top: max(1rem, env(safe-area-inset-top));
+        padding-bottom: max(1rem, env(safe-area-inset-bottom));
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        transform: translateX(100%);
+        transition: transform 0.2s ease-out;
+
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+
+        &.open {
+            transform: translateX(var(--mobile-swipe-offset));
+        }
+    }
+
+    .mobile-bookmark-header {
+        min-height: 3rem;
+        display: grid;
+        grid-template-columns: 3rem 1fr 3rem;
+        align-items: center;
+        flex-shrink: 0;
+
+        span {
+            font: var(--fontBoldLg);
+            text-align: center;
+            color: var(--clr-neutral);
+        }
+    }
+
+    .mobile-bookmark-back {
+        width: 2.75rem;
+        height: 2.75rem;
+        border-radius: 50%;
+        background-color: var(--clr-text-alpha-2);
+        color: var(--clr-primary);
+        cursor: pointer;
+
+        display: grid;
+        place-items: center;
+
+        &:focus-visible {
+            outline: 2px solid var(--clr-primary-alpha);
+            outline-offset: 2px;
+        }
+    }
+
+    .mobile-bookmark-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        padding-bottom: 1rem;
+    }
+
+    .mobile-bookmark-category {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .mobile-bookmark-category-title {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        color: var(--clr-secondary);
+        font: var(--fontBoldMd);
+
+        .icon {
+            width: 1.25rem;
+            height: 1.25rem;
+        }
+    }
+
+    .mobile-bookmark-links {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.5rem;
+    }
+
+    .mobile-bookmark-link {
+        min-height: 3rem;
+        padding: 0.75rem 1rem;
+        border-radius: 0.5rem;
+        background-color: var(--clr-text-alpha-2);
+        color: var(--clr-text);
+        font: var(--fontBoldSm);
+        text-decoration: none;
+
+        display: flex;
+        align-items: center;
+
+        &.disabled {
+            color: var(--clr-disabled);
+        }
+    }
+
+    .trigger,
+    .link-tree {
+        display: none;
+    }
 }
 
 .link-tree {

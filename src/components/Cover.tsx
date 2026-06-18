@@ -9,7 +9,7 @@ import React, {
     useRef,
     useState,
 } from 'react';
-import { Search } from 'lucide-react';
+import { Bookmark, Search } from 'lucide-react';
 import { createPortal } from 'react-dom';
 
 import type { LinkName } from '@/constants/links';
@@ -165,7 +165,9 @@ export const Cover: React.FC = () => {
     >(undefined);
 
     const selectedSearchResult = searchResults.at(selectedSearchResultIndex);
-    const hasSearchResults = searchResults.length > 0;
+    const trimmedSearchValue = searchValue.trim();
+    const hasSearchQuery = trimmedSearchValue !== '';
+    const hasSearchSuggestions = hasSearchQuery;
     const searchInputValue = getSearchInputValue(
         searchValue,
         selectedSearchResult,
@@ -278,7 +280,7 @@ export const Cover: React.FC = () => {
     }, []);
 
     useLayoutEffect(() => {
-        if (!hasSearchResults) {
+        if (!hasSearchSuggestions) {
             searchSuggestionsPositionRef.current = undefined;
             setSearchSuggestionsPosition(undefined);
             return undefined;
@@ -297,7 +299,7 @@ export const Cover: React.FC = () => {
         return () => {
             globalThis.cancelAnimationFrame(animationFrame);
         };
-    }, [hasSearchResults, updateSearchSuggestionsPosition]);
+    }, [hasSearchSuggestions, updateSearchSuggestionsPosition]);
 
     useLayoutEffect(() => {
         const input = inputRef.current;
@@ -431,6 +433,9 @@ export const Cover: React.FC = () => {
         }
 
         navigateToSearchResult(selectedSearchResult);
+        if (!selectedSearchResult) {
+            searchGoogle(searchValue);
+        }
     };
 
     const handleClearSearch = () => {
@@ -449,7 +454,7 @@ export const Cover: React.FC = () => {
     };
 
     const searchSuggestions =
-        hasSearchResults && searchSuggestionsPosition
+        hasSearchSuggestions && searchSuggestionsPosition
             ? createPortal(
                   <div
                       className='search-suggestions'
@@ -498,7 +503,7 @@ export const Cover: React.FC = () => {
                                   }}
                               >
                                   <span className='search-suggestion-icon'>
-                                      <Search className='icon' size={24} />
+                                      <Bookmark className='icon' size={24} />
                                   </span>
                                   <span className='search-suggestion-text'>
                                       {result.link}
@@ -506,6 +511,28 @@ export const Cover: React.FC = () => {
                               </button>
                           );
                       })}
+                      <button
+                          className='search-suggestion google-search-suggestion'
+                          type='button'
+                          role='option'
+                          aria-selected={false}
+                          onMouseDown={(event) => {
+                              event.preventDefault();
+                          }}
+                          onPointerMove={() => {
+                              setHighlightedSearchResultIndex(undefined);
+                          }}
+                          onClick={() => {
+                              searchGoogle(searchValue);
+                          }}
+                      >
+                          <span className='search-suggestion-icon'>
+                              <Search className='icon' size={24} />
+                          </span>
+                          <span className='search-suggestion-text'>
+                              Search Google for "{trimmedSearchValue}"
+                          </span>
+                      </button>
                   </div>,
                   globalThis.document.body
               )
@@ -524,7 +551,7 @@ export const Cover: React.FC = () => {
                     className={[
                         'search',
                         inputFocused && 'focused',
-                        hasSearchResults && 'with-suggestions',
+                        hasSearchSuggestions && 'with-suggestions',
                     ]
                         .filter(Boolean)
                         .join(' ')}
@@ -546,11 +573,11 @@ export const Cover: React.FC = () => {
                             value={searchInputValue}
                             ref={inputRef}
                             aria-controls={
-                                hasSearchResults
+                                hasSearchSuggestions
                                     ? searchSuggestionsId
                                     : undefined
                             }
-                            aria-expanded={hasSearchResults}
+                            aria-expanded={hasSearchSuggestions}
                             aria-autocomplete='list'
                             onKeyDown={handleSearchKeyDown}
                             onChange={(e) => {
