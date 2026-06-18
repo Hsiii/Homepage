@@ -75,8 +75,7 @@ export const HelpDialog: React.FC<HelpDialogProps> = ({
                     <div className='help-desc-text'>
                         {isMouseMode ? (
                             <p className='key-info'>
-                                Search bookmarks directly, or use the Google row
-                                for web search.
+                                Search bookmarks or google something
                             </p>
                         ) : (
                             <>
