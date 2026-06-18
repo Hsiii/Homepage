@@ -7,7 +7,6 @@ import { useTime } from '@/hooks/useTime';
 import { Controls } from './Controls';
 import { Mountains } from './Mountains';
 import { SearchSuggestions } from './SearchSuggestions';
-import { Weather } from './Weather';
 
 import './Cover.css';
 
@@ -15,6 +14,13 @@ const LinkPanel = lazy(
     async () =>
         await import('./LinkPanel').then((module) => ({
             default: module.LinkPanel,
+        }))
+);
+
+const Weather = lazy(
+    async () =>
+        await import('./Weather').then((module) => ({
+            default: module.Weather,
         }))
 );
 
@@ -55,7 +61,9 @@ export const Cover: React.FC = () => {
             <Controls />
             <div className={`cover-content ${inputFocused ? 'focused' : ''}`}>
                 <div className='title-container'>
-                    <Weather />
+                    <Suspense fallback={undefined}>
+                        <Weather />
+                    </Suspense>
                     <span className='title'>{time}</span>
                 </div>
                 <div
