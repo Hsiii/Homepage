@@ -60,9 +60,13 @@ export const isChillSearch = (value: string): boolean =>
     value.trim().toLowerCase() === chillCommand.searchValue;
 
 export const openChillLinks = (): void => {
-    for (const linkName of chillLinks) {
+    const [primaryLinkName, ...backgroundLinkNames] = chillLinks;
+
+    for (const linkName of backgroundLinkNames) {
         globalThis.open(links[linkName], '_blank', 'noopener,noreferrer');
     }
+
+    globalThis.location.replace(links[primaryLinkName]);
 };
 
 export const getSearchResults = (
