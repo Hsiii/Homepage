@@ -92,6 +92,18 @@ const getSearchResults = (results: readonly SearchResult[]): LinkItem[] => {
 const getGoogleSearchUrl = (value: string): string =>
     `https://www.google.com/search?q=${encodeURIComponent(value.trim())}`;
 
+const isAppleKeyboardPlatform = (): boolean => {
+    const userAgent = globalThis.navigator.userAgent.toLowerCase();
+
+    return (
+        userAgent.includes('macintosh') ||
+        userAgent.includes('mac os') ||
+        userAgent.includes('iphone') ||
+        userAgent.includes('ipad') ||
+        userAgent.includes('ipod')
+    );
+};
+
 const getSearchInputValue = (
     searchValue: string,
     selectedSearchResult: LinkItem | undefined,
@@ -149,6 +161,10 @@ export const Cover: React.FC = () => {
     );
     const { time } = useTime();
     const { hideLinks } = useHideLinks();
+    const googleSearchHotkeyLabel = useMemo(
+        () => (isAppleKeyboardPlatform() ? '⌘ Enter' : 'Ctrl Enter'),
+        []
+    );
     const [inputFocused, setInputFocused] = useState(false);
     const [searchValue, setSearchValue] = useState('');
     const [searchResults, setSearchResults] = useState<LinkItem[]>([]);
@@ -561,6 +577,9 @@ export const Cover: React.FC = () => {
                           <span className='search-suggestion-text'>
                               Search Google for "{trimmedSearchValue}"
                           </span>
+                          <kbd className='search-suggestion-hotkey'>
+                              {googleSearchHotkeyLabel}
+                          </kbd>
                       </button>
                   </div>,
                   globalThis.document.body

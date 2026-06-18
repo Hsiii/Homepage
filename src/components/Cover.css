@@ -180,6 +180,27 @@
     }
 }
 
+.google-search-suggestion {
+    gap: 0.5rem;
+}
+
+.search-suggestion-hotkey {
+    margin-left: auto;
+    padding: 0.25rem 0.5rem;
+    border: 1px solid var(--clr-search-suggestion-border);
+    border-radius: 0.25rem;
+    color: var(--clr-search-suggestion-text);
+    background-color: var(--clr-text-alpha-2);
+    font: var(--fontBoldSm);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.google-search-suggestion.selected .search-suggestion-hotkey,
+.google-search-suggestion:focus-visible .search-suggestion-hotkey {
+    color: var(--clr-search-suggestion-text-active);
+}
+
 .search-icon {
     height: var(--height);
     aspect-ratio: 1 / 1;
