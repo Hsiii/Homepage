@@ -92,6 +92,28 @@ const getSearchResults = (results: readonly SearchResult[]): LinkItem[] => {
 const getGoogleSearchUrl = (value: string): string =>
     `https://www.google.com/search?q=${encodeURIComponent(value.trim())}`;
 
+const getSearchInputValue = (
+    searchValue: string,
+    selectedSearchResult?: LinkItem
+): string =>
+    searchValue.trim() !== '' && selectedSearchResult
+        ? selectedSearchResult.link
+        : searchValue;
+
+const getAutocompleteSelectionStart = (
+    searchValue: string,
+    selectedSearchResult: LinkItem
+): number => {
+    const query = searchValue.trim();
+    const selectedLink = selectedSearchResult.link;
+
+    if (selectedLink.toLowerCase().startsWith(query.toLowerCase())) {
+        return query.length;
+    }
+
+    return 0;
+};
+
 const isSameSearchSuggestionsPosition = (
     a: SearchSuggestionsPosition | undefined,
     b: SearchSuggestionsPosition
@@ -127,6 +149,10 @@ export const Cover: React.FC = () => {
     const selectedSearchResult = searchResults.at(selectedSearchResultIndex);
     const alternativeSearchResults = searchResults.slice(1);
     const hasAlternativeSearchResults = alternativeSearchResults.length > 0;
+    const searchInputValue = getSearchInputValue(
+        searchValue,
+        selectedSearchResult
+    );
 
     const flattenedSearchItems = useMemo<LinkItem[]>(
         () =>
@@ -245,6 +271,30 @@ export const Cover: React.FC = () => {
             globalThis.cancelAnimationFrame(animationFrame);
         };
     }, [hasAlternativeSearchResults, updateSearchSuggestionsPosition]);
+
+    useLayoutEffect(() => {
+        const input = inputRef.current;
+
+        if (
+            !inputFocused ||
+            !input ||
+            !selectedSearchResult ||
+            searchValue.trim() === '' ||
+            input.value !== selectedSearchResult.link
+        ) {
+            return;
+        }
+
+        const selectionStart = getAutocompleteSelectionStart(
+            searchValue,
+            selectedSearchResult
+        );
+
+        input.setSelectionRange(
+            selectionStart,
+            selectedSearchResult.link.length
+        );
+    }, [inputFocused, searchValue, selectedSearchResult]);
 
     const navigateToSearchResult = useCallback((result?: LinkItem) => {
         if (result) {
@@ -433,7 +483,7 @@ export const Cover: React.FC = () => {
                             type='text'
                             placeholder='Search bookmarks'
                             autoComplete='off'
-                            value={searchValue}
+                            value={searchInputValue}
                             ref={inputRef}
                             aria-controls={
                                 hasAlternativeSearchResults
