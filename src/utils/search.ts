@@ -44,6 +44,7 @@ const chillLinks = [
     'Crx',
     'YouTube',
     'Anigamer',
+    'Supercell Store',
 ] as const satisfies readonly LinkName[];
 
 export const getSearchItems = (): LinkItem[] =>
