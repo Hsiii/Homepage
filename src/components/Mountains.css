@@ -25,6 +25,10 @@
     }
 }
 
+html[data-animation-mode='skip'] .mountains {
+    background-position: center 100%;
+}
+
 .mountains img {
     width: 100%;
     object-fit: cover;
@@ -56,6 +60,13 @@
     --init-brightness: 0.2;
     --tone-brightness: 0.5;
     --tone-saturation: 1.5;
+}
+
+html[data-animation-mode='skip'] .mountains img {
+    animation-name: none;
+    filter: brightness(var(--tone-brightness, 1))
+        saturate(var(--tone-saturation, 1))
+        hue-rotate(var(--mountain-hue-rotate));
 }
 
 @keyframes rise-mountain {
