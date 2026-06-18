@@ -38,7 +38,7 @@ export const linkTree: CategoryData[] = [
     {
         category: 'Game',
         icon: <Gamepad2 className='icon' />,
-        links: ['Tetr.io', 'maimai'],
+        links: ['Supercell Store', 'Tetr.io', 'maimai', 'maimaiJP'],
     },
     {
         category: 'Dev',
@@ -91,7 +91,14 @@ export const linkTree: CategoryData[] = [
     {
         category: 'Tools',
         icon: <ToolCase className='icon' />,
-        links: ['HackMD', 'Squoosh', 'AkuMa', 'Train'],
+        links: [
+            'HackMD',
+            'Squoosh',
+            'AkuMa',
+            'Train',
+            'Skyscanner',
+            'Badgical',
+        ],
     },
     {
         category: 'GSuite',
