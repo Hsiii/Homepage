@@ -59,6 +59,9 @@ export const getSearchItems = (): LinkItem[] =>
 export const isChillSearch = (value: string): boolean =>
     value.trim().toLowerCase() === chillCommand.searchValue;
 
+export const isSlashCommandSearch = (value: string): boolean =>
+    value.trim().startsWith('/');
+
 export const openChillLinks = (): void => {
     const [primaryLinkName, ...backgroundLinkNames] = chillLinks;
 

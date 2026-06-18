@@ -23,6 +23,7 @@ import {
     getSearchResults,
     isChillSearch,
     isSameSearchSuggestionsPosition,
+    isSlashCommandSearch,
     openChillLinks,
 } from '@/utils/search';
 
@@ -161,6 +162,12 @@ export const useBookmarkSearch = (): {
         if (query === '') {
             setSearchResults([]);
             setHighlightedSearchResultIndex(undefined);
+            return undefined;
+        }
+
+        if (isSlashCommandSearch(query)) {
+            setSearchResults([]);
+            setHighlightedSearchResultIndex(hasChillCommand ? 0 : undefined);
             return undefined;
         }
 
