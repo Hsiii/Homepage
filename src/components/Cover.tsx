@@ -451,7 +451,12 @@ export const Cover: React.FC = () => {
                                       navigateToSearchResult(result);
                                   }}
                               >
-                                  or <span>{result.link}</span>?
+                                  <span className='search-suggestion-icon'>
+                                      <Search className='icon' size={24} />
+                                  </span>
+                                  <span className='search-suggestion-text'>
+                                      {result.link}
+                                  </span>
                               </button>
                           );
                       })}
