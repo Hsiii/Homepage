@@ -1,37 +1,43 @@
 import { Bookmark, Coffee, Search } from 'lucide-react';
 import { createPortal } from 'react-dom';
 
-import type { LinkItem, SearchSuggestionsPosition } from '@/utils/search';
+import type {
+    LinkItem,
+    SearchSuggestionsPosition,
+    SlashCommandItem,
+} from '@/utils/search';
 
 interface SearchSuggestionsProps {
     googleSearchResultIndex: number;
-    hasChillCommand: boolean;
+    hasGoogleSearchResult: boolean;
     highlightedSearchResultIndex?: number;
     id: string;
     onHighlightGoogleSearch: () => void;
     onHighlightSearchResult: (resultIndex: number) => void;
     onSearchGoogle: () => void;
-    onSelectChillCommand: () => void;
     onSelectSearchResult: (result: LinkItem) => void;
+    onSelectSlashCommand: (command: SlashCommandItem) => void;
     position: SearchSuggestionsPosition;
     searchResults: LinkItem[];
     searchResultIndexOffset: number;
+    slashCommandResults: SlashCommandItem[];
     trimmedSearchValue: string;
 }
 
 export const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
     googleSearchResultIndex,
-    hasChillCommand,
+    hasGoogleSearchResult,
     highlightedSearchResultIndex,
     id,
     onHighlightGoogleSearch,
     onHighlightSearchResult,
     onSearchGoogle,
-    onSelectChillCommand,
     onSelectSearchResult,
+    onSelectSlashCommand,
     position,
     searchResults,
     searchResultIndexOffset,
+    slashCommandResults,
     trimmedSearchValue,
 }) =>
     createPortal(
@@ -48,32 +54,42 @@ export const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
                 } as React.CSSProperties
             }
         >
-            {hasChillCommand && (
-                <button
-                    className={`search-suggestion command-suggestion ${
-                        highlightedSearchResultIndex === 0 ? 'selected' : ''
-                    }`}
-                    id={`${id}-command`}
-                    type='button'
-                    role='option'
-                    aria-selected={highlightedSearchResultIndex === 0}
-                    onMouseDown={(event) => {
-                        event.preventDefault();
-                    }}
-                    onFocus={() => {
-                        onHighlightSearchResult(0);
-                    }}
-                    onPointerMove={() => {
-                        onHighlightSearchResult(0);
-                    }}
-                    onClick={onSelectChillCommand}
-                >
-                    <span className='search-suggestion-icon'>
-                        <Coffee className='icon' size={24} />
-                    </span>
-                    <span className='search-suggestion-text'>/chill</span>
-                </button>
-            )}
+            {slashCommandResults.map((command, commandIndex) => {
+                const isSelected =
+                    highlightedSearchResultIndex === commandIndex;
+
+                return (
+                    <button
+                        key={command.command}
+                        className={`search-suggestion command-suggestion ${
+                            isSelected ? 'selected' : ''
+                        }`}
+                        id={`${id}-command-${command.command}`}
+                        type='button'
+                        role='option'
+                        aria-selected={isSelected}
+                        onMouseDown={(event) => {
+                            event.preventDefault();
+                        }}
+                        onFocus={() => {
+                            onHighlightSearchResult(commandIndex);
+                        }}
+                        onPointerMove={() => {
+                            onHighlightSearchResult(commandIndex);
+                        }}
+                        onClick={() => {
+                            onSelectSlashCommand(command);
+                        }}
+                    >
+                        <span className='search-suggestion-icon'>
+                            <Coffee className='icon' size={24} />
+                        </span>
+                        <span className='search-suggestion-text'>
+                            {command.label}
+                        </span>
+                    </button>
+                );
+            })}
             {searchResults.map((result, resultIndex) => {
                 const navigationIndex = resultIndex + searchResultIndexOffset;
                 const isSelected =
@@ -111,31 +127,33 @@ export const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
                     </button>
                 );
             })}
-            <button
-                className={`search-suggestion google-search-suggestion ${
-                    highlightedSearchResultIndex === googleSearchResultIndex
-                        ? 'selected'
-                        : ''
-                }`}
-                type='button'
-                role='option'
-                aria-selected={
-                    highlightedSearchResultIndex === googleSearchResultIndex
-                }
-                onMouseDown={(event) => {
-                    event.preventDefault();
-                }}
-                onFocus={onHighlightGoogleSearch}
-                onPointerMove={onHighlightGoogleSearch}
-                onClick={onSearchGoogle}
-            >
-                <span className='search-suggestion-icon'>
-                    <Search className='icon' size={24} />
-                </span>
-                <span className='search-suggestion-text'>
-                    {trimmedSearchValue}
-                </span>
-            </button>
+            {hasGoogleSearchResult && (
+                <button
+                    className={`search-suggestion google-search-suggestion ${
+                        highlightedSearchResultIndex === googleSearchResultIndex
+                            ? 'selected'
+                            : ''
+                    }`}
+                    type='button'
+                    role='option'
+                    aria-selected={
+                        highlightedSearchResultIndex === googleSearchResultIndex
+                    }
+                    onMouseDown={(event) => {
+                        event.preventDefault();
+                    }}
+                    onFocus={onHighlightGoogleSearch}
+                    onPointerMove={onHighlightGoogleSearch}
+                    onClick={onSearchGoogle}
+                >
+                    <span className='search-suggestion-icon'>
+                        <Search className='icon' size={24} />
+                    </span>
+                    <span className='search-suggestion-text'>
+                        {trimmedSearchValue}
+                    </span>
+                </button>
+            )}
         </div>,
         globalThis.document.body
     );

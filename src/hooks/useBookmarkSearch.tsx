@@ -15,12 +15,13 @@ import type {
     ChillLink,
     LinkItem,
     SearchSuggestionsPosition,
+    SlashCommandItem,
 } from '@/utils/search';
 import {
     getGoogleSearchUrl,
     getSearchItems,
     getSearchResults,
-    isChillSearch,
+    getSlashCommandResults,
     isSameSearchSuggestionsPosition,
     isSlashCommandSearch,
 } from '@/utils/search';
@@ -69,15 +70,15 @@ export const useBookmarkSearch = (): {
     blockedChillLinks: ChillLink[];
     clearSearch: () => void;
     clearBlockedChillLinks: () => void;
-    executeChillCommand: () => void;
+    executeSlashCommand: (command: SlashCommandItem) => void;
     focusSearchInput: () => void;
-    hasChillCommand: boolean;
     googleSearchResultIndex: number;
     handleSearchBlur: () => void;
     handleSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     handleSearchFocus: () => void;
     handleSearchKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
     handleSubmit: (e: React.FormEvent) => void;
+    hasGoogleSearchResult: boolean;
     hasSearchSuggestions: boolean;
     highlightGoogleSearch: () => void;
     highlightSearchResult: (resultIndex: number) => void;
@@ -93,6 +94,7 @@ export const useBookmarkSearch = (): {
     searchResults: LinkItem[];
     searchSuggestionsId: string;
     searchSuggestionsPosition: SearchSuggestionsPosition | undefined;
+    slashCommandResults: SlashCommandItem[];
     searchGoogle: (value: string) => void;
     selectedSearchResult: LinkItem | undefined;
     trimmedSearchValue: string;
@@ -116,14 +118,23 @@ export const useBookmarkSearch = (): {
 
     const trimmedSearchValue = searchValue.trim();
     const hasSearchQuery = trimmedSearchValue !== '';
-    const hasSearchSuggestions = hasSearchQuery;
-    const hasChillCommand = isChillSearch(searchValue);
-    const searchResultIndexOffset = hasChillCommand ? 1 : 0;
-    const chillCommandResultIndex = hasChillCommand ? 0 : undefined;
+    const isSlashCommandQuery = isSlashCommandSearch(trimmedSearchValue);
+    const slashCommandResults = getSlashCommandResults(searchValue);
+    const hasGoogleSearchResult = hasSearchQuery && !isSlashCommandQuery;
+    const hasSearchSuggestions =
+        hasGoogleSearchResult || slashCommandResults.length > 0;
+    const searchResultIndexOffset = slashCommandResults.length;
+    const selectedSlashCommand =
+        highlightedSearchResultIndex === undefined ||
+        highlightedSearchResultIndex >= slashCommandResults.length
+            ? undefined
+            : slashCommandResults[highlightedSearchResultIndex];
     const googleSearchResultIndex =
         searchResultIndexOffset + searchResults.length;
-    const searchNavigationItemCount = hasSearchQuery
-        ? searchResultIndexOffset + searchResults.length + 1
+    const searchNavigationItemCount = hasSearchSuggestions
+        ? searchResultIndexOffset +
+          searchResults.length +
+          (hasGoogleSearchResult ? 1 : 0)
         : 0;
     const selectedSearchResult =
         highlightedSearchResultIndex === undefined ||
@@ -160,6 +171,13 @@ export const useBookmarkSearch = (): {
         setBlockedChillLinks(nextBlockedLinks);
     }, []);
 
+    const executeSlashCommand = useCallback(
+        (_command: SlashCommandItem) => {
+            executeChillCommand();
+        },
+        [executeChillCommand]
+    );
+
     const flattenedSearchItems = useMemo<LinkItem[]>(
         () => getSearchItems(),
         []
@@ -176,7 +194,9 @@ export const useBookmarkSearch = (): {
 
         if (isSlashCommandSearch(query)) {
             setSearchResults([]);
-            setHighlightedSearchResultIndex(hasChillCommand ? 0 : undefined);
+            setHighlightedSearchResultIndex(
+                getSlashCommandResults(query).length > 0 ? 0 : undefined
+            );
             return undefined;
         }
 
@@ -184,10 +204,10 @@ export const useBookmarkSearch = (): {
 
         setSearchResults(nextSearchResults);
         setHighlightedSearchResultIndex(
-            nextSearchResults.length > 0 || hasChillCommand ? 0 : undefined
+            nextSearchResults.length > 0 ? 0 : undefined
         );
         return undefined;
-    }, [flattenedSearchItems, hasChillCommand, searchValue]);
+    }, [flattenedSearchItems, searchValue]);
 
     const updateSearchSuggestionsPosition = useCallback(() => {
         const rect =
@@ -354,16 +374,16 @@ export const useBookmarkSearch = (): {
                 return;
             }
 
-            if (
-                hasChillCommand &&
-                highlightedSearchResultIndex === chillCommandResultIndex
-            ) {
+            if (selectedSlashCommand) {
                 e.preventDefault();
-                executeChillCommand();
+                executeSlashCommand(selectedSlashCommand);
                 return;
             }
 
-            if (highlightedSearchResultIndex === googleSearchResultIndex) {
+            if (
+                hasGoogleSearchResult &&
+                highlightedSearchResultIndex === googleSearchResultIndex
+            ) {
                 e.preventDefault();
                 searchGoogle(searchValue);
                 return;
@@ -375,22 +395,22 @@ export const useBookmarkSearch = (): {
                 return;
             }
 
-            if (hasSearchQuery) {
+            if (hasGoogleSearchResult) {
                 e.preventDefault();
                 searchGoogle(searchValue);
             }
         },
         [
             googleSearchResultIndex,
-            hasChillCommand,
-            hasSearchQuery,
+            hasGoogleSearchResult,
             highlightedSearchResultIndex,
-            executeChillCommand,
+            executeSlashCommand,
             navigateToSearchResult,
             searchGoogle,
             searchNavigationItemCount,
             searchValue,
             selectedSearchResult,
+            selectedSlashCommand,
         ]
     );
 
@@ -429,27 +449,24 @@ export const useBookmarkSearch = (): {
     const handleSubmit = useCallback(
         (e: React.FormEvent) => {
             e.preventDefault();
-            if (
-                hasChillCommand &&
-                highlightedSearchResultIndex === chillCommandResultIndex
-            ) {
-                executeChillCommand();
+            if (selectedSlashCommand) {
+                executeSlashCommand(selectedSlashCommand);
                 return;
             }
 
             navigateToSearchResult(selectedSearchResult);
-            if (!selectedSearchResult) {
+            if (!selectedSearchResult && hasGoogleSearchResult) {
                 searchGoogle(searchValue);
             }
         },
         [
             navigateToSearchResult,
-            hasChillCommand,
-            highlightedSearchResultIndex,
-            executeChillCommand,
+            executeSlashCommand,
+            hasGoogleSearchResult,
             searchGoogle,
             searchValue,
             selectedSearchResult,
+            selectedSlashCommand,
         ]
     );
 
@@ -492,15 +509,15 @@ export const useBookmarkSearch = (): {
         blockedChillLinks,
         clearSearch,
         clearBlockedChillLinks,
-        executeChillCommand,
+        executeSlashCommand,
         focusSearchInput,
-        hasChillCommand,
         googleSearchResultIndex,
         handleSearchBlur,
         handleSearchChange,
         handleSearchFocus,
         handleSearchKeyDown,
         handleSubmit,
+        hasGoogleSearchResult,
         hasSearchSuggestions,
         highlightGoogleSearch,
         highlightSearchResult,
@@ -517,6 +534,7 @@ export const useBookmarkSearch = (): {
         searchResults,
         searchSuggestionsId,
         searchSuggestionsPosition,
+        slashCommandResults,
         selectedSearchResult,
         trimmedSearchValue,
     };

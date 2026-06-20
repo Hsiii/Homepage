@@ -17,7 +17,19 @@ export interface ChillLink {
     url: string;
 }
 
+export interface SlashCommandItem {
+    command: 'chill';
+    label: string;
+}
+
 const maxSearchResults = 4;
+
+export const slashCommands = [
+    {
+        command: 'chill',
+        label: '/chill',
+    },
+] as const satisfies readonly SlashCommandItem[];
 
 export const getSearchItems = (): LinkItem[] =>
     linkTree.flatMap((category, categoryIndex) => {
@@ -34,6 +46,17 @@ export const isChillSearch = (value: string): boolean =>
 
 export const isSlashCommandSearch = (value: string): boolean =>
     value.trim().startsWith('/');
+
+export const getSlashCommandResults = (value: string): SlashCommandItem[] => {
+    const query = value.trim().toLowerCase();
+    if (!isSlashCommandSearch(query)) {
+        return [];
+    }
+
+    return slashCommands.filter((command) =>
+        command.label.toLowerCase().startsWith(query)
+    );
+};
 
 const getSearchScore = (link: LinkName, query: string): number | undefined => {
     const normalizedLink = link.toLowerCase();

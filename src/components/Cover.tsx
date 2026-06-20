@@ -31,15 +31,15 @@ export const Cover: React.FC = () => {
         blockedChillLinks,
         clearSearch,
         clearBlockedChillLinks,
-        executeChillCommand,
+        executeSlashCommand,
         focusSearchInput,
         googleSearchResultIndex,
-        hasChillCommand,
         handleSearchBlur,
         handleSearchChange,
         handleSearchFocus,
         handleSearchKeyDown,
         handleSubmit,
+        hasGoogleSearchResult,
         hasSearchSuggestions,
         highlightGoogleSearch,
         highlightSearchResult,
@@ -56,6 +56,7 @@ export const Cover: React.FC = () => {
         searchSuggestionsId,
         searchSuggestionsPosition,
         selectedSearchResult,
+        slashCommandResults,
         trimmedSearchValue,
     } = useBookmarkSearch();
 
@@ -116,17 +117,18 @@ export const Cover: React.FC = () => {
             {hasSearchSuggestions && searchSuggestionsPosition && (
                 <SearchSuggestions
                     googleSearchResultIndex={googleSearchResultIndex}
-                    hasChillCommand={hasChillCommand}
+                    hasGoogleSearchResult={hasGoogleSearchResult}
                     highlightedSearchResultIndex={highlightedSearchResultIndex}
                     id={searchSuggestionsId}
                     onHighlightGoogleSearch={highlightGoogleSearch}
                     onHighlightSearchResult={highlightSearchResult}
                     onSearchGoogle={searchGoogleCurrentValue}
-                    onSelectChillCommand={executeChillCommand}
                     onSelectSearchResult={navigateToSearchResult}
+                    onSelectSlashCommand={executeSlashCommand}
                     position={searchSuggestionsPosition}
                     searchResults={searchResults}
                     searchResultIndexOffset={searchResultIndexOffset}
+                    slashCommandResults={slashCommandResults}
                     trimmedSearchValue={trimmedSearchValue}
                 />
             )}
