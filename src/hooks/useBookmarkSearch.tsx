@@ -17,9 +17,7 @@ import type {
     SearchSuggestionsPosition,
 } from '@/utils/search';
 import {
-    getAutocompleteSelectionStart,
     getGoogleSearchUrl,
-    getSearchInputValue,
     getSearchItems,
     getSearchResults,
     isChillSearch,
@@ -109,7 +107,6 @@ export const useBookmarkSearch = (): {
     const [blockedChillLinks, setBlockedChillLinks] = useState<ChillLink[]>([]);
     const [highlightedSearchResultIndex, setHighlightedSearchResultIndex] =
         useState<number | undefined>(undefined);
-    const [autocompleteEnabled, setAutocompleteEnabled] = useState(true);
     const [searchSuggestionsPosition, setSearchSuggestionsPosition] = useState<
         SearchSuggestionsPosition | undefined
     >(undefined);
@@ -136,11 +133,7 @@ export const useBookmarkSearch = (): {
             : searchResults[
                   highlightedSearchResultIndex - searchResultIndexOffset
               ];
-    const searchInputValue = getSearchInputValue(
-        searchValue,
-        selectedSearchResult,
-        autocompleteEnabled
-    );
+    const searchInputValue = searchValue;
 
     const executeChillCommand = useCallback(() => {
         const nextBlockedLinks: ChillLink[] = [];
@@ -307,34 +300,6 @@ export const useBookmarkSearch = (): {
         };
     }, [hasSearchSuggestions, updateSearchSuggestionsPosition]);
 
-    useLayoutEffect(() => {
-        const input = inputRef.current;
-
-        if (
-            !autocompleteEnabled ||
-            !inputFocused ||
-            !input ||
-            !selectedSearchResult ||
-            searchValue.trim() === '' ||
-            input.value !== searchInputValue
-        ) {
-            return;
-        }
-
-        const selectionStart = getAutocompleteSelectionStart(
-            searchValue,
-            selectedSearchResult
-        );
-
-        input.setSelectionRange(selectionStart, searchInputValue.length);
-    }, [
-        autocompleteEnabled,
-        inputFocused,
-        searchInputValue,
-        searchValue,
-        selectedSearchResult,
-    ]);
-
     const navigateToSearchResult = useCallback((result?: LinkItem) => {
         if (result) {
             globalThis.location.href = links[result.link];
@@ -355,7 +320,6 @@ export const useBookmarkSearch = (): {
         (e: React.KeyboardEvent<HTMLInputElement>) => {
             if (e.key === 'ArrowDown' && searchNavigationItemCount > 0) {
                 e.preventDefault();
-                setAutocompleteEnabled(true);
                 setHighlightedSearchResultIndex((index) => {
                     const nextIndex =
                         index === undefined
@@ -368,7 +332,6 @@ export const useBookmarkSearch = (): {
 
             if (e.key === 'ArrowUp' && searchNavigationItemCount > 0) {
                 e.preventDefault();
-                setAutocompleteEnabled(true);
                 setHighlightedSearchResultIndex((index) => {
                     const nextIndex =
                         index === undefined
@@ -382,7 +345,6 @@ export const useBookmarkSearch = (): {
 
             if (e.key === 'Escape') {
                 e.preventDefault();
-                setAutocompleteEnabled(true);
                 setSearchValue('');
                 inputRef.current?.blur();
                 return;
@@ -451,7 +413,6 @@ export const useBookmarkSearch = (): {
 
             if (e.key === '/') {
                 e.preventDefault();
-                setAutocompleteEnabled(true);
                 setSearchValue('/');
                 setBlockedChillLinks([]);
                 setInputFocused(true);
@@ -498,7 +459,6 @@ export const useBookmarkSearch = (): {
 
     const handleSearchBlur = useCallback(() => {
         setInputFocused(false);
-        setAutocompleteEnabled(true);
         setSearchValue('');
         setSearchResults([]);
         setHighlightedSearchResultIndex(undefined);
@@ -506,10 +466,6 @@ export const useBookmarkSearch = (): {
 
     const handleSearchChange = useCallback(
         (e: React.ChangeEvent<HTMLInputElement>) => {
-            const inputType =
-                'inputType' in e.nativeEvent ? e.nativeEvent.inputType : '';
-
-            setAutocompleteEnabled(!inputType.startsWith('delete'));
             setSearchValue(e.target.value);
             setBlockedChillLinks([]);
         },
@@ -525,7 +481,6 @@ export const useBookmarkSearch = (): {
     }, []);
 
     const highlightSearchResult = useCallback((resultIndex: number) => {
-        setAutocompleteEnabled(true);
         setHighlightedSearchResultIndex(resultIndex);
     }, []);
 

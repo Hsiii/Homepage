@@ -103,44 +103,6 @@ export const getSearchResults = (
 export const getGoogleSearchUrl = (value: string): string =>
     `https://www.google.com/search?q=${encodeURIComponent(value.trim())}`;
 
-export const getSearchInputValue = (
-    searchValue: string,
-    selectedSearchResult: LinkItem | undefined,
-    autocompleteEnabled: boolean
-): string => {
-    if (
-        !autocompleteEnabled ||
-        searchValue.trim() === '' ||
-        !selectedSearchResult
-    ) {
-        return searchValue;
-    }
-
-    const query = searchValue.trim();
-    const selectedLink = selectedSearchResult.link;
-    const normalizedSelectedLink = selectedLink.toLowerCase();
-
-    if (normalizedSelectedLink.startsWith(query.toLowerCase())) {
-        return `${query}${normalizedSelectedLink.slice(query.length)}`;
-    }
-
-    return normalizedSelectedLink;
-};
-
-export const getAutocompleteSelectionStart = (
-    searchValue: string,
-    selectedSearchResult: LinkItem
-): number => {
-    const query = searchValue.trim();
-    const selectedLink = selectedSearchResult.link;
-
-    if (selectedLink.toLowerCase().startsWith(query.toLowerCase())) {
-        return query.length;
-    }
-
-    return 0;
-};
-
 export const isSameSearchSuggestionsPosition = (
     a: SearchSuggestionsPosition | undefined,
     b: SearchSuggestionsPosition
