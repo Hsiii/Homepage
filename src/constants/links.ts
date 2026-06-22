@@ -2,6 +2,8 @@ export const links = {
     'AkuMa': 'https://accent-marker.sessatakuma.dev/',
     'Algo Ans': 'https://walkccc.me/CLRS/',
     'Anigamer': 'https://ani.gamer.com.tw/',
+    'AppleDev':
+        'https://developer.apple.com/account/resources/certificates/list',
     'AQI TW': 'https://airtw.moenv.gov.tw/',
     'Awwwards': 'https://www.awwwards.com/',
     'Badgical': 'https://badgical.hsichen.dev',
@@ -41,6 +43,7 @@ export const links = {
     'Lucide': 'https://lucide.dev/icons/',
     'maimai': 'https://maimaidx-eng.com/maimai-mobile/home/',
     'maimaiJP': 'https://maimaidx.jp/',
+    'majsoul': 'https://game.maj-soul.com/1/',
     'Maps': 'https://www.google.com/maps/',
     'Mathpix': 'https://snip.mathpix.com/home',
     'Messenger': 'https://www.messenger.com/',
@@ -58,7 +61,6 @@ export const links = {
     'Pose Ref': 'https://pt.pinterest.com/kloezzs/poses/1/',
     'Quickposes': 'https://quickposes.com/en/gestures/timed',
     'refern': 'https://my.refern.app/',
-    'Repomux': 'https://repomux.hsichen.dev/',
     'Resource Boy': 'https://resourceboy.com/',
     'Search Console': 'https://search.google.com/search-console/welcome',
     'Sheet': 'https://docs.google.com/spreadsheets/u/0/',
@@ -71,6 +73,7 @@ export const links = {
     'Supabase': 'https://supabase.com/dashboard/org/csgiyguemdbvpbvaprgx',
     'Supercell Store': 'https://store.supercell.com/brawlstars',
     'Svgl': 'https://svgl.app/',
+    'TDX': 'https://tdx.transportdata.tw/',
     'Tetr.io': 'https://tetr.io',
     'Texturelabs': 'https://texturelabs.org/',
     'Train':

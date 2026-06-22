@@ -38,18 +38,19 @@ export const linkTree: CategoryData[] = [
     {
         category: 'Game',
         icon: <Gamepad2 className='icon' />,
-        links: ['Supercell Store', 'Tetr.io', 'maimai', 'maimaiJP'],
+        links: ['majsoul', 'Supercell Store', 'Tetr.io', 'maimai', 'maimaiJP'],
     },
     {
         category: 'Dev',
         icon: <CodeXml className='icon' />,
         links: [
             'GitHub',
-            'Repomux',
+            'AppleDev',
             'Vercel',
             'Cloudflare',
             'Supabase',
             'Crx',
+            'TDX',
             'Moz Add-on',
             'Search Console',
             'LeetCode',
