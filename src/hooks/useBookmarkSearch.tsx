@@ -12,7 +12,7 @@ import type React from 'react';
 import type { LinkName } from '@/constants/links';
 import { links } from '@/constants/links';
 import type {
-    ChillLink,
+    FeedsLink,
     LinkItem,
     SearchSuggestionsPosition,
     SlashCommandItem,
@@ -27,8 +27,11 @@ import {
 } from '@/utils/search';
 
 const defaultMotionTrackingMs = 2000;
+const feedWindowOffsetHours = 8;
+const feedWindowStartHour = 16;
+const supercellStoreOpenedWindowKey = 'homepage.supercellStoreOpenedWindow';
 
-const chillLinks = [
+const feedLinks = [
     'Instagram',
     'Messenger',
     'Twitter',
@@ -39,6 +42,45 @@ const chillLinks = [
     'Anigamer',
     'Supercell Store',
 ] as const satisfies readonly LinkName[];
+
+const getFeedsWindowKey = (date = new Date()): string => {
+    const shiftedTimestamp =
+        date.getTime() +
+        (feedWindowOffsetHours - feedWindowStartHour) * 60 * 60 * 1000;
+    const shiftedDate = new Date(shiftedTimestamp);
+
+    return shiftedDate.toISOString().slice(0, 10);
+};
+
+const shouldOpenFeedLink = (link: LinkName, windowKey: string): boolean => {
+    if (link !== 'Supercell Store') {
+        return true;
+    }
+
+    try {
+        return (
+            globalThis.localStorage.getItem(supercellStoreOpenedWindowKey) !==
+            windowKey
+        );
+    } catch {
+        return true;
+    }
+};
+
+const recordOpenedFeedLink = (link: LinkName, windowKey: string): void => {
+    if (link !== 'Supercell Store') {
+        return;
+    }
+
+    try {
+        globalThis.localStorage.setItem(
+            supercellStoreOpenedWindowKey,
+            windowKey
+        );
+    } catch {
+        // Ignore private-mode or storage permission failures.
+    }
+};
 
 const getMaxCssTime = (value: string): number =>
     Math.max(
@@ -67,9 +109,9 @@ const getElementMotionDuration = (element: HTMLElement): number => {
 };
 
 export const useBookmarkSearch = (): {
-    blockedChillLinks: ChillLink[];
+    blockedFeedsLinks: FeedsLink[];
     clearSearch: () => void;
-    clearBlockedChillLinks: () => void;
+    clearBlockedFeedsLinks: () => void;
     executeSlashCommand: (command: SlashCommandItem) => void;
     focusSearchInput: () => void;
     googleSearchResultIndex: number;
@@ -106,7 +148,7 @@ export const useBookmarkSearch = (): {
     const [inputFocused, setInputFocused] = useState(false);
     const [searchValue, setSearchValue] = useState('');
     const [searchResults, setSearchResults] = useState<LinkItem[]>([]);
-    const [blockedChillLinks, setBlockedChillLinks] = useState<ChillLink[]>([]);
+    const [blockedFeedsLinks, setBlockedFeedsLinks] = useState<FeedsLink[]>([]);
     const [highlightedSearchResultIndex, setHighlightedSearchResultIndex] =
         useState<number | undefined>(undefined);
     const [searchSuggestionsPosition, setSearchSuggestionsPosition] = useState<
@@ -146,13 +188,19 @@ export const useBookmarkSearch = (): {
               ];
     const searchInputValue = searchValue;
 
-    const executeChillCommand = useCallback(() => {
-        const nextBlockedLinks: ChillLink[] = [];
+    const executeFeedsCommand = useCallback(() => {
+        const nextBlockedLinks: FeedsLink[] = [];
+        const windowKey = getFeedsWindowKey();
 
-        for (const link of chillLinks) {
+        for (const link of feedLinks) {
+            if (!shouldOpenFeedLink(link, windowKey)) {
+                continue;
+            }
+
             const openedTab = globalThis.open(links[link], '_blank');
             if (openedTab) {
                 openedTab.opener = undefined;
+                recordOpenedFeedLink(link, windowKey);
                 continue;
             }
 
@@ -168,14 +216,14 @@ export const useBookmarkSearch = (): {
             });
         }
 
-        setBlockedChillLinks(nextBlockedLinks);
+        setBlockedFeedsLinks(nextBlockedLinks);
     }, []);
 
     const executeSlashCommand = useCallback(
         (_command: SlashCommandItem) => {
-            executeChillCommand();
+            executeFeedsCommand();
         },
-        [executeChillCommand]
+        [executeFeedsCommand]
     );
 
     const flattenedSearchItems = useMemo<LinkItem[]>(
@@ -434,7 +482,7 @@ export const useBookmarkSearch = (): {
             if (e.key === '/') {
                 e.preventDefault();
                 setSearchValue('/');
-                setBlockedChillLinks([]);
+                setBlockedFeedsLinks([]);
                 setInputFocused(true);
                 focusSearchInput();
             }
@@ -484,13 +532,13 @@ export const useBookmarkSearch = (): {
     const handleSearchChange = useCallback(
         (e: React.ChangeEvent<HTMLInputElement>) => {
             setSearchValue(e.target.value);
-            setBlockedChillLinks([]);
+            setBlockedFeedsLinks([]);
         },
         []
     );
 
-    const clearBlockedChillLinks = useCallback(() => {
-        setBlockedChillLinks([]);
+    const clearBlockedFeedsLinks = useCallback(() => {
+        setBlockedFeedsLinks([]);
     }, []);
 
     const handleSearchFocus = useCallback(() => {
@@ -506,9 +554,9 @@ export const useBookmarkSearch = (): {
     }, [googleSearchResultIndex]);
 
     return {
-        blockedChillLinks,
+        blockedFeedsLinks,
         clearSearch,
-        clearBlockedChillLinks,
+        clearBlockedFeedsLinks,
         executeSlashCommand,
         focusSearchInput,
         googleSearchResultIndex,

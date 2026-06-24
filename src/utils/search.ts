@@ -12,13 +12,13 @@ export interface SearchSuggestionsPosition {
     width: number;
 }
 
-export interface ChillLink {
+export interface FeedsLink {
     link: LinkName;
     url: string;
 }
 
 export interface SlashCommandItem {
-    command: 'chill';
+    command: 'feeds';
     label: string;
 }
 
@@ -26,8 +26,8 @@ const maxSearchResults = 4;
 
 export const slashCommands = [
     {
-        command: 'chill',
-        label: '/chill',
+        command: 'feeds',
+        label: '/feeds',
     },
 ] as const satisfies readonly SlashCommandItem[];
 
@@ -41,8 +41,8 @@ export const getSearchItems = (): LinkItem[] =>
         }));
     });
 
-export const isChillSearch = (value: string): boolean =>
-    value.trim().toLowerCase() === '/chill';
+export const isFeedsSearch = (value: string): boolean =>
+    value.trim().toLowerCase() === '/feeds';
 
 export const isSlashCommandSearch = (value: string): boolean =>
     value.trim().startsWith('/');

@@ -28,9 +28,9 @@ export const Cover: React.FC = () => {
     const { time } = useTime();
     const { hideLinks } = useHideLinks();
     const {
-        blockedChillLinks,
+        blockedFeedsLinks,
         clearSearch,
-        clearBlockedChillLinks,
+        clearBlockedFeedsLinks,
         executeSlashCommand,
         focusSearchInput,
         googleSearchResultIndex,
@@ -133,21 +133,21 @@ export const Cover: React.FC = () => {
                 />
             )}
 
-            {blockedChillLinks.length > 0 && (
-                <div className='chill-fallback' role='status'>
-                    <div className='chill-fallback-header'>
-                        <span>Open remaining chill tabs</span>
+            {blockedFeedsLinks.length > 0 && (
+                <div className='feeds-fallback' role='status'>
+                    <div className='feeds-fallback-header'>
+                        <span>Open remaining feed tabs</span>
                         <button
-                            className='chill-fallback-close'
+                            className='feeds-fallback-close'
                             type='button'
                             aria-label='Dismiss'
-                            onClick={clearBlockedChillLinks}
+                            onClick={clearBlockedFeedsLinks}
                         >
                             <X className='icon' size={20} />
                         </button>
                     </div>
-                    <div className='chill-fallback-links'>
-                        {blockedChillLinks.map(({ link, url }) => (
+                    <div className='feeds-fallback-links'>
+                        {blockedFeedsLinks.map(({ link, url }) => (
                             <a
                                 key={link}
                                 href={url}

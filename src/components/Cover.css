@@ -182,7 +182,7 @@
     color: var(--clr-search-suggestion-text-active);
 }
 
-.chill-fallback {
+.feeds-fallback {
     position: fixed;
     left: 50%;
     bottom: 2rem;
@@ -199,7 +199,7 @@
     gap: 0.75rem;
 }
 
-.chill-fallback-header {
+.feeds-fallback-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -207,7 +207,7 @@
     font: var(--fontBoldMd);
 }
 
-.chill-fallback-close {
+.feeds-fallback-close {
     width: 2rem;
     height: 2rem;
     border-radius: 50%;
@@ -218,7 +218,7 @@
     place-items: center;
 }
 
-.chill-fallback-links {
+.feeds-fallback-links {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
