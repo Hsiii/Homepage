@@ -1,5 +1,6 @@
 @import './constants/color.css';
 @import './constants/font.css';
+@import './constants/motion.css';
 
 * {
     margin: 0;
@@ -12,6 +13,8 @@
 
 html {
     overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 
     ::-webkit-scrollbar {
         width: 0;
@@ -37,6 +40,11 @@ body {
     font-family: var(--ff-quicksand);
 
     line-height: 1.5;
+}
+
+p,
+li {
+    text-wrap: pretty;
 }
 
 html[data-animation-mode='skip'] .title,

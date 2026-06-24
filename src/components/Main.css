@@ -10,7 +10,7 @@ footer {
         text-decoration: none;
         color: var(--clr-on-dark);
         filter: brightness(0.8);
-        transition: 0.2s;
+        transition: filter var(--motion-duration-base) var(--motion-ease-out);
 
         &:hover {
             filter: brightness(1);

@@ -4,13 +4,22 @@
     color: var(--clr-primary-alpha);
     cursor: pointer;
     padding: 0.5rem;
+    min-width: 2.5rem;
+    min-height: 2.5rem;
     border-radius: 50%;
     display: grid;
     place-items: center;
-    transition: color 0.1s ease-out;
+    transition:
+        color var(--motion-duration-fast) var(--motion-ease-out),
+        background-color var(--motion-duration-fast) var(--motion-ease-out),
+        scale var(--motion-duration-fast) var(--motion-ease-out);
 
     &:hover {
         color: var(--clr-primary);
+    }
+
+    &:active {
+        scale: var(--motion-press-scale);
     }
 
     &:focus-visible {
@@ -44,8 +53,11 @@
 
     visibility: hidden;
     opacity: 0;
-    transform: translateY(-5px);
-    transition: all 0.1s ease-out;
+    transform: translateY(-0.25rem);
+    transition:
+        opacity var(--motion-duration-fast) var(--motion-ease-out),
+        transform var(--motion-duration-fast) var(--motion-ease-out),
+        visibility var(--motion-duration-fast) var(--motion-ease-out);
 
     &.open {
         visibility: visible;
@@ -88,7 +100,14 @@
     flex: 1;
     display: grid;
     place-items: center;
-    transition: all 0.1s ease-out;
+    transition:
+        background-color var(--motion-duration-fast) var(--motion-ease-out),
+        color var(--motion-duration-fast) var(--motion-ease-out),
+        scale var(--motion-duration-fast) var(--motion-ease-out);
+
+    &:active {
+        scale: var(--motion-press-scale);
+    }
 
     &:hover {
         background-color: var(--clr-text-alpha-2);

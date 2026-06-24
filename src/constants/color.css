@@ -91,6 +91,15 @@
     --clr-overlay: #0005;
     --clr-trigger: #52a5;
     --clr-footer-bg: hsl(0, 0%, 13%);
+
+    --shadow-panel:
+        0 0 0 1px rgba(0, 0, 0, 0.06),
+        0 1px 2px -1px rgba(0, 0, 0, 0.06),
+        0 2px 4px 0 rgba(0, 0, 0, 0.04);
+    --shadow-panel-hover:
+        0 0 0 1px rgba(0, 0, 0, 0.08),
+        0 1px 2px -1px rgba(0, 0, 0, 0.08),
+        0 2px 4px 0 rgba(0, 0, 0, 0.06);
 }
 
 :root[data-theme='dark'] {
@@ -140,6 +149,9 @@
     --clr-overlay: #0008;
     --clr-trigger: var(--clr-primary-alpha);
     --clr-footer-bg: hsl(226, 26%, 9%);
+
+    --shadow-panel: 0 0 0 1px rgba(255, 255, 255, 0.08);
+    --shadow-panel-hover: 0 0 0 1px rgba(255, 255, 255, 0.13);
 }
 
 :root[data-theme-color='azure'] {
