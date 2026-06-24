@@ -9,6 +9,7 @@
 
 .mobile-warning-dialog {
     background-color: var(--clr-neutral-light);
+    box-shadow: var(--shadow-panel);
     padding: 2rem;
     border-radius: 1rem;
     width: 80%;
@@ -32,4 +33,12 @@
     font: var(--fontBoldMd);
 
     cursor: pointer;
+    transition:
+        background-color var(--motion-duration-fast) var(--motion-ease-out),
+        color var(--motion-duration-fast) var(--motion-ease-out),
+        scale var(--motion-duration-fast) var(--motion-ease-out);
+
+    &:active {
+        scale: var(--motion-press-scale);
+    }
 }

@@ -35,16 +35,16 @@
     padding: 0.5rem;
     border-radius: 1rem;
     background-color: var(--clr-panel-bg);
-    border: 1px solid var(--clr-panel-border);
+    box-shadow: var(--shadow-panel);
     backdrop-filter: blur(0.75rem);
 
     visibility: hidden;
     opacity: 0;
     transform: translateY(-0.25rem);
     transition:
-        opacity 0.1s ease-out,
-        transform 0.1s ease-out,
-        visibility 0.1s ease-out;
+        opacity var(--motion-duration-fast) var(--motion-ease-out),
+        transform var(--motion-duration-fast) var(--motion-ease-out),
+        visibility var(--motion-duration-fast) var(--motion-ease-out);
 }
 
 .theme-color-control.open .theme-color-menu {
@@ -54,13 +54,33 @@
 }
 
 .theme-color-option {
-    width: 1.5rem;
-    height: 1.5rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    position: relative;
     border-radius: 50%;
-    background-color: var(--theme-color-option);
+    background-color: transparent;
     cursor: pointer;
     outline: 2px solid transparent;
     outline-offset: 2px;
+    transition:
+        outline-color var(--motion-duration-fast) var(--motion-ease-out),
+        scale var(--motion-duration-fast) var(--motion-ease-out);
+
+    display: grid;
+    place-items: center;
+
+    &::before {
+        content: '';
+        width: 1.5rem;
+        height: 1.5rem;
+        border-radius: 50%;
+        background-color: var(--theme-color-option);
+        box-shadow: var(--shadow-panel);
+    }
+
+    &:active {
+        scale: var(--motion-press-scale);
+    }
 }
 
 .theme-color-option:hover,

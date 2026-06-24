@@ -56,7 +56,7 @@
 
 .search {
     --height: 3rem;
-    --expand-duration: 0.25s;
+    --expand-duration: var(--motion-duration-slow);
 
     position: relative;
     border-radius: calc(var(--height) / 2);
@@ -73,13 +73,22 @@
 }
 
 .search-form {
+    --search-transition-duration: calc(var(--expand-duration) * 2);
+
     position: relative;
     display: flex;
     align-items: center;
     background-color: var(--clr-search-field-bg);
+    box-shadow: var(--shadow-panel);
     border-radius: calc(var(--height) / 2);
     overflow: hidden;
-    transition: calc(var(--expand-duration) * 2);
+    transition:
+        background-color var(--search-transition-duration)
+            var(--motion-ease-out),
+        box-shadow var(--search-transition-duration) var(--motion-ease-out),
+        opacity var(--search-transition-duration) var(--motion-ease-out),
+        padding-left var(--search-transition-duration) var(--motion-ease-out),
+        padding-right var(--search-transition-duration) var(--motion-ease-out);
     cursor: text;
     z-index: 2;
 }
@@ -87,14 +96,18 @@
 .search-form:focus-within,
 .search.focused .search-form,
 .search:hover .search-form {
+    --search-transition-duration: var(--expand-duration);
+
     padding-left: calc(var(--height) / 8);
     padding-right: calc(var(--height) / 2);
     opacity: 1;
-    transition: var(--expand-duration);
     background-color: var(--clr-search-field-bg-active);
+    box-shadow: var(--shadow-panel-hover);
 }
 
 .search-input {
+    --search-input-transition-duration: calc(var(--expand-duration) * 2);
+
     font: var(--fontBaseLg);
     width: 0;
     height: var(--height);
@@ -103,7 +116,12 @@
     color: var(--clr-search-field-text);
     outline: none;
 
-    transition: calc(var(--expand-duration) * 2);
+    transition:
+        background-color var(--search-input-transition-duration)
+            var(--motion-ease-out),
+        color var(--search-input-transition-duration) var(--motion-ease-out),
+        max-width var(--search-input-transition-duration) var(--motion-ease-out),
+        width var(--search-input-transition-duration) var(--motion-ease-out);
 
     &::placeholder {
         color: var(--clr-search-field-placeholder);
@@ -114,11 +132,12 @@
 .search-input:focus,
 .search.focused .search-input,
 .search:hover .search-input {
+    --search-input-transition-duration: var(--expand-duration);
+
     background-color: var(--clr-search-field-bg-active);
     color: var(--clr-search-field-text);
     width: 15rem;
     max-width: 75vw;
-    transition: var(--expand-duration);
 }
 
 .search-input:focus::placeholder,
@@ -152,11 +171,18 @@
     padding-right: calc(var(--suggestion-height) / 2);
     border-radius: var(--suggestion-radius);
     background-color: var(--clr-search-suggestion-bg);
+    box-shadow: var(--shadow-panel);
     color: var(--clr-search-suggestion-text);
     cursor: pointer;
     font: var(--fontBaseMd);
     opacity: 0.8;
     text-align: left;
+    transition:
+        background-color var(--motion-duration-fast) var(--motion-ease-out),
+        box-shadow var(--motion-duration-fast) var(--motion-ease-out),
+        color var(--motion-duration-fast) var(--motion-ease-out),
+        opacity var(--motion-duration-fast) var(--motion-ease-out),
+        scale var(--motion-duration-fast) var(--motion-ease-out);
 
     display: flex;
     align-items: center;
@@ -165,8 +191,13 @@
     &:focus-visible {
         background-color: var(--clr-search-suggestion-bg-active);
         color: var(--clr-search-suggestion-text-active);
+        box-shadow: var(--shadow-panel-hover);
         opacity: 1;
         outline: none;
+    }
+
+    &:active {
+        scale: var(--motion-press-scale);
     }
 
     .search-suggestion-text {
@@ -189,9 +220,9 @@
     translate: -50% 0;
     width: min(28rem, calc(100vw - 2rem));
     padding: 1rem;
-    border: 1px solid var(--clr-panel-border);
     border-radius: 1rem;
     background-color: var(--clr-panel-bg);
+    box-shadow: var(--shadow-panel);
     color: var(--clr-text);
     z-index: 5;
 
@@ -208,14 +239,26 @@
 }
 
 .feeds-fallback-close {
-    width: 2rem;
-    height: 2rem;
+    width: 2.5rem;
+    height: 2.5rem;
     border-radius: 50%;
     color: var(--clr-text);
     cursor: pointer;
+    transition:
+        background-color var(--motion-duration-fast) var(--motion-ease-out),
+        color var(--motion-duration-fast) var(--motion-ease-out),
+        scale var(--motion-duration-fast) var(--motion-ease-out);
 
     display: grid;
     place-items: center;
+
+    &:hover {
+        background-color: var(--clr-text-alpha-2);
+    }
+
+    &:active {
+        scale: var(--motion-press-scale);
+    }
 }
 
 .feeds-fallback-links {
@@ -224,12 +267,24 @@
     gap: 0.5rem;
 
     a {
+        min-height: 2.5rem;
         padding: 0.5rem 0.75rem;
         border-radius: 1rem;
         background-color: var(--clr-search-suggestion-bg);
         color: var(--clr-search-suggestion-text-active);
         font: var(--fontBaseMd);
         text-decoration: none;
+        transition:
+            background-color var(--motion-duration-fast) var(--motion-ease-out),
+            color var(--motion-duration-fast) var(--motion-ease-out),
+            scale var(--motion-duration-fast) var(--motion-ease-out);
+
+        display: flex;
+        align-items: center;
+
+        &:active {
+            scale: var(--motion-press-scale);
+        }
     }
 }
 
@@ -257,7 +312,9 @@
 
     .icon {
         color: var(--clr-search-icon);
-        transition: var(--expand-duration);
+        transition:
+            color var(--expand-duration) var(--motion-ease-out),
+            opacity var(--expand-duration) var(--motion-ease-out);
         animation: rise-show var(--rise-show-duration) ease-in 1;
     }
 }
@@ -266,7 +323,7 @@
 .search:hover .search-icon,
 .search:focus-within .search-icon {
     opacity: 1;
-    transition: var(--expand-duration);
+    transition: opacity var(--expand-duration) var(--motion-ease-out);
 }
 
 .search.focused .search-icon .icon,
@@ -300,7 +357,7 @@
 
     .search {
         width: var(--height);
-        transition: width var(--expand-duration);
+        transition: width var(--expand-duration) var(--motion-ease-out);
     }
 
     .search.focused,

@@ -29,6 +29,7 @@
 
 .weather-info {
     color: var(--clr-primary);
+    font-variant-numeric: tabular-nums;
     display: flex;
     align-items: center;
     gap: 0.25rem;
@@ -39,11 +40,29 @@
     border: none;
     color: var(--clr-primary);
     cursor: pointer;
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 0.25rem;
     border-radius: 50%;
+    transition:
+        color var(--motion-duration-fast) var(--motion-ease-out),
+        scale var(--motion-duration-fast) var(--motion-ease-out);
+
+    &::after {
+        content: '';
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 2.5rem;
+        height: 2.5rem;
+        translate: -50% -50%;
+    }
+
+    &:active {
+        scale: var(--motion-press-scale);
+    }
 
     &.loading {
         animation: spin 1s infinite;

@@ -49,6 +49,7 @@
     background-color: var(
         --clr-neutral-light
     ); /* Assuming this variable exists for panel bg */
+    box-shadow: var(--shadow-panel);
     border-radius: 1rem;
 
     visibility: hidden;
@@ -72,7 +73,7 @@
         width: auto;
         max-height: calc(100svh - 5rem);
         overflow-y: auto;
-        border: 1px solid var(--clr-panel-border);
+        box-shadow: var(--shadow-panel);
     }
 }
 
