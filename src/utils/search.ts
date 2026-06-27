@@ -23,6 +23,84 @@ export interface SlashCommandItem {
 }
 
 const maxSearchResults = 4;
+const latinToBopomofoKeyMap: Partial<Record<string, string>> = {
+    a: 'ㄇ',
+    b: 'ㄖ',
+    c: 'ㄏ',
+    d: 'ㄎ',
+    e: 'ㄍ',
+    f: 'ㄑ',
+    g: 'ㄕ',
+    h: 'ㄘ',
+    i: 'ㄛ',
+    j: 'ㄨ',
+    k: 'ㄜ',
+    l: 'ㄠ',
+    m: 'ㄩ',
+    n: 'ㄙ',
+    o: 'ㄟ',
+    p: 'ㄣ',
+    q: 'ㄆ',
+    r: 'ㄐ',
+    s: 'ㄋ',
+    t: 'ㄔ',
+    u: 'ㄧ',
+    v: 'ㄒ',
+    w: 'ㄊ',
+    x: 'ㄌ',
+    y: 'ㄗ',
+    z: 'ㄈ',
+};
+const bopomofoInitials = new Set([
+    'ㄅ',
+    'ㄆ',
+    'ㄇ',
+    'ㄈ',
+    'ㄉ',
+    'ㄊ',
+    'ㄋ',
+    'ㄌ',
+    'ㄍ',
+    'ㄎ',
+    'ㄏ',
+    'ㄐ',
+    'ㄑ',
+    'ㄒ',
+    'ㄓ',
+    'ㄔ',
+    'ㄕ',
+    'ㄖ',
+    'ㄗ',
+    'ㄘ',
+    'ㄙ',
+]);
+const bopomofoMedials = new Set(['ㄧ', 'ㄨ', 'ㄩ']);
+const bopomofoFinals = new Set([
+    'ㄚ',
+    'ㄛ',
+    'ㄜ',
+    'ㄝ',
+    'ㄞ',
+    'ㄟ',
+    'ㄠ',
+    'ㄡ',
+    'ㄢ',
+    'ㄣ',
+    'ㄤ',
+    'ㄥ',
+    'ㄦ',
+]);
+
+type BopomofoSyllable = {
+    final: string;
+    initial: string;
+    medial: string;
+};
+
+type BopomofoAliasVariant = {
+    alias: string;
+    typedLength: number;
+};
 
 export const slashCommands = [
     {
@@ -58,22 +136,78 @@ export const getSlashCommandResults = (value: string): SlashCommandItem[] => {
     );
 };
 
-const getSearchScore = (link: LinkName, query: string): number | undefined => {
-    const normalizedLink = link.toLowerCase();
-    const normalizedQuery = query.toLowerCase();
-    const includesIndex = normalizedLink.indexOf(normalizedQuery);
+const getBopomofoAliasVariants = (value: string): BopomofoAliasVariant[] => {
+    let aliasBase = '';
+    let typedLength = 0;
+    const variants: BopomofoAliasVariant[] = [];
+    const syllable: BopomofoSyllable = {
+        final: '',
+        initial: '',
+        medial: '',
+    };
 
-    if (normalizedLink === normalizedQuery) {
+    const flushSyllable = (): void => {
+        if (
+            syllable.initial === '' &&
+            syllable.medial === '' &&
+            syllable.final === ''
+        ) {
+            return;
+        }
+
+        aliasBase += syllable.initial + syllable.medial + syllable.final;
+        syllable.initial = '';
+        syllable.medial = '';
+        syllable.final = '';
+    };
+
+    const getCurrentAlias = (): string =>
+        aliasBase + syllable.initial + syllable.medial + syllable.final;
+
+    for (const char of value.toLowerCase()) {
+        const bopomofo = latinToBopomofoKeyMap[char];
+
+        if (bopomofo === undefined) {
+            flushSyllable();
+            aliasBase += char;
+            continue;
+        }
+
+        if (bopomofoInitials.has(bopomofo)) {
+            syllable.initial = bopomofo;
+        } else if (bopomofoMedials.has(bopomofo)) {
+            syllable.medial = bopomofo;
+        } else if (bopomofoFinals.has(bopomofo)) {
+            syllable.final = bopomofo;
+        }
+
+        typedLength++;
+        variants.push({
+            alias: getCurrentAlias(),
+            typedLength,
+        });
+    }
+
+    return variants;
+};
+
+const getTextSearchScore = (
+    source: string,
+    query: string
+): number | undefined => {
+    const includesIndex = source.indexOf(query);
+
+    if (source === query) {
         return 0;
     }
 
-    if (normalizedLink.startsWith(normalizedQuery)) {
-        return 1 + normalizedLink.length / 100;
+    if (source.startsWith(query)) {
+        return 1 + source.length / 100;
     }
 
-    const wordStartIndex = normalizedLink
+    const wordStartIndex = source
         .split(/\s+/)
-        .findIndex((word) => word.startsWith(normalizedQuery));
+        .findIndex((word) => word.startsWith(query));
 
     if (wordStartIndex !== -1) {
         return 2 + wordStartIndex / 100;
@@ -84,17 +218,51 @@ const getSearchScore = (link: LinkName, query: string): number | undefined => {
     }
 
     let queryIndex = 0;
-    for (const char of normalizedLink) {
-        if (char === normalizedQuery[queryIndex]) {
+    for (const char of source) {
+        if (char === query[queryIndex]) {
             queryIndex++;
         }
     }
 
-    if (queryIndex === normalizedQuery.length) {
-        return 4 + normalizedLink.length / 100;
+    if (queryIndex === query.length) {
+        return 4 + source.length / 100;
     }
 
     return undefined;
+};
+
+const getSearchScore = (link: LinkName, query: string): number | undefined => {
+    const normalizedLink = link.toLowerCase();
+    const normalizedQuery = query.toLowerCase();
+    const directScore = getTextSearchScore(normalizedLink, normalizedQuery);
+    let bopomofoAliasScore: number | undefined;
+
+    for (const variant of getBopomofoAliasVariants(normalizedLink)) {
+        const score = getTextSearchScore(variant.alias, normalizedQuery);
+        const weightedScore =
+            score === undefined
+                ? undefined
+                : score + variant.typedLength / 1000;
+
+        if (weightedScore === undefined) {
+            continue;
+        }
+
+        bopomofoAliasScore =
+            bopomofoAliasScore === undefined
+                ? weightedScore
+                : Math.min(bopomofoAliasScore, weightedScore);
+    }
+
+    if (directScore === undefined) {
+        return bopomofoAliasScore;
+    }
+
+    if (bopomofoAliasScore === undefined) {
+        return directScore;
+    }
+
+    return Math.min(directScore, bopomofoAliasScore);
 };
 
 export const getSearchResults = (
