@@ -51,47 +51,36 @@ const latinToBopomofoKeyMap: Partial<Record<string, string>> = {
     y: 'ㄗ',
     z: 'ㄈ',
 };
-const bopomofoInitials = new Set([
-    'ㄅ',
-    'ㄆ',
-    'ㄇ',
-    'ㄈ',
-    'ㄉ',
-    'ㄊ',
-    'ㄋ',
-    'ㄌ',
-    'ㄍ',
-    'ㄎ',
-    'ㄏ',
-    'ㄐ',
-    'ㄑ',
-    'ㄒ',
-    'ㄓ',
-    'ㄔ',
-    'ㄕ',
-    'ㄖ',
-    'ㄗ',
-    'ㄘ',
-    'ㄙ',
-]);
-const bopomofoMedials = new Set(['ㄧ', 'ㄨ', 'ㄩ']);
-const bopomofoFinals = new Set([
-    'ㄚ',
-    'ㄛ',
-    'ㄜ',
-    'ㄝ',
-    'ㄞ',
-    'ㄟ',
-    'ㄠ',
-    'ㄡ',
-    'ㄢ',
-    'ㄣ',
-    'ㄤ',
-    'ㄥ',
-    'ㄦ',
-]);
+const bopomofoKeySlotMap: Partial<Record<string, keyof BopomofoComposition>> = {
+    ㄆ: 'initial',
+    ㄇ: 'initial',
+    ㄈ: 'initial',
+    ㄊ: 'initial',
+    ㄋ: 'initial',
+    ㄌ: 'initial',
+    ㄍ: 'initial',
+    ㄎ: 'initial',
+    ㄏ: 'initial',
+    ㄐ: 'initial',
+    ㄑ: 'initial',
+    ㄒ: 'initial',
+    ㄔ: 'initial',
+    ㄕ: 'initial',
+    ㄖ: 'initial',
+    ㄗ: 'initial',
+    ㄘ: 'initial',
+    ㄙ: 'initial',
+    ㄧ: 'medial',
+    ㄨ: 'medial',
+    ㄩ: 'medial',
+    ㄛ: 'final',
+    ㄜ: 'final',
+    ㄟ: 'final',
+    ㄠ: 'final',
+    ㄣ: 'final',
+};
 
-type BopomofoSyllable = {
+type BopomofoComposition = {
     final: string;
     initial: string;
     medial: string;
@@ -136,51 +125,50 @@ export const getSlashCommandResults = (value: string): SlashCommandItem[] => {
     );
 };
 
-const getBopomofoAliasVariants = (value: string): BopomofoAliasVariant[] => {
+const getBopomofoCompositionValue = (
+    composition: BopomofoComposition
+): string => composition.initial + composition.medial + composition.final;
+
+const getBopomofoKeystrokeAliases = (value: string): BopomofoAliasVariant[] => {
     let aliasBase = '';
     let typedLength = 0;
     const variants: BopomofoAliasVariant[] = [];
-    const syllable: BopomofoSyllable = {
+    const composition: BopomofoComposition = {
         final: '',
         initial: '',
         medial: '',
     };
 
-    const flushSyllable = (): void => {
-        if (
-            syllable.initial === '' &&
-            syllable.medial === '' &&
-            syllable.final === ''
-        ) {
+    const flushComposition = (): void => {
+        const compositionValue = getBopomofoCompositionValue(composition);
+        if (compositionValue === '') {
             return;
         }
 
-        aliasBase += syllable.initial + syllable.medial + syllable.final;
-        syllable.initial = '';
-        syllable.medial = '';
-        syllable.final = '';
+        aliasBase += compositionValue;
+        composition.initial = '';
+        composition.medial = '';
+        composition.final = '';
     };
 
     const getCurrentAlias = (): string =>
-        aliasBase + syllable.initial + syllable.medial + syllable.final;
+        aliasBase + getBopomofoCompositionValue(composition);
 
     for (const char of value.toLowerCase()) {
         const bopomofo = latinToBopomofoKeyMap[char];
 
         if (bopomofo === undefined) {
-            flushSyllable();
+            flushComposition();
             aliasBase += char;
             continue;
         }
 
-        if (bopomofoInitials.has(bopomofo)) {
-            syllable.initial = bopomofo;
-        } else if (bopomofoMedials.has(bopomofo)) {
-            syllable.medial = bopomofo;
-        } else if (bopomofoFinals.has(bopomofo)) {
-            syllable.final = bopomofo;
+        const slot = bopomofoKeySlotMap[bopomofo];
+        if (slot === undefined) {
+            continue;
         }
 
+        composition[slot] = bopomofo;
         typedLength++;
         variants.push({
             alias: getCurrentAlias(),
@@ -237,7 +225,7 @@ const getSearchScore = (link: LinkName, query: string): number | undefined => {
     const directScore = getTextSearchScore(normalizedLink, normalizedQuery);
     let bopomofoAliasScore: number | undefined;
 
-    for (const variant of getBopomofoAliasVariants(normalizedLink)) {
+    for (const variant of getBopomofoKeystrokeAliases(normalizedLink)) {
         const score = getTextSearchScore(variant.alias, normalizedQuery);
         const weightedScore =
             score === undefined
