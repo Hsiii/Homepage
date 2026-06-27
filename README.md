@@ -1,4 +1,4 @@
-# [Homepage](https://hsichen.dev)
+# [Homepage](https://homepage.hsichen.dev)
 
 A browser homepage providing frictionless, browser-agnostic bookmark access — with mouse hover navigation, keyboard hotkeys, and instant search, designed to minimize friction and maximize speed.
 
