@@ -2,9 +2,8 @@ export const links = {
     'AkuMa': 'https://accent-marker.sessatakuma.dev/',
     'Algo Ans': 'https://walkccc.me/CLRS/',
     'Anigamer': 'https://ani.gamer.com.tw/',
-    'AppleDev':
-        'https://developer.apple.com/account/resources/certificates/list',
     'AQI TW': 'https://airtw.moenv.gov.tw/',
+    'ASC': 'https://appstoreconnect.apple.com/',
     'Awwwards': 'https://www.awwwards.com/',
     'Badgical': 'https://badgical.hsichen.dev',
     'Calendar': 'https://calendar.google.com/calendar/u/0/r',
