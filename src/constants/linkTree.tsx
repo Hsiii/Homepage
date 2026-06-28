@@ -28,7 +28,7 @@ export const linkTree: CategoryData[] = [
     {
         category: 'SNS',
         icon: <MessagesSquare className='icon' />,
-        links: ['Instagram', 'Messenger', 'Twitter', 'Facebook'],
+        links: ['Instagram', 'Threads', 'Messenger', 'Twitter', 'Facebook'],
     },
     {
         category: 'Media',
@@ -70,6 +70,7 @@ export const linkTree: CategoryData[] = [
             'Coolor',
             'WebGradients',
             'Haikei',
+            'React Bits',
             'Motion',
             'SSTM',
         ],

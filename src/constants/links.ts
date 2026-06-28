@@ -60,6 +60,7 @@ export const links = {
     'Pixiv': 'https://www.pixiv.net/',
     'Pose Ref': 'https://pt.pinterest.com/kloezzs/poses/1/',
     'Quickposes': 'https://quickposes.com/en/gestures/timed',
+    'React Bits': 'https://reactbits.dev/',
     'refern': 'https://my.refern.app/',
     'Resource Boy': 'https://resourceboy.com/',
     'Search Console': 'https://search.google.com/search-console/welcome',
@@ -76,6 +77,7 @@ export const links = {
     'TDX': 'https://tdx.transportdata.tw/',
     'Tetr.io': 'https://tetr.io',
     'Texturelabs': 'https://texturelabs.org/',
+    'Threads': 'https://www.threads.com/',
     'Train':
         'https://tip.railway.gov.tw/tra-tip-web/tip/tip001/tip112/gobytime',
     'Translate': 'https://translate.google.com/',
