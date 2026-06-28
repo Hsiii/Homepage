@@ -98,6 +98,7 @@ export const linkTree: CategoryData[] = [
             'AkuMa',
             'Train',
             'Skyscanner',
+            'Morning',
             'Badgical',
         ],
     },

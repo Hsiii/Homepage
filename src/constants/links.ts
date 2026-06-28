@@ -46,6 +46,7 @@ export const links = {
     'Maps': 'https://www.google.com/maps/',
     'Mathpix': 'https://snip.mathpix.com/home',
     'Messenger': 'https://www.messenger.com/',
+    'Morning': 'https://bot.hsichen.dev/morning/',
     'Motion': 'https://motion.zajno.com/',
     'Moz Add-on': 'https://addons.mozilla.org/en-US/developers/addons',
     'NMSL': 'https://nmsl.cs.nthu.edu.tw/cs5262-schedule-2024/',
