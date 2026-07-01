@@ -4,7 +4,6 @@ import {
     CloudLightning,
     CloudRain,
     CloudSnow,
-    Gauge,
     Sun,
 } from 'lucide-react';
 
@@ -70,7 +69,6 @@ export const Weather: React.FC = () => {
                         title={`${locationLabel} · ${aqi.publishTime} · ${aqiRankLabel}`}
                         aria-label={`${t.aqi} ${aqi.aqi ?? '--'}, ${aqiRankLabel}`}
                     >
-                        <Gauge size={20} />
                         <span>{t.aqi}</span>
                         <span>{aqi.aqi ?? '--'}</span>
                     </span>

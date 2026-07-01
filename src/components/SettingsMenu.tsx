@@ -1,7 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
+    ChevronDown,
     Languages,
     MapPin,
+    Monitor,
     Moon,
     Palette,
     Play,
@@ -16,18 +18,13 @@ import { getLocationLabel, taiwanLocations } from '@/constants/taiwanLocations';
 import { useLocale } from '@/hooks/useLocale';
 import { useTaiwanLocation } from '@/hooks/useTaiwanLocation';
 
-interface ThemeTransitionModule {
-    runThemeTransition: (options: {
-        button: HTMLButtonElement;
-        isDarkMode: boolean;
-    }) => boolean;
-}
-
 const animationStorageKey = 'animation-mode';
 const defaultThemeColor = 'amethyst';
 const normalAnimationMode = 'normal';
 const skipAnimationMode = 'skip';
+const themeStorageKey = 'theme';
 const themeColorStorageKey = 'theme-color';
+const systemThemeQuery = '(prefers-color-scheme: dark)';
 
 const themeColorOptions = [
     {
@@ -41,20 +38,54 @@ const themeColorOptions = [
 ] as const;
 
 type ThemeColor = (typeof themeColorOptions)[number]['value'];
+type ThemeMode = 'system' | 'light' | 'dark';
 
 const isThemeColor = (value: string | null): value is ThemeColor =>
     themeColorOptions.some((option) => option.value === value);
 
-const applyThemeImmediately = (isDarkMode: boolean): boolean => {
-    const nextDarkMode = !isDarkMode;
-    const nextTheme = nextDarkMode ? 'dark' : 'light';
+const isThemeMode = (value: string | null): value is ThemeMode =>
+    value === 'system' || value === 'light' || value === 'dark';
+
+const getInitialThemeMode = (): ThemeMode => {
+    const savedThemeMode = globalThis.localStorage.getItem(themeStorageKey);
+
+    return isThemeMode(savedThemeMode) ? savedThemeMode : 'system';
+};
+
+const getSystemTheme = (): Exclude<ThemeMode, 'system'> =>
+    globalThis.matchMedia(systemThemeQuery).matches ? 'dark' : 'light';
+
+const resolveThemeMode = (
+    themeMode: ThemeMode
+): Exclude<ThemeMode, 'system'> =>
+    themeMode === 'system' ? getSystemTheme() : themeMode;
+
+const applyResolvedTheme = (
+    theme: Exclude<ThemeMode, 'system'>,
+    themeMode: ThemeMode
+) => {
     const root = globalThis.document.documentElement;
 
-    root.dataset.theme = nextTheme;
-    root.style.colorScheme = nextTheme;
-    globalThis.localStorage.setItem('theme', nextTheme);
+    root.dataset.theme = theme;
+    root.dataset.themeMode = themeMode;
+    root.style.colorScheme = theme;
+};
 
-    return nextDarkMode;
+const applyThemeMode = (themeMode: ThemeMode) => {
+    globalThis.localStorage.setItem(themeStorageKey, themeMode);
+    applyResolvedTheme(resolveThemeMode(themeMode), themeMode);
+};
+
+const getThemeModeIcon = (themeMode: ThemeMode) => {
+    if (themeMode === 'system') {
+        return <Monitor className='icon' size={20} />;
+    }
+
+    return themeMode === 'dark' ? (
+        <Moon className='icon' size={20} />
+    ) : (
+        <Sun className='icon' size={20} />
+    );
 };
 
 const applyThemeColor = (themeColor: ThemeColor) => {
@@ -79,9 +110,7 @@ export const SettingsMenu: React.FC = () => {
     } = useTaiwanLocation();
     const { locale, setLocale, t } = useLocale();
     const [isOpen, setIsOpen] = useState(false);
-    const [isDarkMode, setIsDarkMode] = useState(
-        () => globalThis.document.documentElement.dataset.theme === 'dark'
-    );
+    const [themeMode, setThemeMode] = useState<ThemeMode>(getInitialThemeMode);
     const [isSkipAnimation, setIsSkipAnimation] = useState(
         () =>
             globalThis.document.documentElement.dataset.animationMode ===
@@ -98,22 +127,6 @@ export const SettingsMenu: React.FC = () => {
         }
     );
     const menuRef = useRef<HTMLDivElement>(null);
-    const themeTransitionLoaderRef = useRef<
-        Promise<ThemeTransitionModule> | undefined
-    >(undefined);
-
-    const loadThemeTransition =
-        useCallback(async (): Promise<ThemeTransitionModule> => {
-            themeTransitionLoaderRef.current ??=
-                import('@/utils/themeTransition');
-
-            return await themeTransitionLoaderRef.current;
-        }, []);
-
-    const preloadThemeTransition = useCallback(() => {
-        loadThemeTransition().catch(() => undefined);
-        return undefined;
-    }, [loadThemeTransition]);
 
     useEffect(() => {
         if (!isOpen) {
@@ -132,24 +145,28 @@ export const SettingsMenu: React.FC = () => {
         };
     }, [isOpen]);
 
-    const toggleTheme = useCallback(
-        async (event: React.MouseEvent<HTMLButtonElement>) => {
-            const button = event.currentTarget;
+    useEffect(() => {
+        if (themeMode !== 'system') {
+            return undefined;
+        }
 
-            try {
-                const { runThemeTransition } = await loadThemeTransition();
-                const nextDarkMode = runThemeTransition({
-                    button,
-                    isDarkMode,
-                });
+        const mediaQuery = globalThis.matchMedia(systemThemeQuery);
+        const updateSystemTheme = () => {
+            applyResolvedTheme(getSystemTheme(), 'system');
+        };
 
-                setIsDarkMode(nextDarkMode);
-            } catch {
-                setIsDarkMode(applyThemeImmediately(isDarkMode));
-            }
-        },
-        [isDarkMode, loadThemeTransition]
-    );
+        updateSystemTheme();
+        mediaQuery.addEventListener('change', updateSystemTheme);
+
+        return () => {
+            mediaQuery.removeEventListener('change', updateSystemTheme);
+        };
+    }, [themeMode]);
+
+    const updateThemeMode = useCallback((nextThemeMode: ThemeMode) => {
+        applyThemeMode(nextThemeMode);
+        setThemeMode(nextThemeMode);
+    }, []);
 
     const selectThemeColor = useCallback((themeColor: ThemeColor) => {
         applyThemeColor(themeColor);
@@ -188,34 +205,38 @@ export const SettingsMenu: React.FC = () => {
                     aria-label={t.settings}
                 >
                     <div className='settings-section'>
-                        <button
-                            className='settings-row settings-action-row'
-                            type='button'
-                            aria-label={
-                                isDarkMode
-                                    ? t.switchToLightMode
-                                    : t.switchToDarkMode
-                            }
-                            onFocus={preloadThemeTransition}
-                            onMouseEnter={preloadThemeTransition}
-                            onClick={(event) => {
-                                toggleTheme(event).catch(() => undefined);
-                            }}
+                        <label
+                            className='settings-row settings-select-row'
+                            htmlFor='theme-picker'
                         >
                             <span className='settings-row-icon'>
-                                {isDarkMode ? (
-                                    <Moon className='icon' size={20} />
-                                ) : (
-                                    <Sun className='icon' size={20} />
-                                )}
+                                {getThemeModeIcon(themeMode)}
                             </span>
                             <span className='settings-row-label'>
                                 {t.theme}
                             </span>
-                            <span className='settings-value'>
-                                {isDarkMode ? t.dark : t.light}
+                            <span className='settings-select-control'>
+                                <select
+                                    className='settings-select'
+                                    id='theme-picker'
+                                    value={themeMode}
+                                    onChange={(event) => {
+                                        if (isThemeMode(event.target.value)) {
+                                            updateThemeMode(event.target.value);
+                                        }
+                                    }}
+                                >
+                                    <option value='system'>{t.system}</option>
+                                    <option value='light'>{t.light}</option>
+                                    <option value='dark'>{t.dark}</option>
+                                </select>
+                                <ChevronDown
+                                    className='settings-select-chevron'
+                                    size={16}
+                                    aria-hidden
+                                />
                             </span>
-                        </button>
+                        </label>
 
                         <div className='settings-row'>
                             <span className='settings-row-icon'>
@@ -283,8 +304,10 @@ export const SettingsMenu: React.FC = () => {
                                 {isSkipAnimation ? t.skip : t.normal}
                             </span>
                         </button>
+                    </div>
 
-                        <div className='settings-row settings-location-select-row'>
+                    <div className='settings-section settings-location-section'>
+                        <div className='settings-row settings-label-row'>
                             <span className='settings-row-icon'>
                                 <MapPin className='icon' size={20} />
                             </span>
@@ -294,72 +317,105 @@ export const SettingsMenu: React.FC = () => {
                             >
                                 {t.location}
                             </label>
-                            <select
-                                className='settings-select'
-                                id='location-picker'
-                                value={selectedLocation.id}
-                                onChange={(event) => {
-                                    selectLocationId(event.target.value);
-                                }}
-                            >
-                                {taiwanLocations.map((location) => (
-                                    <option
-                                        key={location.id}
-                                        value={location.id}
-                                    >
-                                        {getLocationLabel(location, locale)}
-                                    </option>
-                                ))}
-                            </select>
-                            <button
-                                className={[
-                                    'settings-icon-action',
-                                    isSyncingLocation && 'loading',
-                                ]
-                                    .filter(Boolean)
-                                    .join(' ')}
-                                type='button'
-                                aria-label={t.useCurrentLocation}
-                                title={t.useCurrentLocation}
-                                disabled={isSyncingLocation}
-                                onClick={() => {
-                                    syncCurrentLocation();
-                                }}
-                            >
-                                <RefreshCw className='icon' size={18} />
-                            </button>
                         </div>
-
-                        <label
-                            className='settings-row settings-select-row'
-                            htmlFor='language-picker'
+                        <div className='settings-row settings-field-row'>
+                            <span className='settings-select-control settings-select-control-full'>
+                                <select
+                                    className='settings-select'
+                                    id='location-picker'
+                                    value={selectedLocation.id}
+                                    onChange={(event) => {
+                                        selectLocationId(event.target.value);
+                                    }}
+                                >
+                                    {taiwanLocations.map((location) => (
+                                        <option
+                                            key={location.id}
+                                            value={location.id}
+                                        >
+                                            {getLocationLabel(location, locale)}
+                                        </option>
+                                    ))}
+                                </select>
+                                <ChevronDown
+                                    className='settings-select-chevron'
+                                    size={16}
+                                    aria-hidden
+                                />
+                            </span>
+                        </div>
+                        <button
+                            className='settings-row settings-action-row'
+                            type='button'
+                            aria-label={t.useCurrentLocation}
+                            title={t.useCurrentLocation}
+                            disabled={isSyncingLocation}
+                            onClick={() => {
+                                syncCurrentLocation();
+                            }}
                         >
+                            <span className='settings-row-icon'>
+                                <RefreshCw
+                                    className={[
+                                        'icon',
+                                        isSyncingLocation && 'loading',
+                                    ]
+                                        .filter(Boolean)
+                                        .join(' ')}
+                                    size={20}
+                                />
+                            </span>
+                            <span className='settings-row-label'>
+                                {t.useCurrentLocation}
+                            </span>
+                            {isSyncingLocation ? (
+                                <span className='settings-value'>
+                                    {t.syncing}
+                                </span>
+                            ) : undefined}
+                        </button>
+                    </div>
+
+                    <div className='settings-section'>
+                        <div className='settings-row settings-label-row'>
                             <span className='settings-row-icon'>
                                 <Languages className='icon' size={20} />
                             </span>
-                            <span className='settings-row-label'>
-                                {t.language}
-                            </span>
-                            <select
-                                className='settings-select'
-                                id='language-picker'
-                                value={locale}
-                                onChange={(event) => {
-                                    if (isAppLocale(event.target.value)) {
-                                        setLocale(event.target.value);
-                                    }
-                                }}
+                            <label
+                                className='settings-row-label'
+                                htmlFor='language-picker'
                             >
-                                {localeOptions.map((option) => (
-                                    <option
-                                        key={option.value}
-                                        value={option.value}
-                                    >
-                                        {option.label}
-                                    </option>
-                                ))}
-                            </select>
-                        </label>
+                                {t.language}
+                            </label>
+                        </div>
+                        <div className='settings-row settings-field-row'>
+                            <span className='settings-select-control settings-select-control-full'>
+                                <select
+                                    className='settings-select'
+                                    id='language-picker'
+                                    value={locale}
+                                    onChange={(event) => {
+                                        if (isAppLocale(event.target.value)) {
+                                            setLocale(event.target.value);
+                                        }
+                                    }}
+                                >
+                                    {localeOptions.map((option) => (
+                                        <option
+                                            key={option.value}
+                                            value={option.value}
+                                        >
+                                            {option.label}
+                                        </option>
+                                    ))}
+                                </select>
+                                <ChevronDown
+                                    className='settings-select-chevron'
+                                    size={16}
+                                    aria-hidden
+                                />
+                            </span>
+                        </div>
                     </div>
                 </div>
             ) : undefined}

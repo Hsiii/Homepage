@@ -19,8 +19,8 @@ export const taiwanLocations = [
         lat: 25.1276,
         lon: 121.7392,
         labels: {
-            'en': 'Keelung City',
-            'zh-TW': '基隆市',
+            'en': 'Keelung',
+            'zh-TW': '基隆',
         },
     },
     {
@@ -30,8 +30,8 @@ export const taiwanLocations = [
         lat: 25.033,
         lon: 121.5654,
         labels: {
-            'en': 'Taipei City',
-            'zh-TW': '臺北市',
+            'en': 'Taipei',
+            'zh-TW': '臺北',
         },
     },
     {
@@ -41,8 +41,8 @@ export const taiwanLocations = [
         lat: 25.011_997,
         lon: 121.465_662,
         labels: {
-            'en': 'New Taipei City',
-            'zh-TW': '新北市',
+            'en': 'New Taipei',
+            'zh-TW': '新北',
         },
     },
     {
@@ -52,8 +52,8 @@ export const taiwanLocations = [
         lat: 24.9937,
         lon: 121.301,
         labels: {
-            'en': 'Taoyuan City',
-            'zh-TW': '桃園市',
+            'en': 'Taoyuan',
+            'zh-TW': '桃園',
         },
     },
     {
@@ -63,19 +63,8 @@ export const taiwanLocations = [
         lat: 24.8138,
         lon: 120.9675,
         labels: {
-            'en': 'Hsinchu City',
-            'zh-TW': '新竹市',
-        },
-    },
-    {
-        id: 'hsinchu-county',
-        county: '新竹縣',
-        aqiSiteName: '竹東',
-        lat: 24.8387,
-        lon: 121.0177,
-        labels: {
-            'en': 'Hsinchu County',
-            'zh-TW': '新竹縣',
+            'en': 'Hsinchu',
+            'zh-TW': '新竹',
         },
     },
     {
@@ -85,8 +74,8 @@ export const taiwanLocations = [
         lat: 24.5602,
         lon: 120.8214,
         labels: {
-            'en': 'Miaoli County',
-            'zh-TW': '苗栗縣',
+            'en': 'Miaoli',
+            'zh-TW': '苗栗',
         },
     },
     {
@@ -96,8 +85,8 @@ export const taiwanLocations = [
         lat: 24.1477,
         lon: 120.6736,
         labels: {
-            'en': 'Taichung City',
-            'zh-TW': '臺中市',
+            'en': 'Taichung',
+            'zh-TW': '臺中',
         },
     },
     {
@@ -107,8 +96,8 @@ export const taiwanLocations = [
         lat: 24.0518,
         lon: 120.5161,
         labels: {
-            'en': 'Changhua County',
-            'zh-TW': '彰化縣',
+            'en': 'Changhua',
+            'zh-TW': '彰化',
         },
     },
     {
@@ -118,8 +107,8 @@ export const taiwanLocations = [
         lat: 23.9609,
         lon: 120.9719,
         labels: {
-            'en': 'Nantou County',
-            'zh-TW': '南投縣',
+            'en': 'Nantou',
+            'zh-TW': '南投',
         },
     },
     {
@@ -129,8 +118,8 @@ export const taiwanLocations = [
         lat: 23.7092,
         lon: 120.4313,
         labels: {
-            'en': 'Yunlin County',
-            'zh-TW': '雲林縣',
+            'en': 'Yunlin',
+            'zh-TW': '雲林',
         },
     },
     {
@@ -140,19 +129,8 @@ export const taiwanLocations = [
         lat: 23.4801,
         lon: 120.4491,
         labels: {
-            'en': 'Chiayi City',
-            'zh-TW': '嘉義市',
-        },
-    },
-    {
-        id: 'chiayi-county',
-        county: '嘉義縣',
-        aqiSiteName: '朴子',
-        lat: 23.4518,
-        lon: 120.2555,
-        labels: {
-            'en': 'Chiayi County',
-            'zh-TW': '嘉義縣',
+            'en': 'Chiayi',
+            'zh-TW': '嘉義',
         },
     },
     {
@@ -162,8 +140,8 @@ export const taiwanLocations = [
         lat: 22.9999,
         lon: 120.227,
         labels: {
-            'en': 'Tainan City',
-            'zh-TW': '臺南市',
+            'en': 'Tainan',
+            'zh-TW': '臺南',
         },
     },
     {
@@ -173,8 +151,8 @@ export const taiwanLocations = [
         lat: 22.6273,
         lon: 120.3014,
         labels: {
-            'en': 'Kaohsiung City',
-            'zh-TW': '高雄市',
+            'en': 'Kaohsiung',
+            'zh-TW': '高雄',
         },
     },
     {
@@ -184,8 +162,8 @@ export const taiwanLocations = [
         lat: 22.551,
         lon: 120.5488,
         labels: {
-            'en': 'Pingtung County',
-            'zh-TW': '屏東縣',
+            'en': 'Pingtung',
+            'zh-TW': '屏東',
         },
     },
     {
@@ -195,8 +173,8 @@ export const taiwanLocations = [
         lat: 24.7021,
         lon: 121.7378,
         labels: {
-            'en': 'Yilan County',
-            'zh-TW': '宜蘭縣',
+            'en': 'Yilan',
+            'zh-TW': '宜蘭',
         },
     },
     {
@@ -206,8 +184,8 @@ export const taiwanLocations = [
         lat: 23.9872,
         lon: 121.6015,
         labels: {
-            'en': 'Hualien County',
-            'zh-TW': '花蓮縣',
+            'en': 'Hualien',
+            'zh-TW': '花蓮',
         },
     },
     {
@@ -217,8 +195,8 @@ export const taiwanLocations = [
         lat: 22.7972,
         lon: 121.0714,
         labels: {
-            'en': 'Taitung County',
-            'zh-TW': '臺東縣',
+            'en': 'Taitung',
+            'zh-TW': '臺東',
         },
     },
     {
@@ -228,8 +206,8 @@ export const taiwanLocations = [
         lat: 23.5711,
         lon: 119.5793,
         labels: {
-            'en': 'Penghu County',
-            'zh-TW': '澎湖縣',
+            'en': 'Penghu',
+            'zh-TW': '澎湖',
         },
     },
     {
@@ -239,8 +217,8 @@ export const taiwanLocations = [
         lat: 24.4321,
         lon: 118.3171,
         labels: {
-            'en': 'Kinmen County',
-            'zh-TW': '金門縣',
+            'en': 'Kinmen',
+            'zh-TW': '金門',
         },
     },
     {
@@ -250,11 +228,29 @@ export const taiwanLocations = [
         lat: 26.1602,
         lon: 119.9517,
         labels: {
-            'en': 'Lienchiang County',
-            'zh-TW': '連江縣',
+            'en': 'Lienchiang',
+            'zh-TW': '連江',
         },
     },
 ] as const satisfies readonly TaiwanLocation[];
+
+const legacyLocationIds = {
+    'chiayi-county': 'chiayi-city',
+    'hsinchu-county': 'hsinchu-city',
+} as const satisfies Record<string, string>;
+
+const legacyAqiSiteLocationIds = {
+    朴子: 'chiayi-city',
+    竹東: 'hsinchu-city',
+} as const satisfies Record<string, string>;
+
+function normalizeLocationName(value: string): string {
+    return value
+        .toLocaleLowerCase()
+        .replace(/\s+(city|county)$/u, '')
+        .replace(/[市縣]$/u, '')
+        .trim();
+}
 
 export function getLocationLabel(
     location: TaiwanLocation,
@@ -264,8 +260,13 @@ export function getLocationLabel(
 }
 
 export function findTaiwanLocation(id: string | undefined): TaiwanLocation {
+    const locationId =
+        id === undefined || !(id in legacyLocationIds)
+            ? id
+            : legacyLocationIds[id as keyof typeof legacyLocationIds];
+
     return (
-        taiwanLocations.find((location) => location.id === id) ??
+        taiwanLocations.find((location) => location.id === locationId) ??
         taiwanLocations.find((location) => location.id === defaultLocationId) ??
         taiwanLocations[0]
     );
@@ -274,8 +275,22 @@ export function findTaiwanLocation(id: string | undefined): TaiwanLocation {
 export function findTaiwanLocationByAqiSiteName(
     siteName: string | null
 ): TaiwanLocation | undefined {
-    return taiwanLocations.find(
-        (location) => location.aqiSiteName === siteName
+    const location = taiwanLocations.find(
+        (candidate) => candidate.aqiSiteName === siteName
+    );
+
+    if (location !== undefined || siteName === null) {
+        return location;
+    }
+
+    if (!(siteName in legacyAqiSiteLocationIds)) {
+        return undefined;
+    }
+
+    return findTaiwanLocation(
+        legacyAqiSiteLocationIds[
+            siteName as keyof typeof legacyAqiSiteLocationIds
+        ]
     );
 }
 
@@ -286,10 +301,10 @@ export function findTaiwanLocationByWeatherName(
         return undefined;
     }
 
-    const normalizedName = weatherName.toLocaleLowerCase();
+    const normalizedName = normalizeLocationName(weatherName);
 
     return taiwanLocations.find((location) =>
-        location.labels.en.toLocaleLowerCase().startsWith(normalizedName)
+        normalizeLocationName(location.labels.en).startsWith(normalizedName)
     );
 }
 

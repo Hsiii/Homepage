@@ -40,7 +40,7 @@
 
 .weather-location {
     color: var(--clr-weather-location);
-    font: var(--fontBoldMd);
+    font: inherit;
 }
 
 .weather-info {

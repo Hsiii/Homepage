@@ -27,20 +27,30 @@
         <script>
             try {
                 const root = document.documentElement;
-                const savedTheme = localStorage.getItem('theme');
+                const savedThemeMode = localStorage.getItem('theme');
                 const savedThemeColor = localStorage.getItem('theme-color');
-                const isDark =
-                    savedTheme === 'dark' ||
-                    (savedTheme === null &&
-                        matchMedia('(prefers-color-scheme: dark)').matches);
+                const themeMode =
+                    savedThemeMode === 'light' || savedThemeMode === 'dark'
+                        ? savedThemeMode
+                        : 'system';
+                const prefersDark = matchMedia(
+                    '(prefers-color-scheme: dark)'
+                ).matches;
+                const theme =
+                    themeMode === 'dark' ||
+                    (themeMode === 'system' && prefersDark)
+                        ? 'dark'
+                        : 'light';
 
-                root.dataset.theme = isDark ? 'dark' : 'light';
-                root.style.colorScheme = isDark ? 'dark' : 'light';
+                root.dataset.theme = theme;
+                root.dataset.themeMode = themeMode;
+                root.style.colorScheme = theme;
                 if (savedThemeColor === 'azure') {
                     root.dataset.themeColor = savedThemeColor;
                 }
             } catch {
                 document.documentElement.dataset.theme = 'light';
+                document.documentElement.dataset.themeMode = 'system';
                 document.documentElement.style.colorScheme = 'light';
             }
         </script>
