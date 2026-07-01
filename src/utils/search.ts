@@ -51,6 +51,34 @@ const latinToBopomofoKeyMap: Partial<Record<string, string>> = {
     y: 'ㄗ',
     z: 'ㄈ',
 };
+const bopomofoToLatinKeyMap: Partial<Record<string, string>> = {
+    ㄆ: 'q',
+    ㄇ: 'a',
+    ㄈ: 'z',
+    ㄊ: 'w',
+    ㄋ: 's',
+    ㄌ: 'x',
+    ㄍ: 'e',
+    ㄎ: 'd',
+    ㄏ: 'c',
+    ㄐ: 'r',
+    ㄑ: 'f',
+    ㄒ: 'v',
+    ㄔ: 't',
+    ㄕ: 'g',
+    ㄖ: 'b',
+    ㄗ: 'y',
+    ㄘ: 'h',
+    ㄙ: 'n',
+    ㄧ: 'u',
+    ㄨ: 'j',
+    ㄩ: 'm',
+    ㄛ: 'i',
+    ㄜ: 'k',
+    ㄟ: 'o',
+    ㄠ: 'l',
+    ㄣ: 'p',
+};
 const bopomofoKeySlotMap: Partial<Record<string, keyof BopomofoComposition>> = {
     ㄆ: 'initial',
     ㄇ: 'initial',
@@ -129,10 +157,28 @@ const getBopomofoCompositionValue = (
     composition: BopomofoComposition
 ): string => composition.initial + composition.medial + composition.final;
 
-const getBopomofoKeystrokeAliases = (value: string): BopomofoAliasVariant[] => {
+const getLatinKeySequenceAlias = (query: string): string | undefined => {
+    let alias = '';
+    let hasBopomofo = false;
+
+    for (const char of query) {
+        const latinKey = bopomofoToLatinKeyMap[char];
+        if (latinKey === undefined) {
+            alias += char;
+            continue;
+        }
+
+        hasBopomofo = true;
+        alias += latinKey;
+    }
+
+    return hasBopomofo ? alias : undefined;
+};
+
+const getBopomofoCompositionAliases = (
+    value: string
+): BopomofoAliasVariant[] => {
     let compositionAliasBase = '';
-    let inputSequenceBase = '';
-    let inputSequence = '';
     let typedLength = 0;
     const variants: BopomofoAliasVariant[] = [];
     const composition: BopomofoComposition = {
@@ -153,25 +199,15 @@ const getBopomofoKeystrokeAliases = (value: string): BopomofoAliasVariant[] => {
         composition.final = '';
     };
 
-    const flushInputSequence = (): void => {
-        inputSequenceBase += inputSequence;
-        inputSequence = '';
-    };
-
     const getCurrentCompositionAlias = (): string =>
         compositionAliasBase + getBopomofoCompositionValue(composition);
-
-    const getCurrentInputSequenceAlias = (): string =>
-        inputSequenceBase + inputSequence;
 
     for (const char of value.toLowerCase()) {
         const bopomofo = latinToBopomofoKeyMap[char];
 
         if (bopomofo === undefined) {
             flushComposition();
-            flushInputSequence();
             compositionAliasBase += char;
-            inputSequenceBase += char;
             continue;
         }
 
@@ -181,19 +217,12 @@ const getBopomofoKeystrokeAliases = (value: string): BopomofoAliasVariant[] => {
         }
 
         composition[slot] = bopomofo;
-        inputSequence += bopomofo;
         typedLength++;
 
-        variants.push(
-            {
-                alias: getCurrentCompositionAlias(),
-                typedLength,
-            },
-            {
-                alias: getCurrentInputSequenceAlias(),
-                typedLength,
-            }
-        );
+        variants.push({
+            alias: getCurrentCompositionAlias(),
+            typedLength,
+        });
     }
 
     return variants;
@@ -243,9 +272,13 @@ const getSearchScore = (link: LinkName, query: string): number | undefined => {
     const normalizedLink = link.toLowerCase();
     const normalizedQuery = query.toLowerCase();
     const directScore = getTextSearchScore(normalizedLink, normalizedQuery);
+    const latinKeySequenceScore = getTextSearchScore(
+        normalizedLink,
+        getLatinKeySequenceAlias(normalizedQuery) ?? normalizedQuery
+    );
     let bopomofoAliasScore: number | undefined;
 
-    for (const variant of getBopomofoKeystrokeAliases(normalizedLink)) {
+    for (const variant of getBopomofoCompositionAliases(normalizedLink)) {
         const score = getTextSearchScore(variant.alias, normalizedQuery);
         const weightedScore =
             score === undefined
@@ -263,14 +296,26 @@ const getSearchScore = (link: LinkName, query: string): number | undefined => {
     }
 
     if (directScore === undefined) {
-        return bopomofoAliasScore;
+        if (latinKeySequenceScore === undefined) {
+            return bopomofoAliasScore;
+        }
+
+        return bopomofoAliasScore === undefined
+            ? latinKeySequenceScore
+            : Math.min(latinKeySequenceScore, bopomofoAliasScore);
+    }
+
+    if (latinKeySequenceScore === undefined) {
+        return bopomofoAliasScore === undefined
+            ? directScore
+            : Math.min(directScore, bopomofoAliasScore);
     }
 
     if (bopomofoAliasScore === undefined) {
-        return directScore;
+        return Math.min(directScore, latinKeySequenceScore);
     }
 
-    return Math.min(directScore, bopomofoAliasScore);
+    return Math.min(directScore, latinKeySequenceScore, bopomofoAliasScore);
 };
 
 export const getSearchResults = (
