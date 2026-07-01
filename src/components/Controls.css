@@ -64,7 +64,7 @@
     box-shadow: var(--shadow-panel);
     backdrop-filter: blur(0.75rem);
     color: var(--clr-text);
-    overflow-y: auto;
+    overflow: visible;
     overscroll-behavior: contain;
 
     animation: settings-menu-enter var(--motion-duration-fast)
@@ -201,15 +201,16 @@
     grid-template-columns: 2.5rem minmax(4rem, 1fr) minmax(7rem, 9rem);
 }
 
-.settings-select-row:has(.settings-select-control.open) {
-    align-items: start;
-}
-
 .settings-select-control {
     width: 100%;
     min-width: 0;
+    position: relative;
     display: grid;
     align-items: center;
+
+    &.open {
+        z-index: 2;
+    }
 }
 
 .settings-select {
@@ -269,8 +270,12 @@
 }
 
 .settings-dropdown {
+    position: absolute;
+    top: calc(100% + 0.25rem);
+    right: 0;
+    left: 0;
+    z-index: 2;
     max-height: 12rem;
-    margin-top: 0.25rem;
     padding: 0.25rem;
     border-radius: 1rem;
     background-color: var(--clr-panel-bg);
