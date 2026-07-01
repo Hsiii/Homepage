@@ -25,7 +25,6 @@
     color: var(--clr-primary-alpha);
     cursor: pointer;
     transition:
-        background-color var(--motion-duration-fast) var(--motion-ease-out),
         color var(--motion-duration-fast) var(--motion-ease-out),
         scale var(--motion-duration-fast) var(--motion-ease-out);
 
@@ -34,10 +33,7 @@
     display: grid;
     place-items: center;
 
-    &[aria-expanded='true'] {
-        background-color: var(--clr-neutral-light-alpha);
-    }
-
+    &[aria-expanded='true'],
     &:hover {
         color: var(--clr-primary);
     }
@@ -50,6 +46,53 @@
         outline: 2px solid var(--clr-primary-alpha);
         outline-offset: 2px;
     }
+}
+
+.settings-trigger-icons {
+    width: 1.25rem;
+    height: 1.25rem;
+    position: relative;
+
+    display: grid;
+    place-items: center;
+}
+
+.settings-trigger-icon {
+    grid-area: 1 / 1;
+    transition:
+        opacity 300ms cubic-bezier(0.2, 0, 0, 1),
+        filter 300ms cubic-bezier(0.2, 0, 0, 1),
+        scale 300ms cubic-bezier(0.2, 0, 0, 1),
+        rotate 300ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.settings-trigger-icon-settings {
+    opacity: 1;
+    filter: blur(0px);
+    scale: 1;
+    rotate: 0deg;
+}
+
+.settings-trigger-icon-close {
+    position: absolute;
+    opacity: 0;
+    filter: blur(4px);
+    scale: 0.25;
+    rotate: -90deg;
+}
+
+.settings-trigger[aria-expanded='true'] .settings-trigger-icon-settings {
+    opacity: 0;
+    filter: blur(4px);
+    scale: 0.25;
+    rotate: 90deg;
+}
+
+.settings-trigger[aria-expanded='true'] .settings-trigger-icon-close {
+    opacity: 1;
+    filter: blur(0px);
+    scale: 1;
+    rotate: 0deg;
 }
 
 .settings-menu {

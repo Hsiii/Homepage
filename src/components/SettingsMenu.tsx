@@ -11,6 +11,7 @@ import {
     PlayOff,
     Settings,
     Sun,
+    X,
 } from 'lucide-react';
 
 import { isAppLocale, localeOptions } from '@/constants/i18n';
@@ -395,7 +396,16 @@ export const SettingsMenu: React.FC = () => {
                     setIsOpen(!isOpen);
                 }}
             >
-                <Settings className='icon' />
+                <span className='settings-trigger-icons' aria-hidden>
+                    <Settings
+                        className='settings-trigger-icon settings-trigger-icon-settings'
+                        size={20}
+                    />
+                    <X
+                        className='settings-trigger-icon settings-trigger-icon-close'
+                        size={20}
+                    />
+                </span>
             </button>
             {isOpen ? (
                 <div
