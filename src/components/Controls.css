@@ -98,35 +98,6 @@
     font: var(--fontBaseMd);
 }
 
-.settings-action-row {
-    width: 100%;
-    background: transparent;
-    cursor: pointer;
-    text-align: left;
-    transition:
-        background-color var(--motion-duration-fast) var(--motion-ease-out),
-        color var(--motion-duration-fast) var(--motion-ease-out),
-        scale var(--motion-duration-fast) var(--motion-ease-out);
-
-    &:hover,
-    &:focus-visible {
-        background-color: var(--clr-text-alpha-2);
-        color: var(--clr-primary);
-        outline: none;
-    }
-
-    &:active {
-        scale: var(--motion-press-scale);
-    }
-
-    &:disabled {
-        color: var(--clr-disabled);
-        cursor: not-allowed;
-        opacity: 0.72;
-        scale: 1;
-    }
-}
-
 .settings-row-icon {
     height: 2.5rem;
     display: grid;
@@ -138,55 +109,27 @@
     font: var(--fontBoldMd);
 }
 
-.settings-value {
-    color: var(--clr-text-alpha);
-    font: var(--fontBaseSm);
-}
-
-.settings-swatch-group {
+.settings-option-content {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    min-width: 0;
 }
 
-.settings-swatch {
-    width: 2.5rem;
-    height: 2.5rem;
-    position: relative;
+.settings-option-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.settings-option-swatch {
+    width: 1rem;
+    height: 1rem;
     border-radius: 50%;
-    background-color: transparent;
-    cursor: pointer;
-    outline: none;
-    transition: scale var(--motion-duration-fast) var(--motion-ease-out);
-
-    display: grid;
-    place-items: center;
-
-    &::before {
-        content: '';
-        width: 1.5rem;
-        height: 1.5rem;
-        border-radius: 50%;
-        background-color: var(--settings-swatch-color);
-        outline: 2px solid transparent;
-        outline-offset: 0;
-        box-shadow: var(--shadow-panel);
-        transition: outline-color var(--motion-duration-fast)
-            var(--motion-ease-out);
-    }
-
-    &:hover::before,
-    &:focus-visible::before {
-        outline-color: var(--clr-primary-alpha);
-    }
-
-    &.selected::before {
-        outline-color: var(--clr-text);
-    }
-
-    &:active {
-        scale: var(--motion-press-scale);
-    }
+    background-color: var(--settings-swatch-color);
+    box-shadow: var(--shadow-panel);
+    flex: 0 0 auto;
 }
 
 .settings-swatch-amethyst {

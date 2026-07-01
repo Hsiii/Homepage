@@ -29,21 +29,23 @@ const myLocationOptionValue = 'my-location';
 
 const themeColorOptions = [
     {
-        label: 'Amethyst',
+        labelKey: 'amethyst',
         value: 'amethyst',
     },
     {
-        label: 'Azure',
+        labelKey: 'azure',
         value: 'azure',
     },
 ] as const;
 
+type AnimationMode = typeof normalAnimationMode | typeof skipAnimationMode;
 type ThemeColor = (typeof themeColorOptions)[number]['value'];
 type ThemeMode = 'system' | 'light' | 'dark';
 
 interface SettingsDropdownOption {
     disabled?: boolean;
     label: string;
+    leading?: React.ReactNode;
     value: string;
 }
 
@@ -60,8 +62,21 @@ interface SettingsDropdownProps {
 const isThemeColor = (value: string | null): value is ThemeColor =>
     themeColorOptions.some((option) => option.value === value);
 
+const isAnimationMode = (value: string | null): value is AnimationMode =>
+    value === normalAnimationMode || value === skipAnimationMode;
+
 const isThemeMode = (value: string | null): value is ThemeMode =>
     value === 'system' || value === 'light' || value === 'dark';
+
+const getInitialAnimationMode = (): AnimationMode => {
+    const savedAnimationMode =
+        globalThis.document.documentElement.dataset.animationMode ??
+        globalThis.localStorage.getItem(animationStorageKey);
+
+    return isAnimationMode(savedAnimationMode)
+        ? savedAnimationMode
+        : normalAnimationMode;
+};
 
 const getInitialThemeMode = (): ThemeMode => {
     const savedThemeMode = globalThis.localStorage.getItem(themeStorageKey);
@@ -105,6 +120,13 @@ const getThemeModeIcon = (themeMode: ThemeMode) => {
     );
 };
 
+const getAnimationModeIcon = (animationMode: AnimationMode) =>
+    animationMode === skipAnimationMode ? (
+        <PlayOff className='icon' size={20} />
+    ) : (
+        <Play className='icon' size={20} />
+    );
+
 const applyThemeColor = (themeColor: ThemeColor) => {
     const root = globalThis.document.documentElement;
 
@@ -129,6 +151,12 @@ const SettingsDropdown: React.FC<SettingsDropdownProps> = ({
 }) => {
     const selectedOption =
         options.find((option) => option.value === value) ?? options[0];
+    const renderOptionContent = (option: SettingsDropdownOption) => (
+        <span className='settings-option-content'>
+            {option.leading}
+            <span className='settings-option-label'>{option.label}</span>
+        </span>
+    );
 
     return (
         <span
@@ -160,7 +188,7 @@ const SettingsDropdown: React.FC<SettingsDropdownProps> = ({
                 }}
             >
                 <span className='settings-select-value'>
-                    {selectedOption.label}
+                    {renderOptionContent(selectedOption)}
                 </span>
                 <ChevronDown
                     className='settings-select-chevron'
@@ -202,7 +230,7 @@ const SettingsDropdown: React.FC<SettingsDropdownProps> = ({
                                     }
                                 }}
                             >
-                                <span>{option.label}</span>
+                                {renderOptionContent(option)}
                                 {isSelected ? (
                                     <Check
                                         className='settings-dropdown-check'
@@ -229,10 +257,8 @@ export const SettingsMenu: React.FC = () => {
     const { locale, setLocale, t } = useLocale();
     const [isOpen, setIsOpen] = useState(false);
     const [themeMode, setThemeMode] = useState<ThemeMode>(getInitialThemeMode);
-    const [isSkipAnimation, setIsSkipAnimation] = useState(
-        () =>
-            globalThis.document.documentElement.dataset.animationMode ===
-            skipAnimationMode
+    const [animationMode, setAnimationMode] = useState<AnimationMode>(
+        getInitialAnimationMode
     );
     const [selectedThemeColor, setSelectedThemeColor] = useState<ThemeColor>(
         () => {
@@ -298,21 +324,40 @@ export const SettingsMenu: React.FC = () => {
         setSelectedThemeColor(themeColor);
     }, []);
 
-    const updateAnimationMode = useCallback((nextSkipAnimation: boolean) => {
-        const nextAnimationMode = nextSkipAnimation
-            ? skipAnimationMode
-            : normalAnimationMode;
-
-        globalThis.document.documentElement.dataset.animationMode =
-            nextAnimationMode;
-        globalThis.localStorage.setItem(animationStorageKey, nextAnimationMode);
-        setIsSkipAnimation(nextSkipAnimation);
-    }, []);
+    const updateAnimationMode = useCallback(
+        (nextAnimationMode: AnimationMode) => {
+            globalThis.document.documentElement.dataset.animationMode =
+                nextAnimationMode;
+            globalThis.localStorage.setItem(
+                animationStorageKey,
+                nextAnimationMode
+            );
+            setAnimationMode(nextAnimationMode);
+        },
+        []
+    );
 
     const themeModeOptions: SettingsDropdownOption[] = [
         { label: t.system, value: 'system' },
         { label: t.light, value: 'light' },
         { label: t.dark, value: 'dark' },
+    ];
+
+    const themeColorDropdownOptions: SettingsDropdownOption[] =
+        themeColorOptions.map((option) => ({
+            label: t[option.labelKey],
+            leading: (
+                <span
+                    className={`settings-option-swatch settings-swatch-${option.value}`}
+                    aria-hidden
+                />
+            ),
+            value: option.value,
+        }));
+
+    const animationModeOptions: SettingsDropdownOption[] = [
+        { label: t.normal, value: normalAnimationMode },
+        { label: t.skip, value: skipAnimationMode },
     ];
 
     const locationOptions: SettingsDropdownOption[] = [
@@ -396,72 +441,61 @@ export const SettingsMenu: React.FC = () => {
                             />
                         </div>
 
-                        <div className='settings-row'>
+                        <div className='settings-row settings-select-row'>
                             <span className='settings-row-icon'>
                                 <Palette className='icon' size={20} />
                             </span>
-                            <span className='settings-row-label'>
+                            <span
+                                className='settings-row-label'
+                                id='accent-picker-label'
+                            >
                                 {t.accent}
                             </span>
-                            <div
-                                className='settings-swatch-group'
-                                role='radiogroup'
-                                aria-label={t.accent}
-                            >
-                                {themeColorOptions.map((option) => (
-                                    <button
-                                        className={[
-                                            'settings-swatch',
-                                            `settings-swatch-${option.value}`,
-                                            selectedThemeColor ===
-                                                option.value && 'selected',
-                                        ]
-                                            .filter(Boolean)
-                                            .join(' ')}
-                                        key={option.value}
-                                        type='button'
-                                        role='radio'
-                                        aria-checked={
-                                            selectedThemeColor === option.value
-                                        }
-                                        aria-label={option.label}
-                                        title={option.label}
-                                        onClick={() => {
-                                            selectThemeColor(option.value);
-                                        }}
-                                    />
-                                ))}
-                            </div>
+                            <SettingsDropdown
+                                id='accent-picker'
+                                labelledBy='accent-picker-label'
+                                value={selectedThemeColor}
+                                options={themeColorDropdownOptions}
+                                isOpen={openDropdownId === 'accent-picker'}
+                                onOpenChange={getDropdownOpenHandler(
+                                    'accent-picker'
+                                )}
+                                onChange={(nextThemeColor) => {
+                                    if (isThemeColor(nextThemeColor)) {
+                                        selectThemeColor(nextThemeColor);
+                                    }
+                                }}
+                            />
                         </div>
                     </div>
 
                     <div className='settings-section'>
-                        <button
-                            className='settings-row settings-action-row'
-                            type='button'
-                            aria-label={
-                                isSkipAnimation
-                                    ? t.useNormalAnimations
-                                    : t.skipRiseAnimations
-                            }
-                            onClick={() => {
-                                updateAnimationMode(!isSkipAnimation);
-                            }}
-                        >
+                        <div className='settings-row settings-select-row'>
                             <span className='settings-row-icon'>
-                                {isSkipAnimation ? (
-                                    <PlayOff className='icon' size={20} />
-                                ) : (
-                                    <Play className='icon' size={20} />
-                                )}
+                                {getAnimationModeIcon(animationMode)}
                             </span>
-                            <span className='settings-row-label'>
+                            <span
+                                className='settings-row-label'
+                                id='animation-picker-label'
+                            >
                                 {t.animations}
                             </span>
-                            <span className='settings-value'>
-                                {isSkipAnimation ? t.skip : t.normal}
-                            </span>
-                        </button>
+                            <SettingsDropdown
+                                id='animation-picker'
+                                labelledBy='animation-picker-label'
+                                value={animationMode}
+                                options={animationModeOptions}
+                                isOpen={openDropdownId === 'animation-picker'}
+                                onOpenChange={getDropdownOpenHandler(
+                                    'animation-picker'
+                                )}
+                                onChange={(nextAnimationMode) => {
+                                    if (isAnimationMode(nextAnimationMode)) {
+                                        updateAnimationMode(nextAnimationMode);
+                                    }
+                                }}
+                            />
+                        </div>
                     </div>
 
                     <div className='settings-section'>

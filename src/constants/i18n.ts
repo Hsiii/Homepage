@@ -16,8 +16,10 @@ export type AppLocale = (typeof localeOptions)[number]['value'];
 const messages = {
     'en': {
         accent: 'Accent',
+        amethyst: 'Amethyst',
         animations: 'Animations',
         aqi: 'AQI',
+        azure: 'Azure',
         dark: 'Dark',
         language: 'Language',
         light: 'Light',
@@ -34,8 +36,10 @@ const messages = {
     },
     'zh-TW': {
         accent: '強調色',
+        amethyst: '紫晶',
         animations: '動畫',
         aqi: 'AQI',
+        azure: '天藍',
         dark: '深色',
         language: '語言',
         light: '淺色',
