@@ -7,8 +7,10 @@ import React, {
     useState,
 } from 'react';
 import {
+    CloudSun,
     Gauge,
     HelpCircle,
+    LocateFixed,
     Moon,
     Palette,
     Play,
@@ -18,6 +20,8 @@ import {
 } from 'lucide-react';
 
 import { useAqi } from '@/hooks/useAqi';
+import type { WeatherLocation } from '@/hooks/useWeather';
+import { useWeather } from '@/hooks/useWeather';
 
 import './Help.css';
 
@@ -42,6 +46,8 @@ const defaultThemeColor = 'amethyst';
 const normalAnimationMode = 'normal';
 const skipAnimationMode = 'skip';
 const themeColorStorageKey = 'theme-color';
+const weatherLocationSearchDelay = 300;
+const weatherLocationSearchMinLength = 2;
 
 const themeColorOptions = [
     {
@@ -87,9 +93,22 @@ const applyThemeColor = (themeColor: ThemeColor) => {
 export const SettingsMenu: React.FC = () => {
     const { isSitesLoading, selectedSiteName, selectSiteName, siteOptions } =
         useAqi();
+    const {
+        fetchWeatherByCurrentLocation,
+        isLoading: isWeatherLoading,
+        searchWeatherLocations,
+        selectedLocation: selectedWeatherLocation,
+        selectWeatherLocation,
+    } = useWeather();
     const [isOpen, setIsOpen] = useState(false);
     const [isHelpOpen, setIsHelpOpen] = useState(false);
     const [isMouseMode, setIsMouseMode] = useState(true);
+    const [weatherLocationQuery, setWeatherLocationQuery] = useState('');
+    const [weatherLocationOptions, setWeatherLocationOptions] = useState<
+        readonly WeatherLocation[]
+    >([]);
+    const [isWeatherLocationLoading, setIsWeatherLocationLoading] =
+        useState(false);
     const [isDarkMode, setIsDarkMode] = useState(
         () => globalThis.document.documentElement.dataset.theme === 'dark'
     );
@@ -151,6 +170,47 @@ export const SettingsMenu: React.FC = () => {
         };
     }, [isOpen]);
 
+    useEffect(() => {
+        const query = weatherLocationQuery.trim();
+
+        if (!isOpen || query.length < weatherLocationSearchMinLength) {
+            setWeatherLocationOptions([]);
+            setIsWeatherLocationLoading(false);
+            return undefined;
+        }
+
+        let isCancelled = false;
+        const timeoutHandle = globalThis.setTimeout(
+            () => {
+                setIsWeatherLocationLoading(true);
+                searchWeatherLocations(query)
+                    .then((locations) => {
+                        if (!isCancelled) {
+                            setWeatherLocationOptions(locations);
+                        }
+                    })
+                    .catch((error: unknown) => {
+                        console.error(error);
+                        if (!isCancelled) {
+                            setWeatherLocationOptions([]);
+                        }
+                    })
+                    .finally(() => {
+                        if (!isCancelled) {
+                            setIsWeatherLocationLoading(false);
+                        }
+                    });
+            },
+            weatherLocationSearchDelay,
+            undefined
+        );
+
+        return () => {
+            isCancelled = true;
+            globalThis.clearTimeout(timeoutHandle);
+        };
+    }, [isOpen, searchWeatherLocations, weatherLocationQuery]);
+
     const toggleTheme = useCallback(
         async (event: React.MouseEvent<HTMLButtonElement>) => {
             const button = event.currentTarget;
@@ -185,6 +245,20 @@ export const SettingsMenu: React.FC = () => {
         globalThis.localStorage.setItem(animationStorageKey, nextAnimationMode);
         setIsSkipAnimation(nextSkipAnimation);
     }, []);
+
+    const clearWeatherLocationSearch = useCallback(() => {
+        setWeatherLocationQuery('');
+        setWeatherLocationOptions([]);
+        setIsWeatherLocationLoading(false);
+    }, []);
+
+    const chooseWeatherLocation = useCallback(
+        (location: WeatherLocation) => {
+            selectWeatherLocation(location);
+            clearWeatherLocationSearch();
+        },
+        [clearWeatherLocationSearch, selectWeatherLocation]
+    );
 
     return (
         <div className='settings-control' ref={menuRef}>
@@ -298,6 +372,82 @@ export const SettingsMenu: React.FC = () => {
                                 {isSkipAnimation ? 'Skip' : 'Normal'}
                             </span>
                         </button>
+
+                        <div className='settings-row settings-location-row'>
+                            <span className='settings-row-icon'>
+                                <CloudSun className='icon' size={20} />
+                            </span>
+                            <label
+                                className='settings-row-label'
+                                htmlFor='weather-location-picker'
+                            >
+                                Weather
+                            </label>
+                            <input
+                                className='settings-input'
+                                id='weather-location-picker'
+                                type='search'
+                                value={weatherLocationQuery}
+                                placeholder={selectedWeatherLocation.label}
+                                autoComplete='off'
+                                spellCheck={false}
+                                onChange={(event) => {
+                                    setWeatherLocationQuery(event.target.value);
+                                }}
+                            />
+                            <button
+                                className='settings-icon-action'
+                                type='button'
+                                aria-label='Use current location'
+                                title='Use current location'
+                                disabled={isWeatherLoading}
+                                onClick={() => {
+                                    fetchWeatherByCurrentLocation();
+                                    clearWeatherLocationSearch();
+                                }}
+                            >
+                                <LocateFixed className='icon' size={18} />
+                            </button>
+                        </div>
+                        <span className='settings-hint'>
+                            {selectedWeatherLocation.label}
+                        </span>
+                        {weatherLocationOptions.length > 0 ? (
+                            <div
+                                className='settings-location-results'
+                                role='listbox'
+                                aria-label='Weather locations'
+                            >
+                                {weatherLocationOptions.map((location) => (
+                                    <button
+                                        className='settings-location-option'
+                                        key={`${location.lat}-${location.lon}-${location.label}`}
+                                        type='button'
+                                        role='option'
+                                        aria-selected={
+                                            location.lat ===
+                                                selectedWeatherLocation.lat &&
+                                            location.lon ===
+                                                selectedWeatherLocation.lon
+                                        }
+                                        onClick={() => {
+                                            chooseWeatherLocation(location);
+                                        }}
+                                    >
+                                        <span>{location.label}</span>
+                                        {location.localName !== undefined &&
+                                        location.localName !== location.name ? (
+                                            <span className='settings-location-local'>
+                                                {location.localName}
+                                            </span>
+                                        ) : undefined}
+                                    </button>
+                                ))}
+                            </div>
+                        ) : undefined}
+                        {isWeatherLocationLoading ? (
+                            <span className='settings-hint'>Searching</span>
+                        ) : undefined}
 
                         <label
                             className='settings-row settings-select-row'

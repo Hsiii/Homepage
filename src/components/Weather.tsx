@@ -5,7 +5,6 @@ import {
     CloudRain,
     CloudSnow,
     Gauge,
-    RefreshCw,
     Sun,
 } from 'lucide-react';
 
@@ -24,8 +23,7 @@ const weatherIcons = {
 };
 
 export const Weather: React.FC = () => {
-    const { weather, isLoading, isCached, fetchWeatherByCurrentLocation } =
-        useWeather();
+    const { weather, selectedLocation } = useWeather();
     const { aqi } = useAqi();
     const hasWeather = weather !== undefined;
     const hasAqi = aqi !== undefined;
@@ -50,18 +48,9 @@ export const Weather: React.FC = () => {
         >
             <span className='weather-date'>{dateStr}</span>
             {hasWeather && (
-                <span className='weather-info'>
+                <span className='weather-info' title={selectedLocation.label}>
                     {weatherIcon}
                     {`${Math.round(weather.temp)}°C`}
-                    {!isCached && (
-                        <button
-                            className={`weather-refresh ${isLoading ? 'loading' : ''}`}
-                            onClick={fetchWeatherByCurrentLocation}
-                            title='Update with my location'
-                        >
-                            <RefreshCw size={14} />
-                        </button>
-                    )}
                 </span>
             )}
             {hasAqi && (

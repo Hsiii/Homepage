@@ -12,14 +12,32 @@ type WeatherPayload = {
         main?: string;
     }[];
 };
+type WeatherLocation = {
+    name: string;
+    country: string;
+    label: string;
+    lat: number;
+    lon: number;
+    localName?: string;
+    state?: string;
+};
+type WeatherLocationPayload = {
+    name?: string;
+    country?: string;
+    lat?: number;
+    local_names?: Record<string, string>;
+    lon?: number;
+    state?: string;
+};
 
 const defaultAqiSiteName = '新竹';
 const defaultWeatherCoords = {
-    lat: '25.03',
-    lon: '121.57',
+    lat: '25.0330',
+    lon: '121.5654',
 };
 const moenvAqiUrl = 'https://data.moenv.gov.tw/api/v2/aqx_p_432';
 const openWeatherUrl = 'https://api.openweathermap.org/data/2.5/weather';
+const openWeatherGeocodingUrl = 'https://api.openweathermap.org/geo/1.0/direct';
 
 function getRequestUrl(request: IncomingMessage): URL {
     return new URL(request.url ?? '/', 'http://localhost');
@@ -54,7 +72,7 @@ function parseCoordinate(
         return undefined;
     }
 
-    return num.toFixed(2);
+    return num.toFixed(4);
 }
 
 function writeJson(
@@ -116,6 +134,75 @@ function mapSiteOption(record: AqiRecord) {
         county: readString(record, 'county'),
         siteId: readString(record, 'siteid'),
     };
+}
+
+function buildWeatherLocationLabel(location: WeatherLocationPayload): string {
+    return [location.name, location.state, location.country]
+        .filter((part) => part !== undefined && part !== '')
+        .join(', ');
+}
+
+function mapWeatherLocation(
+    location: WeatherLocationPayload
+): WeatherLocation | undefined {
+    if (
+        location.name === undefined ||
+        location.country === undefined ||
+        location.lat === undefined ||
+        location.lon === undefined
+    ) {
+        return undefined;
+    }
+
+    return {
+        name: location.name,
+        country: location.country,
+        label: buildWeatherLocationLabel(location),
+        lat: location.lat,
+        lon: location.lon,
+        localName:
+            location.local_names?.en ??
+            location.local_names?.zh_tw ??
+            location.local_names?.zh ??
+            location.local_names?.ascii,
+        state: location.state,
+    };
+}
+
+async function fetchWeatherLocations(
+    query: string,
+    apiKey: string
+): Promise<readonly WeatherLocation[]> {
+    if (query.length < 2) {
+        return [];
+    }
+
+    const url = new URL(openWeatherGeocodingUrl);
+    url.searchParams.set('q', query);
+    url.searchParams.set('limit', '5');
+    url.searchParams.set('appid', apiKey);
+
+    const res = await fetch(url);
+
+    if (!res.ok) {
+        throw new Error(`Geocoding API responded with status ${res.status}`);
+    }
+
+    const payload = (await res.json()) as unknown;
+
+    if (!Array.isArray(payload)) {
+        throw new TypeError('Geocoding API returned an unexpected payload');
+    }
+
+    return payload
+        .map((location) =>
+            typeof location === 'object' && location !== null
+                ? mapWeatherLocation(location as WeatherLocationPayload)
+                : undefined
+        )
+        .filter(
+            (location): location is WeatherLocation => location !== undefined
+        );
 }
 
 function uniqueSites(
@@ -209,6 +296,17 @@ async function handleWeatherDevRequest(
     }
 
     const requestUrl = getRequestUrl(request);
+
+    if (requestUrl.searchParams.get('mode') === 'locations') {
+        const locations = await fetchWeatherLocations(
+            requestUrl.searchParams.get('q')?.trim() ?? '',
+            apiKey
+        );
+
+        writeJson(response, 200, { locations });
+        return;
+    }
+
     const lat = parseCoordinate(
         requestUrl.searchParams.get('lat'),
         defaultWeatherCoords.lat

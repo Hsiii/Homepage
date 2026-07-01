@@ -190,7 +190,8 @@
     grid-template-columns: 2.5rem 3rem 1fr;
 }
 
-.settings-select {
+.settings-select,
+.settings-input {
     width: 100%;
     min-height: 2.5rem;
     padding: 0.5rem 0.75rem;
@@ -198,7 +199,6 @@
     background-color: var(--clr-search-field-bg-active);
     box-shadow: var(--shadow-panel);
     color: var(--clr-search-field-text);
-    cursor: pointer;
     font: var(--fontBaseSm);
     outline: 2px solid transparent;
     outline-offset: 2px;
@@ -210,6 +210,100 @@
         outline-color: var(--clr-primary-alpha);
         box-shadow: var(--shadow-panel-hover);
     }
+}
+
+.settings-select {
+    cursor: pointer;
+}
+
+.settings-input {
+    min-width: 0;
+    cursor: text;
+
+    &::placeholder {
+        color: var(--clr-text-alpha);
+    }
+}
+
+.settings-location-row {
+    grid-template-columns: 2.5rem 4.5rem minmax(0, 1fr) 2.5rem;
+}
+
+.settings-icon-action {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--clr-secondary);
+    cursor: pointer;
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    transition:
+        background-color var(--motion-duration-fast) var(--motion-ease-out),
+        color var(--motion-duration-fast) var(--motion-ease-out),
+        outline-color var(--motion-duration-fast) var(--motion-ease-out),
+        scale var(--motion-duration-fast) var(--motion-ease-out);
+
+    display: grid;
+    place-items: center;
+
+    &:hover,
+    &:focus-visible {
+        background-color: var(--clr-text-alpha-2);
+        color: var(--clr-primary);
+        outline-color: var(--clr-primary-alpha);
+    }
+
+    &:active {
+        scale: var(--motion-press-scale);
+    }
+
+    &:disabled {
+        color: var(--clr-disabled);
+        cursor: not-allowed;
+        opacity: 0.72;
+        scale: 1;
+    }
+}
+
+.settings-location-results {
+    display: grid;
+    gap: 0.25rem;
+    padding-left: 3rem;
+}
+
+.settings-location-option {
+    min-height: 2.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.75rem;
+    background: transparent;
+    color: var(--clr-text);
+    cursor: pointer;
+    font: var(--fontBaseSm);
+    text-align: left;
+    transition:
+        background-color var(--motion-duration-fast) var(--motion-ease-out),
+        color var(--motion-duration-fast) var(--motion-ease-out),
+        scale var(--motion-duration-fast) var(--motion-ease-out);
+
+    display: grid;
+    gap: 0.25rem;
+
+    &:hover,
+    &:focus-visible,
+    &[aria-selected='true'] {
+        background-color: var(--clr-text-alpha-2);
+        color: var(--clr-primary);
+        outline: none;
+    }
+
+    &:active {
+        scale: var(--motion-press-scale);
+    }
+}
+
+.settings-location-local {
+    color: var(--clr-text-alpha);
 }
 
 .settings-hint {
