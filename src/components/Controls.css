@@ -269,13 +269,6 @@
     }
 }
 
-.settings-animation-icon {
-    width: 1.25rem;
-    height: 1.25rem;
-    display: grid;
-    place-items: center;
-}
-
 .settings-switch-track {
     width: 3.5rem;
     height: 2rem;
@@ -314,7 +307,7 @@
 }
 
 .settings-animation-switch[aria-checked='true'] .settings-switch-track {
-    background-color: var(--clr-text-alpha-2);
+    background-color: var(--clr-primary);
     box-shadow: var(--shadow-panel-hover);
 }
 

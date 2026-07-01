@@ -4,8 +4,6 @@ import {
     ChevronDown,
     Monitor,
     Moon,
-    Play,
-    PlayOff,
     Settings,
     Sun,
     X,
@@ -119,13 +117,6 @@ const getThemeModeIcon = (themeMode: ThemeMode) => {
         <Sun className='icon' size={20} />
     );
 };
-
-const getAnimationModeIcon = (animationMode: AnimationMode) =>
-    animationMode === skipAnimationMode ? (
-        <PlayOff className='icon' size={20} />
-    ) : (
-        <Play className='icon' size={20} />
-    );
 
 const applyThemeColor = (themeColor: ThemeColor) => {
     const root = globalThis.document.documentElement;
@@ -610,12 +601,6 @@ export const SettingsMenu: React.FC = () => {
                                     );
                                 }}
                             >
-                                <span
-                                    className='settings-animation-icon'
-                                    aria-hidden
-                                >
-                                    {getAnimationModeIcon(animationMode)}
-                                </span>
                                 <span
                                     className='settings-switch-track'
                                     aria-hidden
