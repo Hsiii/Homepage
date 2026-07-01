@@ -130,7 +130,9 @@ const getBopomofoCompositionValue = (
 ): string => composition.initial + composition.medial + composition.final;
 
 const getBopomofoKeystrokeAliases = (value: string): BopomofoAliasVariant[] => {
-    let aliasBase = '';
+    let compositionAliasBase = '';
+    let inputSequenceBase = '';
+    let inputSequence = '';
     let typedLength = 0;
     const variants: BopomofoAliasVariant[] = [];
     const composition: BopomofoComposition = {
@@ -145,21 +147,31 @@ const getBopomofoKeystrokeAliases = (value: string): BopomofoAliasVariant[] => {
             return;
         }
 
-        aliasBase += compositionValue;
+        compositionAliasBase += compositionValue;
         composition.initial = '';
         composition.medial = '';
         composition.final = '';
     };
 
-    const getCurrentAlias = (): string =>
-        aliasBase + getBopomofoCompositionValue(composition);
+    const flushInputSequence = (): void => {
+        inputSequenceBase += inputSequence;
+        inputSequence = '';
+    };
+
+    const getCurrentCompositionAlias = (): string =>
+        compositionAliasBase + getBopomofoCompositionValue(composition);
+
+    const getCurrentInputSequenceAlias = (): string =>
+        inputSequenceBase + inputSequence;
 
     for (const char of value.toLowerCase()) {
         const bopomofo = latinToBopomofoKeyMap[char];
 
         if (bopomofo === undefined) {
             flushComposition();
-            aliasBase += char;
+            flushInputSequence();
+            compositionAliasBase += char;
+            inputSequenceBase += char;
             continue;
         }
 
@@ -169,11 +181,19 @@ const getBopomofoKeystrokeAliases = (value: string): BopomofoAliasVariant[] => {
         }
 
         composition[slot] = bopomofo;
+        inputSequence += bopomofo;
         typedLength++;
-        variants.push({
-            alias: getCurrentAlias(),
-            typedLength,
-        });
+
+        variants.push(
+            {
+                alias: getCurrentCompositionAlias(),
+                typedLength,
+            },
+            {
+                alias: getCurrentInputSequenceAlias(),
+                typedLength,
+            }
+        );
     }
 
     return variants;
