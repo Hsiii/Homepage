@@ -44,10 +44,10 @@ type ThemeColor = (typeof themeColorOptions)[number]['value'];
 type ThemeMode = 'system' | 'light' | 'dark';
 
 interface SettingsDropdownOption {
-    disabled?: boolean;
-    label: string;
-    leading?: React.ReactNode;
-    value: string;
+    readonly disabled?: boolean;
+    readonly label: string;
+    readonly leading?: React.ReactNode;
+    readonly value: string;
 }
 
 interface SettingsDropdownProps {
@@ -379,6 +379,25 @@ export const SettingsMenu: React.FC = () => {
             value: option.value,
         })
     );
+    const dropdownOptionGroups: ReadonlyArray<
+        readonly SettingsDropdownOption[]
+    > = [
+        themeModeOptions,
+        themeColorDropdownOptions,
+        animationModeOptions,
+        locationOptions,
+        languageOptions,
+    ];
+    const maxDropdownValueLength = Math.max(
+        ...dropdownOptionGroups.flatMap((options) =>
+            options.map(
+                (option) => option.label.length + (option.leading ? 3 : 0)
+            )
+        )
+    );
+    const settingsMenuStyle = {
+        '--settings-select-width': `max(10rem, calc(${maxDropdownValueLength}ch + 3rem))`,
+    } as React.CSSProperties & Record<'--settings-select-width', string>;
 
     const getDropdownOpenHandler = (id: string) => (nextIsOpen: boolean) => {
         setOpenDropdownId(nextIsOpen ? id : undefined);
@@ -412,6 +431,7 @@ export const SettingsMenu: React.FC = () => {
                     className='settings-menu'
                     role='dialog'
                     aria-label={t.settings}
+                    style={settingsMenuStyle}
                     onClickCapture={(event) => {
                         const { target } = event;
 
