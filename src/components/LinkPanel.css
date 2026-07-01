@@ -418,25 +418,6 @@
     );
 }
 
-.link-tree .hint {
-    position: absolute;
-    right: 2rem;
-    text-align: center;
-    font: var(--fontBoldSm);
-    color: var(--clr-neutral);
-    opacity: 0.75;
-
-    transition: opacity var(--motion-duration-slow) var(--motion-ease-out);
-
-    &.hidden {
-        opacity: 0;
-    }
-
-    @media (width < 32rem) {
-        opacity: 0;
-    }
-}
-
 @media (width < 37.5rem) {
     .link-panel .trigger,
     .link-panel .link-tree {

@@ -25,18 +25,13 @@ export const LinkPanel: React.FC<LinkPanelProps> = ({
     highlightedCategory,
     onClearSearch,
 }) => {
-    const {
-        selectedCategory,
-        isKeyboardNav,
-        isMouseNav,
-        startMouseNav,
-        endMouseNav,
-    } = useLinkNavigation(isSearchNav, onClearSearch, highlightedCategory);
+    const { selectedCategory, isMouseNav, startMouseNav, endMouseNav } =
+        useLinkNavigation(isSearchNav, onClearSearch, highlightedCategory);
 
     const [windowHeight, setWindowHeight] = useState(globalThis.innerHeight);
     const [isMobileOpen, setIsMobileOpen] = useState(false);
     const isMobileViewport = useMediaQuery(mobileViewportQuery);
-    const isExpanded = isKeyboardNav ? true : selectedCategory !== 0;
+    const isExpanded = selectedCategory !== 0;
 
     useEffect(() => {
         const onResize = () => {
@@ -107,7 +102,6 @@ export const LinkPanel: React.FC<LinkPanelProps> = ({
                         index={i}
                         selectedCategory={selectedCategory}
                         isMouseNav={isMouseNav}
-                        keyboardNavEnabled={!isSearchNav}
                         padding={panelPaddings[i]}
                         highlightedLink={highlightedLink}
                     />

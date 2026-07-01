@@ -1,13 +1,5 @@
-import React, {
-    lazy,
-    Suspense,
-    useCallback,
-    useEffect,
-    useRef,
-    useState,
-} from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    HelpCircle,
     Languages,
     MapPin,
     Moon,
@@ -24,23 +16,12 @@ import { getLocationLabel, taiwanLocations } from '@/constants/taiwanLocations';
 import { useLocale } from '@/hooks/useLocale';
 import { useTaiwanLocation } from '@/hooks/useTaiwanLocation';
 
-import './Help.css';
-
 interface ThemeTransitionModule {
     runThemeTransition: (options: {
         button: HTMLButtonElement;
         isDarkMode: boolean;
     }) => boolean;
 }
-
-const loadHelpDialog = async () => await import('./HelpDialog');
-
-const HelpDialog = lazy(
-    async () =>
-        await loadHelpDialog().then((module) => ({
-            default: module.HelpDialog,
-        }))
-);
 
 const animationStorageKey = 'animation-mode';
 const defaultThemeColor = 'amethyst';
@@ -98,8 +79,6 @@ export const SettingsMenu: React.FC = () => {
     } = useTaiwanLocation();
     const { locale, setLocale, t } = useLocale();
     const [isOpen, setIsOpen] = useState(false);
-    const [isHelpOpen, setIsHelpOpen] = useState(false);
-    const [isMouseMode, setIsMouseMode] = useState(true);
     const [isDarkMode, setIsDarkMode] = useState(
         () => globalThis.document.documentElement.dataset.theme === 'dark'
     );
@@ -135,11 +114,6 @@ export const SettingsMenu: React.FC = () => {
         loadThemeTransition().catch(() => undefined);
         return undefined;
     }, [loadThemeTransition]);
-
-    const preloadHelpDialog = useCallback(() => {
-        loadHelpDialog().catch(() => undefined);
-        return undefined;
-    }, []);
 
     useEffect(() => {
         if (!isOpen) {
@@ -386,46 +360,6 @@ export const SettingsMenu: React.FC = () => {
                                 ))}
                             </select>
                         </label>
-                    </div>
-
-                    <div className='settings-section settings-help-section'>
-                        <button
-                            className='settings-row settings-action-row'
-                            type='button'
-                            aria-label={t.help}
-                            aria-expanded={isHelpOpen}
-                            onFocus={preloadHelpDialog}
-                            onMouseEnter={preloadHelpDialog}
-                            onClick={() => {
-                                if (!isHelpOpen) {
-                                    preloadHelpDialog();
-                                }
-                                setIsHelpOpen(!isHelpOpen);
-                            }}
-                        >
-                            <span className='settings-row-icon'>
-                                <HelpCircle className='icon' size={20} />
-                            </span>
-                            <span className='settings-row-label'>{t.help}</span>
-                            <span className='settings-value'>
-                                {isHelpOpen ? t.open : t.closed}
-                            </span>
-                        </button>
-                        {isHelpOpen ? (
-                            <div className='settings-help-panel'>
-                                <Suspense fallback={undefined}>
-                                    <HelpDialog
-                                        isMouseMode={isMouseMode}
-                                        onSelectKeyboardMode={() => {
-                                            setIsMouseMode(false);
-                                        }}
-                                        onSelectMouseMode={() => {
-                                            setIsMouseMode(true);
-                                        }}
-                                    />
-                                </Suspense>
-                            </div>
-                        ) : undefined}
                     </div>
                 </div>
             ) : undefined}

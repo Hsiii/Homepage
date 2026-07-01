@@ -265,13 +265,6 @@
     padding-left: 3rem;
 }
 
-.settings-help-panel {
-    overflow: hidden;
-    border-radius: 0.75rem;
-    background-color: var(--clr-neutral-light);
-    box-shadow: var(--shadow-panel);
-}
-
 @keyframes settings-menu-enter {
     from {
         opacity: 0;
