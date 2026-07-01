@@ -4,12 +4,14 @@ interface ThemeTransitionOptions {
     button: HTMLButtonElement;
     isDarkMode: boolean;
     nextDarkMode?: boolean;
+    onCommit?: () => void;
     themeMode?: 'system' | 'light' | 'dark';
 }
 
 const applyTheme = (
     nextDarkMode: boolean,
-    themeMode: ThemeTransitionOptions['themeMode']
+    themeMode: ThemeTransitionOptions['themeMode'],
+    onCommit?: ThemeTransitionOptions['onCommit']
 ) => {
     const nextTheme = nextDarkMode ? 'dark' : 'light';
     const root = globalThis.document.documentElement;
@@ -20,12 +22,14 @@ const applyTheme = (
     }
     root.style.colorScheme = nextTheme;
     globalThis.localStorage.setItem('theme', themeMode ?? nextTheme);
+    onCommit?.();
 };
 
 export const runThemeTransition = ({
     button,
     isDarkMode,
     nextDarkMode: requestedNextDarkMode,
+    onCommit,
     themeMode,
 }: ThemeTransitionOptions): boolean => {
     const darkTheme = 'dark';
@@ -102,6 +106,7 @@ export const runThemeTransition = ({
         }
         root.style.colorScheme = nextTheme;
         globalThis.localStorage.setItem('theme', themeMode ?? nextTheme);
+        onCommit?.();
     };
 
     if ('startViewTransition' in globalThis.document) {
@@ -163,12 +168,12 @@ export const runThemeTransition = ({
                 });
             })
             .catch(() => {
-                applyTheme(nextDarkMode, themeMode);
+                applyTheme(nextDarkMode, themeMode, onCommit);
             });
 
         return nextDarkMode;
     }
 
-    applyTheme(nextDarkMode, themeMode);
+    applyTheme(nextDarkMode, themeMode, onCommit);
     return nextDarkMode;
 };

@@ -10,6 +10,7 @@ import {
     Sun,
     X,
 } from 'lucide-react';
+import { flushSync } from 'react-dom';
 
 import { isAppLocale, localeOptions } from '@/constants/i18n';
 import { getLocationLabel, taiwanLocations } from '@/constants/taiwanLocations';
@@ -358,19 +359,31 @@ export const SettingsMenu: React.FC = () => {
             const currentDarkMode =
                 (root.dataset.theme ?? resolveThemeMode(themeMode)) === 'dark';
             const nextDarkMode = resolveThemeMode(nextThemeMode) === 'dark';
+            let hasCommittedThemeMode = false;
+
+            const commitThemeModeState = () => {
+                if (hasCommittedThemeMode) {
+                    return;
+                }
+
+                hasCommittedThemeMode = true;
+                flushSync(() => {
+                    setThemeMode(nextThemeMode);
+                });
+            };
 
             if (button !== undefined && currentDarkMode !== nextDarkMode) {
                 runThemeTransition({
                     button,
                     isDarkMode: currentDarkMode,
                     nextDarkMode,
+                    onCommit: commitThemeModeState,
                     themeMode: nextThemeMode,
                 });
             } else {
                 applyThemeMode(nextThemeMode);
+                setThemeMode(nextThemeMode);
             }
-
-            setThemeMode(nextThemeMode);
         },
         [themeMode]
     );
@@ -581,19 +594,19 @@ export const SettingsMenu: React.FC = () => {
                                 type='button'
                                 role='switch'
                                 aria-checked={
-                                    animationMode === skipAnimationMode
+                                    animationMode === normalAnimationMode
                                 }
                                 aria-label={t.animations}
                                 title={
-                                    animationMode === skipAnimationMode
-                                        ? t.skip
-                                        : t.normal
+                                    animationMode === normalAnimationMode
+                                        ? t.normal
+                                        : t.skip
                                 }
                                 onClick={() => {
                                     updateAnimationMode(
-                                        animationMode === skipAnimationMode
-                                            ? normalAnimationMode
-                                            : skipAnimationMode
+                                        animationMode === normalAnimationMode
+                                            ? skipAnimationMode
+                                            : normalAnimationMode
                                     );
                                 }}
                             >
