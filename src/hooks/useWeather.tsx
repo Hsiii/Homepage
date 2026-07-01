@@ -15,10 +15,7 @@ interface CachedWeather {
 // Taipei Coordinates
 const DEFAULT_LAT = 25.033;
 const DEFAULT_LON = 121.5654;
-// Use production API for local dev (bun dev), relative path for Vercel.
-const BASE_API_URL = import.meta.env.DEV
-    ? 'https://hsi-homepage.vercel.app/api/weather'
-    : '/api/weather';
+const BASE_API_URL = '/api/weather';
 const CACHE_KEY = 'weather_cache';
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 const WEATHER_INIT_TIMEOUT = 1000;

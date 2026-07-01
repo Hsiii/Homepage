@@ -10,6 +10,13 @@ export default defineConfig({
         },
     },
     server: {
+        proxy: {
+            '/api': {
+                target: 'https://hsi-homepage.vercel.app',
+                changeOrigin: true,
+                secure: true,
+            },
+        },
         watch: {
             ignored: ['**/api/**'],
         },
