@@ -1,7 +1,9 @@
 .weather-container {
-    display: grid;
-    justify-items: center;
-    gap: 0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    flex-wrap: nowrap;
     font: var(--fontBaseLg);
 
     color: var(--clr-text);
@@ -14,7 +16,7 @@
     @media (width < 37.5rem) {
         font-size: var(--fs-md);
 
-        gap: 0.25rem;
+        gap: 0.5rem;
     }
 }
 
@@ -24,6 +26,7 @@
 
 .weather-date {
     color: var(--clr-text);
+    white-space: nowrap;
 }
 
 .weather-metrics {
@@ -32,6 +35,7 @@
     justify-content: center;
     gap: 0.75rem;
     min-height: 1.5rem;
+    white-space: nowrap;
 
     @media (width < 37.5rem) {
         gap: 0.5rem;

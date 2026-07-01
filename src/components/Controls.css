@@ -198,7 +198,7 @@
 }
 
 .settings-select-row {
-    grid-template-columns: 2.5rem minmax(4rem, 1fr) minmax(7rem, 9rem);
+    grid-template-columns: 2.5rem max-content minmax(7rem, 1fr);
 }
 
 .settings-select-control {
@@ -215,6 +215,7 @@
 
 .settings-select {
     appearance: none;
+    position: relative;
     width: 100%;
     min-width: 0;
     min-height: 2.5rem;
@@ -233,10 +234,7 @@
         box-shadow var(--motion-duration-fast) var(--motion-ease-out),
         outline-color var(--motion-duration-fast) var(--motion-ease-out);
 
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 0.5rem;
+    display: block;
 
     &:hover {
         box-shadow: var(--shadow-panel-hover);
@@ -255,6 +253,7 @@
 }
 
 .settings-select-value {
+    display: block;
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -262,6 +261,10 @@
 }
 
 .settings-select-chevron {
+    position: absolute;
+    top: 50%;
+    right: 0.75rem;
+    translate: 0 -50%;
     color: var(--clr-text-alpha);
     pointer-events: none;
     transition:
