@@ -22,6 +22,7 @@ const messages = {
         language: 'Language',
         light: 'Light',
         location: 'Location',
+        myLocation: 'My location',
         normal: 'Normal',
         settings: 'Settings',
         skip: 'Skip',
@@ -29,7 +30,6 @@ const messages = {
         skipRiseAnimations: 'Skip rise animations',
         system: 'System',
         theme: 'Theme',
-        useCurrentLocation: 'Use my location',
         useNormalAnimations: 'Use normal animations',
     },
     'zh-TW': {
@@ -40,6 +40,7 @@ const messages = {
         language: '語言',
         light: '淺色',
         location: '位置',
+        myLocation: '我的位置',
         normal: '一般',
         settings: '設定',
         skip: '略過',
@@ -47,7 +48,6 @@ const messages = {
         skipRiseAnimations: '略過進場動畫',
         system: '系統',
         theme: '主題',
-        useCurrentLocation: '使用目前位置',
         useNormalAnimations: '使用一般動畫',
     },
 } as const satisfies Record<AppLocale, Record<string, string>>;

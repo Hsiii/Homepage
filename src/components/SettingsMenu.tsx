@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
+    Check,
     ChevronDown,
     Languages,
     MapPin,
@@ -8,7 +9,6 @@ import {
     Palette,
     Play,
     PlayOff,
-    RefreshCw,
     Settings,
     Sun,
 } from 'lucide-react';
@@ -25,6 +25,7 @@ const skipAnimationMode = 'skip';
 const themeStorageKey = 'theme';
 const themeColorStorageKey = 'theme-color';
 const systemThemeQuery = '(prefers-color-scheme: dark)';
+const myLocationOptionValue = 'my-location';
 
 const themeColorOptions = [
     {
@@ -39,6 +40,22 @@ const themeColorOptions = [
 
 type ThemeColor = (typeof themeColorOptions)[number]['value'];
 type ThemeMode = 'system' | 'light' | 'dark';
+
+interface SettingsDropdownOption {
+    disabled?: boolean;
+    label: string;
+    value: string;
+}
+
+interface SettingsDropdownProps {
+    id: string;
+    isOpen: boolean;
+    labelledBy: string;
+    onChange: (value: string) => void;
+    onOpenChange: (isOpen: boolean) => void;
+    options: SettingsDropdownOption[];
+    value: string;
+}
 
 const isThemeColor = (value: string | null): value is ThemeColor =>
     themeColorOptions.some((option) => option.value === value);
@@ -101,6 +118,107 @@ const applyThemeColor = (themeColor: ThemeColor) => {
     globalThis.localStorage.setItem(themeColorStorageKey, themeColor);
 };
 
+const SettingsDropdown: React.FC<SettingsDropdownProps> = ({
+    id,
+    isOpen,
+    labelledBy,
+    onChange,
+    onOpenChange,
+    options,
+    value,
+}) => {
+    const selectedOption =
+        options.find((option) => option.value === value) ?? options[0];
+
+    return (
+        <span
+            className={['settings-select-control', isOpen && 'open']
+                .filter(Boolean)
+                .join(' ')}
+        >
+            <button
+                className='settings-select'
+                type='button'
+                id={id}
+                aria-haspopup='listbox'
+                aria-expanded={isOpen}
+                aria-controls={`${id}-listbox`}
+                aria-labelledby={labelledBy}
+                onClick={() => {
+                    onOpenChange(!isOpen);
+                }}
+                onKeyDown={(event) => {
+                    if (event.key === 'Escape') {
+                        event.preventDefault();
+                        onOpenChange(false);
+                    }
+
+                    if (event.key === 'ArrowDown' && !isOpen) {
+                        event.preventDefault();
+                        onOpenChange(true);
+                    }
+                }}
+            >
+                <span className='settings-select-value'>
+                    {selectedOption.label}
+                </span>
+                <ChevronDown
+                    className='settings-select-chevron'
+                    size={16}
+                    aria-hidden
+                />
+            </button>
+            {isOpen ? (
+                <div
+                    className='settings-dropdown'
+                    id={`${id}-listbox`}
+                    role='listbox'
+                    aria-labelledby={labelledBy}
+                >
+                    {options.map((option) => {
+                        const isSelected = option.value === value;
+
+                        return (
+                            <button
+                                className='settings-dropdown-option'
+                                type='button'
+                                role='option'
+                                aria-selected={isSelected}
+                                data-value={option.value}
+                                disabled={option.disabled}
+                                key={option.value}
+                                onClick={() => {
+                                    if (option.disabled) {
+                                        return;
+                                    }
+
+                                    onChange(option.value);
+                                    onOpenChange(false);
+                                }}
+                                onKeyDown={(event) => {
+                                    if (event.key === 'Escape') {
+                                        event.preventDefault();
+                                        onOpenChange(false);
+                                    }
+                                }}
+                            >
+                                <span>{option.label}</span>
+                                {isSelected ? (
+                                    <Check
+                                        className='settings-dropdown-check'
+                                        size={16}
+                                        aria-hidden
+                                    />
+                                ) : undefined}
+                            </button>
+                        );
+                    })}
+                </div>
+            ) : undefined}
+        </span>
+    );
+};
+
 export const SettingsMenu: React.FC = () => {
     const {
         isSyncingLocation,
@@ -126,6 +244,7 @@ export const SettingsMenu: React.FC = () => {
                 : defaultThemeColor;
         }
     );
+    const [openDropdownId, setOpenDropdownId] = useState<string>();
     const menuRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -143,6 +262,12 @@ export const SettingsMenu: React.FC = () => {
         return () => {
             globalThis.document.removeEventListener('click', onClickOutside);
         };
+    }, [isOpen]);
+
+    useEffect(() => {
+        if (!isOpen) {
+            setOpenDropdownId(undefined);
+        }
     }, [isOpen]);
 
     useEffect(() => {
@@ -184,6 +309,35 @@ export const SettingsMenu: React.FC = () => {
         setIsSkipAnimation(nextSkipAnimation);
     }, []);
 
+    const themeModeOptions: SettingsDropdownOption[] = [
+        { label: t.system, value: 'system' },
+        { label: t.light, value: 'light' },
+        { label: t.dark, value: 'dark' },
+    ];
+
+    const locationOptions: SettingsDropdownOption[] = [
+        {
+            disabled: isSyncingLocation,
+            label: isSyncingLocation ? t.syncing : t.myLocation,
+            value: myLocationOptionValue,
+        },
+        ...taiwanLocations.map((location) => ({
+            label: getLocationLabel(location, locale),
+            value: location.id,
+        })),
+    ];
+
+    const languageOptions: SettingsDropdownOption[] = localeOptions.map(
+        (option) => ({
+            label: option.label,
+            value: option.value,
+        })
+    );
+
+    const getDropdownOpenHandler = (id: string) => (nextIsOpen: boolean) => {
+        setOpenDropdownId(nextIsOpen ? id : undefined);
+    };
+
     return (
         <div className='settings-control' ref={menuRef}>
             <button
@@ -203,40 +357,44 @@ export const SettingsMenu: React.FC = () => {
                     className='settings-menu'
                     role='dialog'
                     aria-label={t.settings}
+                    onClickCapture={(event) => {
+                        const { target } = event;
+
+                        if (
+                            target instanceof Element &&
+                            !target.closest('.settings-select-control')
+                        ) {
+                            setOpenDropdownId(undefined);
+                        }
+                    }}
                 >
                     <div className='settings-section'>
-                        <label
-                            className='settings-row settings-select-row'
-                            htmlFor='theme-picker'
-                        >
+                        <div className='settings-row settings-select-row'>
                             <span className='settings-row-icon'>
                                 {getThemeModeIcon(themeMode)}
                             </span>
-                            <span className='settings-row-label'>
+                            <span
+                                className='settings-row-label'
+                                id='theme-picker-label'
+                            >
                                 {t.theme}
                             </span>
-                            <span className='settings-select-control'>
-                                <select
-                                    className='settings-select'
-                                    id='theme-picker'
-                                    value={themeMode}
-                                    onChange={(event) => {
-                                        if (isThemeMode(event.target.value)) {
-                                            updateThemeMode(event.target.value);
-                                        }
-                                    }}
-                                >
-                                    <option value='system'>{t.system}</option>
-                                    <option value='light'>{t.light}</option>
-                                    <option value='dark'>{t.dark}</option>
-                                </select>
-                                <ChevronDown
-                                    className='settings-select-chevron'
-                                    size={16}
-                                    aria-hidden
-                                />
-                            </span>
-                        </label>
+                            <SettingsDropdown
+                                id='theme-picker'
+                                labelledBy='theme-picker-label'
+                                value={themeMode}
+                                options={themeModeOptions}
+                                isOpen={openDropdownId === 'theme-picker'}
+                                onOpenChange={getDropdownOpenHandler(
+                                    'theme-picker'
+                                )}
+                                onChange={(nextThemeMode) => {
+                                    if (isThemeMode(nextThemeMode)) {
+                                        updateThemeMode(nextThemeMode);
+                                    }
+                                }}
+                            />
+                        </div>
 
                         <div className='settings-row'>
                             <span className='settings-row-icon'>
@@ -306,115 +464,66 @@ export const SettingsMenu: React.FC = () => {
                         </button>
                     </div>
 
-                    <div className='settings-section settings-location-section'>
-                        <div className='settings-row settings-label-row'>
+                    <div className='settings-section'>
+                        <div className='settings-row settings-select-row'>
                             <span className='settings-row-icon'>
                                 <MapPin className='icon' size={20} />
                             </span>
-                            <label
+                            <span
                                 className='settings-row-label'
-                                htmlFor='location-picker'
+                                id='location-picker-label'
                             >
                                 {t.location}
-                            </label>
+                            </span>
+                            <SettingsDropdown
+                                id='location-picker'
+                                labelledBy='location-picker-label'
+                                value={selectedLocation.id}
+                                options={locationOptions}
+                                isOpen={openDropdownId === 'location-picker'}
+                                onOpenChange={getDropdownOpenHandler(
+                                    'location-picker'
+                                )}
+                                onChange={(nextLocationId) => {
+                                    if (
+                                        nextLocationId === myLocationOptionValue
+                                    ) {
+                                        syncCurrentLocation();
+                                        return;
+                                    }
+
+                                    selectLocationId(nextLocationId);
+                                }}
+                            />
                         </div>
-                        <div className='settings-row settings-field-row'>
-                            <span className='settings-select-control settings-select-control-full'>
-                                <select
-                                    className='settings-select'
-                                    id='location-picker'
-                                    value={selectedLocation.id}
-                                    onChange={(event) => {
-                                        selectLocationId(event.target.value);
-                                    }}
-                                >
-                                    {taiwanLocations.map((location) => (
-                                        <option
-                                            key={location.id}
-                                            value={location.id}
-                                        >
-                                            {getLocationLabel(location, locale)}
-                                        </option>
-                                    ))}
-                                </select>
-                                <ChevronDown
-                                    className='settings-select-chevron'
-                                    size={16}
-                                    aria-hidden
-                                />
-                            </span>
-                        </div>
-                        <button
-                            className='settings-row settings-action-row'
-                            type='button'
-                            aria-label={t.useCurrentLocation}
-                            title={t.useCurrentLocation}
-                            disabled={isSyncingLocation}
-                            onClick={() => {
-                                syncCurrentLocation();
-                            }}
-                        >
-                            <span className='settings-row-icon'>
-                                <RefreshCw
-                                    className={[
-                                        'icon',
-                                        isSyncingLocation && 'loading',
-                                    ]
-                                        .filter(Boolean)
-                                        .join(' ')}
-                                    size={20}
-                                />
-                            </span>
-                            <span className='settings-row-label'>
-                                {t.useCurrentLocation}
-                            </span>
-                            {isSyncingLocation ? (
-                                <span className='settings-value'>
-                                    {t.syncing}
-                                </span>
-                            ) : undefined}
-                        </button>
                     </div>
 
                     <div className='settings-section'>
-                        <div className='settings-row settings-label-row'>
+                        <div className='settings-row settings-select-row'>
                             <span className='settings-row-icon'>
                                 <Languages className='icon' size={20} />
                             </span>
-                            <label
+                            <span
                                 className='settings-row-label'
-                                htmlFor='language-picker'
+                                id='language-picker-label'
                             >
                                 {t.language}
-                            </label>
-                        </div>
-                        <div className='settings-row settings-field-row'>
-                            <span className='settings-select-control settings-select-control-full'>
-                                <select
-                                    className='settings-select'
-                                    id='language-picker'
-                                    value={locale}
-                                    onChange={(event) => {
-                                        if (isAppLocale(event.target.value)) {
-                                            setLocale(event.target.value);
-                                        }
-                                    }}
-                                >
-                                    {localeOptions.map((option) => (
-                                        <option
-                                            key={option.value}
-                                            value={option.value}
-                                        >
-                                            {option.label}
-                                        </option>
-                                    ))}
-                                </select>
-                                <ChevronDown
-                                    className='settings-select-chevron'
-                                    size={16}
-                                    aria-hidden
-                                />
                             </span>
+                            <SettingsDropdown
+                                id='language-picker'
+                                labelledBy='language-picker-label'
+                                value={locale}
+                                options={languageOptions}
+                                isOpen={openDropdownId === 'language-picker'}
+                                onOpenChange={getDropdownOpenHandler(
+                                    'language-picker'
+                                )}
+                                onChange={(nextLocale) => {
+                                    if (isAppLocale(nextLocale)) {
+                                        setLocale(nextLocale);
+                                    }
+                                }}
+                            />
                         </div>
                     </div>
                 </div>
