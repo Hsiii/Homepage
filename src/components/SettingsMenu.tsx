@@ -15,6 +15,7 @@ import { isAppLocale, localeOptions } from '@/constants/i18n';
 import { getLocationLabel, taiwanLocations } from '@/constants/taiwanLocations';
 import { useLocale } from '@/hooks/useLocale';
 import { useTaiwanLocation } from '@/hooks/useTaiwanLocation';
+import { runThemeTransition } from '@/utils/themeTransition';
 
 const animationStorageKey = 'animation-mode';
 const defaultThemeColor = 'amethyst';
@@ -307,10 +308,28 @@ export const SettingsMenu: React.FC = () => {
         };
     }, [themeMode]);
 
-    const updateThemeMode = useCallback((nextThemeMode: ThemeMode) => {
-        applyThemeMode(nextThemeMode);
-        setThemeMode(nextThemeMode);
-    }, []);
+    const updateThemeMode = useCallback(
+        (nextThemeMode: ThemeMode, button?: HTMLButtonElement) => {
+            const root = globalThis.document.documentElement;
+            const currentDarkMode =
+                (root.dataset.theme ?? resolveThemeMode(themeMode)) === 'dark';
+            const nextDarkMode = resolveThemeMode(nextThemeMode) === 'dark';
+
+            if (button !== undefined && currentDarkMode !== nextDarkMode) {
+                runThemeTransition({
+                    button,
+                    isDarkMode: currentDarkMode,
+                    nextDarkMode,
+                    themeMode: nextThemeMode,
+                });
+            } else {
+                applyThemeMode(nextThemeMode);
+            }
+
+            setThemeMode(nextThemeMode);
+        },
+        [themeMode]
+    );
 
     const selectThemeColor = useCallback((themeColor: ThemeColor) => {
         applyThemeColor(themeColor);
@@ -443,10 +462,11 @@ export const SettingsMenu: React.FC = () => {
                                             aria-checked={isSelected}
                                             aria-label={option.label}
                                             title={option.label}
-                                            onClick={() => {
+                                            onClick={(event) => {
                                                 if (isThemeMode(option.value)) {
                                                     updateThemeMode(
-                                                        option.value
+                                                        option.value,
+                                                        event.currentTarget
                                                     );
                                                 }
                                             }}

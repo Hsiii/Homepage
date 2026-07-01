@@ -3,20 +3,30 @@ import { createBlobPath } from '@/hooks/themeTransitionUtils';
 interface ThemeTransitionOptions {
     button: HTMLButtonElement;
     isDarkMode: boolean;
+    nextDarkMode?: boolean;
+    themeMode?: 'system' | 'light' | 'dark';
 }
 
-const applyTheme = (nextDarkMode: boolean) => {
+const applyTheme = (
+    nextDarkMode: boolean,
+    themeMode: ThemeTransitionOptions['themeMode']
+) => {
     const nextTheme = nextDarkMode ? 'dark' : 'light';
     const root = globalThis.document.documentElement;
 
     root.dataset.theme = nextTheme;
+    if (themeMode !== undefined) {
+        root.dataset.themeMode = themeMode;
+    }
     root.style.colorScheme = nextTheme;
-    globalThis.localStorage.setItem('theme', nextTheme);
+    globalThis.localStorage.setItem('theme', themeMode ?? nextTheme);
 };
 
 export const runThemeTransition = ({
     button,
     isDarkMode,
+    nextDarkMode: requestedNextDarkMode,
+    themeMode,
 }: ThemeTransitionOptions): boolean => {
     const darkTheme = 'dark';
     const lightTheme = 'light';
@@ -47,7 +57,7 @@ export const runThemeTransition = ({
     const lightFinalExpandEasing = 'cubic-bezier(0.16, 0.9, 0.22, 1)';
 
     const root = globalThis.document.documentElement;
-    const nextDarkMode = !isDarkMode;
+    const nextDarkMode = requestedNextDarkMode ?? !isDarkMode;
     const nextTheme = nextDarkMode ? darkTheme : lightTheme;
     const searchElement = globalThis.document.querySelector(searchSelector);
     const searchRect = searchElement?.getBoundingClientRect();
@@ -87,8 +97,11 @@ export const runThemeTransition = ({
 
     const commitTheme = () => {
         root.dataset.theme = nextTheme;
+        if (themeMode !== undefined) {
+            root.dataset.themeMode = themeMode;
+        }
         root.style.colorScheme = nextTheme;
-        globalThis.localStorage.setItem('theme', nextTheme);
+        globalThis.localStorage.setItem('theme', themeMode ?? nextTheme);
     };
 
     if ('startViewTransition' in globalThis.document) {
@@ -150,12 +163,12 @@ export const runThemeTransition = ({
                 });
             })
             .catch(() => {
-                applyTheme(nextDarkMode);
+                applyTheme(nextDarkMode, themeMode);
             });
 
         return nextDarkMode;
     }
 
-    applyTheme(nextDarkMode);
+    applyTheme(nextDarkMode, themeMode);
     return nextDarkMode;
 };
