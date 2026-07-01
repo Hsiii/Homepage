@@ -48,8 +48,7 @@ li {
 html[data-animation-mode='skip'] .title,
 html[data-animation-mode='skip'] .search,
 html[data-animation-mode='skip'] .search-icon .icon,
-html[data-animation-mode='skip'] .theme-icon-btn,
-html[data-animation-mode='skip'] .help-icon-btn,
+html[data-animation-mode='skip'] .settings-trigger,
 html[data-animation-mode='skip'] .weather-container,
 html[data-animation-mode='skip'] .mountains,
 html[data-animation-mode='skip'] .trigger {

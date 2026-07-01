@@ -1,82 +1,3 @@
-.theme-icon-btn,
-.help-icon-btn {
-    background: transparent;
-    color: var(--clr-primary-alpha);
-    cursor: pointer;
-    padding: 0.5rem;
-    min-width: 2.5rem;
-    min-height: 2.5rem;
-    border-radius: 50%;
-    display: grid;
-    place-items: center;
-    transition:
-        color var(--motion-duration-fast) var(--motion-ease-out),
-        background-color var(--motion-duration-fast) var(--motion-ease-out),
-        scale var(--motion-duration-fast) var(--motion-ease-out);
-
-    &:hover {
-        color: var(--clr-primary);
-    }
-
-    &:active {
-        scale: var(--motion-press-scale);
-    }
-
-    &:focus-visible {
-        outline: 2px solid var(--clr-primary-alpha);
-        outline-offset: 2px;
-    }
-
-    animation: rise-show var(--rise-show-duration) ease-out;
-}
-
-.help-control {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-}
-
-.help-control.open .help-icon-btn {
-    background-color: var(--clr-neutral-light-alpha);
-}
-
-.help-dialog {
-    position: absolute;
-    top: calc(100% + 0.5rem);
-    right: 0;
-    width: 400px;
-    background-color: var(
-        --clr-neutral-light
-    ); /* Assuming this variable exists for panel bg */
-    box-shadow: var(--shadow-panel);
-    border-radius: 1rem;
-
-    visibility: hidden;
-    opacity: 0;
-    transform: translateY(-0.25rem);
-    transition:
-        opacity var(--motion-duration-fast) var(--motion-ease-out),
-        transform var(--motion-duration-fast) var(--motion-ease-out),
-        visibility var(--motion-duration-fast) var(--motion-ease-out);
-
-    &.open {
-        visibility: visible;
-        opacity: 1;
-        transform: translateY(0);
-    }
-
-    @media (width < 37.5rem) {
-        position: fixed;
-        top: 4rem;
-        inset-inline: 1rem;
-        width: auto;
-        max-height: calc(100svh - 5rem);
-        overflow-y: auto;
-        box-shadow: var(--shadow-panel);
-    }
-}
-
 .help-content {
     display: flex;
     flex-direction: column;
@@ -189,10 +110,6 @@
 @media (width < 37.5rem) {
     .help-switch {
         display: none;
-    }
-
-    .help-dialog {
-        border-radius: 0.75rem;
     }
 
     .help-desc-list {

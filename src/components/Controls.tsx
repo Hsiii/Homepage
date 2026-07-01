@@ -1,21 +1,11 @@
 import React from 'react';
 
-import { AnimationToggle } from './AnimationToggle';
-import { AqiDistrictPicker } from './AqiDistrictPicker';
-import { Help } from './Help';
-import { ThemeColorPicker } from './ThemeColorPicker';
-import { ThemeToggle } from './ThemeToggle';
+import { SettingsMenu } from './SettingsMenu';
 
 import './Controls.css';
 
 export const Controls: React.FC = () => (
     <div className='controls'>
-        <div className='controls-actions'>
-            <ThemeToggle />
-            <ThemeColorPicker />
-            <AnimationToggle />
-            <Help />
-            <AqiDistrictPicker />
-        </div>
+        <SettingsMenu />
     </div>
 );
