@@ -164,7 +164,7 @@
     top: 0;
     left: 0;
     border-radius: 50%;
-    background-color: var(--clr-search-field-bg-active);
+    background-color: var(--clr-text-alpha-2);
     box-shadow: var(--shadow-panel);
     translate: calc(var(--settings-theme-index, 0) * 3rem) 0;
     transition:
@@ -305,7 +305,7 @@
 }
 
 .settings-animation-switch[aria-checked='true'] .settings-switch-track {
-    background-color: var(--clr-search-field-bg-active);
+    background-color: var(--clr-text-alpha-2);
     box-shadow: var(--shadow-panel-hover);
 }
 
@@ -374,7 +374,7 @@
     }
 
     &[aria-expanded='true'] .settings-select-chevron {
-        color: var(--clr-text);
+        color: var(--clr-search-field-text);
         rotate: 180deg;
     }
 }
@@ -393,7 +393,7 @@
     right: 0.75rem;
     z-index: 1;
     translate: 0 -50%;
-    color: var(--clr-text);
+    color: var(--clr-search-field-text);
     pointer-events: none;
     transition:
         color var(--motion-duration-fast) var(--motion-ease-out),
