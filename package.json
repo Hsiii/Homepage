@@ -23,7 +23,10 @@
         ]
     },
     "dependencies": {
+        "@clerk/backend": "^3.10.0",
         "@clerk/react": "^6.11.3",
+        "@neondatabase/serverless": "^1.1.0",
+        "@vercel/blob": "^2.5.0",
         "lucide-react": "^1.21.0",
         "react": "^19.0.0",
         "react-dom": "^19.0.0"
