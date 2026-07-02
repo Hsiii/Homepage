@@ -38,46 +38,44 @@ export const normalizeBookmarkTree = (
     const getUniqueId = createUniqueIdGetter();
     let bookmarkIndex = 0;
 
-    return bookmarkTree
-        .map((categoryData) => {
-            const category =
-                normalizeText(categoryData.category) || defaultCategoryName;
-            const icon =
-                categoryData.icon === undefined
-                    ? undefined
-                    : normalizeText(categoryData.icon);
-            const links = categoryData.links
-                .map((bookmark): BookmarkLinkData | undefined => {
-                    const title = normalizeText(bookmark.title);
-                    const url = bookmark.url.trim();
+    return bookmarkTree.map((categoryData) => {
+        const category =
+            normalizeText(categoryData.category) || defaultCategoryName;
+        const icon =
+            categoryData.icon === undefined
+                ? undefined
+                : normalizeText(categoryData.icon);
+        const links = categoryData.links
+            .map((bookmark): BookmarkLinkData | undefined => {
+                const title = normalizeText(bookmark.title);
+                const url = bookmark.url.trim();
 
-                    if (title === '' || url === '') {
-                        return undefined;
-                    }
+                if (title === '' || url === '') {
+                    return undefined;
+                }
 
-                    const id =
-                        normalizeText(bookmark.id) ||
-                        createFallbackId(bookmarkIndex);
-                    bookmarkIndex++;
+                const id =
+                    normalizeText(bookmark.id) ||
+                    createFallbackId(bookmarkIndex);
+                bookmarkIndex++;
 
-                    return {
-                        id: getUniqueId(id),
-                        title,
-                        url,
-                    };
-                })
-                .filter(
-                    (bookmark): bookmark is BookmarkLinkData =>
-                        bookmark !== undefined
-                );
+                return {
+                    id: getUniqueId(id),
+                    title,
+                    url,
+                };
+            })
+            .filter(
+                (bookmark): bookmark is BookmarkLinkData =>
+                    bookmark !== undefined
+            );
 
-            return {
-                category,
-                ...(icon === undefined || icon === '' ? {} : { icon }),
-                links,
-            };
-        })
-        .filter((categoryData) => categoryData.links.length > 0);
+        return {
+            category,
+            ...(icon === undefined || icon === '' ? {} : { icon }),
+            links,
+        };
+    });
 };
 
 export const coerceBookmarkTree = (

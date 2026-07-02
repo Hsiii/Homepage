@@ -6,6 +6,7 @@ import {
     Image,
     Monitor,
     Moon,
+    Pencil,
     RotateCcw,
     Settings,
     Sun,
@@ -25,6 +26,7 @@ import { isBrowser } from '@/utils/browserEnv';
 import { runThemeTransition } from '@/utils/themeTransition';
 import { getCssUrlValue } from '@/utils/wallpaperStyle';
 import { wallpaperAcceptedContentTypes } from '../../shared/wallpaper';
+import { BookmarkManagerDialog } from './BookmarkManagerDialog';
 
 const animationStorageKey = 'animation-mode';
 const defaultThemeColor = 'amethyst';
@@ -322,6 +324,7 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({
     const [animationMode, setAnimationMode] = useState<AnimationMode>(
         getInitialAnimationMode
     );
+    const [isBookmarkManagerOpen, setIsBookmarkManagerOpen] = useState(false);
     const [selectedThemeColor, setSelectedThemeColor] = useState<ThemeColor>(
         () => {
             if (!isBrowser()) {
@@ -371,6 +374,7 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({
 
         setIsOpen(false);
         setOpenDropdownId(undefined);
+        setIsBookmarkManagerOpen(false);
     }, [closeSignal]);
 
     useEffect(() => {
@@ -833,6 +837,18 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({
                                 <button
                                     className='settings-icon-choice'
                                     type='button'
+                                    aria-label={t.manageBookmarks}
+                                    title={t.manageBookmarks}
+                                    onClick={() => {
+                                        setIsBookmarkManagerOpen(true);
+                                        setIsOpen(false);
+                                    }}
+                                >
+                                    <Pencil className='icon' size={18} />
+                                </button>
+                                <button
+                                    className='settings-icon-choice'
+                                    type='button'
                                     aria-label={t.importBookmarks}
                                     title={t.importBookmarks}
                                     onClick={() => {
@@ -934,6 +950,14 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({
                         </div>
                     </div>
                 </div>
+            ) : undefined}
+            {isBookmarkManagerOpen ? (
+                <BookmarkManagerDialog
+                    bookmarkControls={bookmarkControls}
+                    onClose={() => {
+                        setIsBookmarkManagerOpen(false);
+                    }}
+                />
             ) : undefined}
         </div>
     );
