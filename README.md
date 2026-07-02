@@ -1,6 +1,6 @@
 # [Homepage](https://homepage.hsichen.dev)
 
-A fast personal browser homepage for search, bookmarks, weather, AQI, and daily links.
+A fast personal browser homepage for search, bookmarks, weather, and AQI.
 
 ![Homepage](https://raw.githubusercontent.com/Hsiii/homepage/main/docs/demo.webp)
 
