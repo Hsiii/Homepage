@@ -1,16 +1,6 @@
 import type { ReactElement } from 'react';
-import {
-    BookOpenText,
-    Brush,
-    CodeXml,
-    Folder,
-    Gamepad2,
-    LayoutGrid,
-    MessagesSquare,
-    MonitorPlay,
-    PenTool,
-    ToolCase,
-} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import { Folder, icons } from 'lucide-react';
 
 import type { LinkName } from '@/constants/links';
 import { links } from '@/constants/links';
@@ -18,40 +8,89 @@ import type { BookmarkCategoryData, BookmarkLinkData } from '@/types/bookmarks';
 
 export type CategoryData = {
     category: string;
-    icon?: ReactElement;
+    icon: ReactElement;
+    iconName: string;
     links: BookmarkLinkData[];
 };
 
 type DefaultCategoryData = {
     category: string;
-    icon: ReactElement;
+    iconName: string;
     links: LinkName[];
 };
+
+export interface CategoryIconOption {
+    Icon: LucideIcon;
+    iconName: string;
+    label: string;
+    searchText: string;
+}
+
+const categoryIcons = icons as Partial<Record<string, LucideIcon>>;
+const categoryIconNames = new Set(Object.keys(categoryIcons));
+
+const formatIconName = (iconName: string): string =>
+    iconName.replaceAll(/([\da-z])([A-Z])/g, '$1 $2');
+
+const normalizeIconSearchText = (value: string): string =>
+    value.toLowerCase().replaceAll(/[^\da-z]+/g, '');
+
+export const categoryIconOptions: CategoryIconOption[] = Object.keys(
+    categoryIcons
+)
+    .flatMap((iconName) => {
+        const Icon = categoryIcons[iconName];
+        if (Icon === undefined) {
+            return [];
+        }
+
+        const label = formatIconName(iconName);
+
+        return [
+            {
+                Icon,
+                iconName,
+                label,
+                searchText: `${normalizeIconSearchText(
+                    iconName
+                )} ${normalizeIconSearchText(label)}`,
+            },
+        ];
+    })
+    .toSorted((a, b) => a.label.localeCompare(b.label));
+
+export const normalizeCategoryIconSearch = (value: string): string =>
+    normalizeIconSearchText(value);
+
+export const isCategoryIconName = (
+    iconName: string | undefined
+): iconName is string =>
+    iconName !== undefined && categoryIconNames.has(iconName);
 
 const defaultCategoryData = [
     {
         category: 'Study',
-        icon: <BookOpenText className='icon' />,
+        iconName: 'BookOpenText',
         links: ['eeclass', 'ccxp', 'Past Exam', 'NotebookLM'],
     },
     {
         category: 'SNS',
-        icon: <MessagesSquare className='icon' />,
+        iconName: 'MessagesSquare',
         links: ['Instagram', 'Threads', 'Messenger', 'Twitter', 'Facebook'],
     },
     {
         category: 'Media',
-        icon: <MonitorPlay className='icon' />,
+        iconName: 'MonitorPlay',
         links: ['YouTube', 'Anigamer', 'Spotify', 'Utaten', 'Dam'],
     },
     {
         category: 'Game',
-        icon: <Gamepad2 className='icon' />,
+        iconName: 'Gamepad2',
         links: ['majsoul', 'Supercell Store', 'Tetr.io', 'maimai', 'maimaiJP'],
     },
     {
         category: 'Dev',
-        icon: <CodeXml className='icon' />,
+        iconName: 'CodeXml',
         links: [
             'GitHub',
             'ASC',
@@ -69,7 +108,7 @@ const defaultCategoryData = [
     },
     {
         category: 'Design',
-        icon: <PenTool className='icon' />,
+        iconName: 'PenTool',
         links: [
             'Awwwards',
             'Figma',
@@ -88,7 +127,7 @@ const defaultCategoryData = [
     },
     {
         category: 'Art',
-        icon: <Brush className='icon' />,
+        iconName: 'Brush',
         links: [
             'Pinterest',
             'Pixiv',
@@ -103,7 +142,7 @@ const defaultCategoryData = [
     },
     {
         category: 'Tools',
-        icon: <ToolCase className='icon' />,
+        iconName: 'ToolCase',
         links: [
             'HackMD',
             'Squoosh',
@@ -116,7 +155,7 @@ const defaultCategoryData = [
     },
     {
         category: 'GSuite',
-        icon: <LayoutGrid className='icon' />,
+        iconName: 'LayoutGrid',
         links: [
             'Gemini',
             'Maps',
@@ -140,25 +179,47 @@ export const defaultBookmarkTree: BookmarkCategoryData[] =
         })),
     }));
 
-const categoryIconByName = new Map<string, ReactElement>(
+const categoryIconNameByName = new Map<string, string>(
     defaultCategoryData.map((categoryData) => [
         categoryData.category,
-        categoryData.icon,
+        categoryData.iconName,
     ])
 );
 
-const fallbackCategoryIcon = <Folder className='icon' />;
+const fallbackCategoryIconName = 'Folder';
+
+const createCategoryIcon = (iconName: string): ReactElement => {
+    const Icon = categoryIcons[iconName] ?? Folder;
+
+    return <Icon className='icon category-icon-display' />;
+};
+
+const resolveCategoryIconName = (
+    categoryData: BookmarkCategoryData
+): string => {
+    if (isCategoryIconName(categoryData.icon)) {
+        return categoryData.icon;
+    }
+
+    return (
+        categoryIconNameByName.get(categoryData.category) ??
+        fallbackCategoryIconName
+    );
+};
 
 export const decorateBookmarkTree = (
     bookmarkTree: readonly BookmarkCategoryData[]
 ): CategoryData[] =>
-    bookmarkTree.map((categoryData) => ({
-        category: categoryData.category,
-        icon:
-            categoryIconByName.get(categoryData.category) ??
-            fallbackCategoryIcon,
-        links: [...categoryData.links],
-    }));
+    bookmarkTree.map((categoryData) => {
+        const iconName = resolveCategoryIconName(categoryData);
+
+        return {
+            category: categoryData.category,
+            icon: createCategoryIcon(iconName),
+            iconName,
+            links: [...categoryData.links],
+        };
+    });
 
 export const linkTree: CategoryData[] =
     decorateBookmarkTree(defaultBookmarkTree);

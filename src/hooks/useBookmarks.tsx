@@ -32,6 +32,7 @@ export interface BookmarkControls {
     isCustom: boolean;
     resetBookmarks: () => void;
     status?: BookmarkStatus;
+    updateCategoryIcon: (categoryIndex: number, icon: string) => void;
 }
 
 const getStoredBookmarkTree = (): BookmarkCategoryData[] | undefined => {
@@ -148,6 +149,39 @@ export const useBookmarks = (): BookmarkControls => {
         setStatus({ messageKey: 'bookmarksReset', type: 'success' });
     }, []);
 
+    const updateCategoryIcon = useCallback(
+        (categoryIndex: number, icon: string) => {
+            if (
+                categoryIndex < 0 ||
+                categoryIndex >= bookmarkTree.length ||
+                bookmarkTree[categoryIndex]?.icon === icon
+            ) {
+                return;
+            }
+
+            const nextBookmarkTree = bookmarkTree.map(
+                (categoryData, currentIndex) =>
+                    currentIndex === categoryIndex
+                        ? { ...categoryData, icon }
+                        : categoryData
+            );
+
+            try {
+                storeBookmarkTree(nextBookmarkTree);
+            } catch {
+                setStatus({
+                    messageKey: 'bookmarksStorageFailed',
+                    type: 'error',
+                });
+                return;
+            }
+
+            setBookmarkTree(nextBookmarkTree);
+            setIsCustom(true);
+        },
+        [bookmarkTree]
+    );
+
     return {
         bookmarkTree,
         exportBookmarks,
@@ -155,5 +189,6 @@ export const useBookmarks = (): BookmarkControls => {
         isCustom,
         resetBookmarks,
         status,
+        updateCategoryIcon,
     };
 };

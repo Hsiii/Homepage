@@ -6,5 +6,6 @@ export interface BookmarkLinkData {
 
 export interface BookmarkCategoryData {
     category: string;
+    icon?: string;
     links: BookmarkLinkData[];
 }

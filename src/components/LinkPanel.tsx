@@ -154,6 +154,9 @@ export const LinkPanel: React.FC<LinkPanelProps> = ({
                         index={i}
                         selectedCategory={selectedCategory}
                         isMouseNav={isMouseNav}
+                        onCategoryIconChange={
+                            bookmarkControls.updateCategoryIcon
+                        }
                         padding={panelPaddings[i]}
                         highlightedLinkId={highlightedLink}
                     />

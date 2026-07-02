@@ -42,6 +42,10 @@ export const normalizeBookmarkTree = (
         .map((categoryData) => {
             const category =
                 normalizeText(categoryData.category) || defaultCategoryName;
+            const icon =
+                categoryData.icon === undefined
+                    ? undefined
+                    : normalizeText(categoryData.icon);
             const links = categoryData.links
                 .map((bookmark): BookmarkLinkData | undefined => {
                     const title = normalizeText(bookmark.title);
@@ -69,6 +73,7 @@ export const normalizeBookmarkTree = (
 
             return {
                 category,
+                ...(icon === undefined || icon === '' ? {} : { icon }),
                 links,
             };
         })
@@ -96,6 +101,10 @@ export const coerceBookmarkTree = (
             if (!Array.isArray(linksValue)) {
                 return undefined;
             }
+            const icon =
+                typeof categoryValue.icon === 'string'
+                    ? categoryValue.icon
+                    : undefined;
 
             const links = linksValue
                 .map((bookmarkValue): BookmarkLinkData | undefined => {
@@ -125,6 +134,7 @@ export const coerceBookmarkTree = (
 
             return {
                 category,
+                ...(icon === undefined ? {} : { icon }),
                 links,
             };
         })
