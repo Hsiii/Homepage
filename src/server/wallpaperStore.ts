@@ -1,7 +1,10 @@
+import 'server-only';
+
 import { neon } from '@neondatabase/serverless';
 import type { NeonQueryFunction } from '@neondatabase/serverless';
 import { del } from '@vercel/blob';
 
+import { ApiError } from '@/server/apiError';
 import type { WallpaperAsset } from '../../shared/wallpaper';
 import {
     getWallpaperUploadPrefix,
@@ -9,7 +12,6 @@ import {
     wallpaperMaxDimensionPx,
     wallpaperMaxFileSizeBytes,
 } from '../../shared/wallpaper';
-import { ApiError } from './auth';
 
 interface WallpaperRow {
     content_type: string;

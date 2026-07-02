@@ -1,38 +1,30 @@
+import { auth } from '@clerk/nextjs/server';
 import type { HandleUploadBody } from '@vercel/blob/client';
 import { handleUpload } from '@vercel/blob/client';
-import type { VercelRequest, VercelResponse } from '@vercel/node';
 
+import { ApiError, createApiErrorResponse } from '@/server/apiError';
 import {
     getWallpaperUploadPrefix,
     wallpaperAcceptedContentTypes,
     wallpaperMaxFileSizeBytes,
     wallpaperUploadCacheMaxAgeSeconds,
     wallpaperUploadTokenTtlMs,
-} from '../shared/wallpaper';
-import { ApiError, authenticateRequest, sendApiError } from './_shared/auth';
+} from '../../../../shared/wallpaper';
 
-const parseHandleUploadBody = (body: unknown): HandleUploadBody => {
-    if (typeof body === 'string') {
-        return JSON.parse(body) as HandleUploadBody;
+const requireUserId = async (): Promise<string> => {
+    const { userId } = await auth();
+
+    if (userId === null) {
+        throw new ApiError('Sign in is required.', 401);
     }
 
-    return body as HandleUploadBody;
+    return userId;
 };
 
-// eslint-disable-next-line import-x/no-default-export
-export default async function handler(
-    request: VercelRequest,
-    response: VercelResponse
-): Promise<void> {
-    if (request.method !== 'POST') {
-        response.setHeader('Allow', 'POST');
-        response.status(405).json({ error: 'Method not allowed.' });
-        return;
-    }
-
+export const POST = async (request: Request): Promise<Response> => {
     try {
-        const { userId } = await authenticateRequest(request);
-        const body = parseHandleUploadBody(request.body);
+        const userId = await requireUserId();
+        const body = (await request.json()) as HandleUploadBody;
 
         const uploadResponse = await handleUpload({
             body,
@@ -59,8 +51,8 @@ export default async function handler(
             },
         });
 
-        response.status(200).json(uploadResponse);
+        return Response.json(uploadResponse);
     } catch (error) {
-        sendApiError(response, error);
+        return createApiErrorResponse(error);
     }
-}
+};

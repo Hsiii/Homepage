@@ -113,8 +113,9 @@ const uniqueSites = (
     );
 };
 
-export const fetchWeatherData = async (
-    location: TaiwanLocation
+export const fetchWeatherByCoordinates = async (
+    lat: number,
+    lon: number
 ): Promise<WeatherData | undefined> => {
     const apiKey = process.env.OPENWEATHERMAP_API_KEY;
 
@@ -123,8 +124,8 @@ export const fetchWeatherData = async (
     }
 
     const url = new URL(openWeatherUrl);
-    url.searchParams.set('lat', location.lat.toFixed(4));
-    url.searchParams.set('lon', location.lon.toFixed(4));
+    url.searchParams.set('lat', lat.toFixed(4));
+    url.searchParams.set('lon', lon.toFixed(4));
     url.searchParams.set('units', 'metric');
     url.searchParams.set('appid', apiKey);
 
@@ -149,6 +150,11 @@ export const fetchWeatherData = async (
         weatherType,
     };
 };
+
+export const fetchWeatherData = async (
+    location: TaiwanLocation
+): Promise<WeatherData | undefined> =>
+    await fetchWeatherByCoordinates(location.lat, location.lon);
 
 export const fetchAqiData = async (
     siteName: string

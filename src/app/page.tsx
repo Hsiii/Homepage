@@ -7,7 +7,7 @@ import {
     taiwanLocationCookieName,
 } from '@/constants/taiwanLocations';
 import { fetchAqiData, fetchWeatherData } from '@/server/environmentData';
-import { getUserWallpaper } from '@/server/wallpaperData';
+import { getUserWallpaper } from '@/server/wallpaperStore';
 import type { WallpaperAsset } from '../../shared/wallpaper';
 import { HomePageClient } from './HomePageClient';
 

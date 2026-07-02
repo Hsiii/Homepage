@@ -22,9 +22,7 @@
         ]
     },
     "dependencies": {
-        "@clerk/backend": "^3.10.0",
         "@clerk/nextjs": "^7.5.12",
-        "@clerk/react": "^6.11.3",
         "@neondatabase/serverless": "^1.1.0",
         "@vercel/blob": "^2.5.0",
         "lucide-react": "^1.21.0",
@@ -40,7 +38,6 @@
         "@types/node": "^25.0.6",
         "@types/react": "^19.2.9",
         "@types/react-dom": "^19.2.3",
-        "@vercel/node": "^5.5.28",
         "complete-lint": "^5.1.5",
         "complete-node": "^1.1.0",
         "eslint": "^9.39.1",
