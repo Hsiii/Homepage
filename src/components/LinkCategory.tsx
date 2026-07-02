@@ -6,7 +6,8 @@ import React, {
     useRef,
     useState,
 } from 'react';
-import { Check, Pencil, Search } from 'lucide-react';
+import { Check, Pencil, Search, X } from 'lucide-react';
+import { createPortal } from 'react-dom';
 
 import type { CategoryData } from '@/constants/linkTree';
 import {
@@ -38,7 +39,6 @@ export const LinkCategory: React.FC<LinkCategoryProps> = ({
     const isCategorySelected = selectedCategory === index + 1;
     const [isIconPickerOpen, setIsIconPickerOpen] = useState(false);
     const [iconSearch, setIconSearch] = useState('');
-    const iconControlRef = useRef<HTMLDivElement>(null);
     const iconSearchInputRef = useRef<HTMLInputElement>(null);
     const iconPickerId = useId();
 
@@ -64,25 +64,6 @@ export const LinkCategory: React.FC<LinkCategoryProps> = ({
 
     useEffect(() => {
         if (!isIconPickerOpen) {
-            return undefined;
-        }
-
-        const onDocumentClick = (event: MouseEvent) => {
-            if (
-                iconControlRef.current?.contains(event.target as Node) === false
-            ) {
-                setIsIconPickerOpen(false);
-            }
-        };
-
-        globalThis.document.addEventListener('click', onDocumentClick);
-        return () => {
-            globalThis.document.removeEventListener('click', onDocumentClick);
-        };
-    }, [isIconPickerOpen]);
-
-    useEffect(() => {
-        if (!isIconPickerOpen) {
             setIconSearch('');
             return;
         }
@@ -97,12 +78,117 @@ export const LinkCategory: React.FC<LinkCategoryProps> = ({
         setIsIconPickerOpen(false);
     };
 
+    const iconPickerDialog =
+        isIconPickerOpen && typeof document !== 'undefined'
+            ? createPortal(
+                  <div
+                      className='category-icon-dialog-backdrop'
+                      onClick={() => {
+                          setIsIconPickerOpen(false);
+                      }}
+                  >
+                      <div
+                          className='category-icon-dialog'
+                          id={iconPickerId}
+                          role='dialog'
+                          aria-label={`Change ${categoryData.category} icon`}
+                          aria-modal='true'
+                          onClick={(event) => {
+                              event.stopPropagation();
+                          }}
+                          onKeyDown={(event) => {
+                              if (event.key === 'Escape') {
+                                  event.stopPropagation();
+                                  setIsIconPickerOpen(false);
+                              }
+                          }}
+                      >
+                          <div className='category-icon-dialog-header'>
+                              <span className='category-icon-dialog-title'>
+                                  {categoryData.category}
+                              </span>
+                              <button
+                                  className='category-icon-dialog-close'
+                                  type='button'
+                                  aria-label='Close icon selector'
+                                  onClick={() => {
+                                      setIsIconPickerOpen(false);
+                                  }}
+                              >
+                                  <X size={16} aria-hidden />
+                              </button>
+                          </div>
+                          <label className='category-icon-search'>
+                              <Search
+                                  className='category-icon-search-symbol'
+                                  size={16}
+                                  aria-hidden
+                              />
+                              <input
+                                  ref={iconSearchInputRef}
+                                  type='search'
+                                  value={iconSearch}
+                                  placeholder='Search icons'
+                                  aria-label='Search category icons'
+                                  onChange={(event) => {
+                                      setIconSearch(event.target.value);
+                                  }}
+                              />
+                          </label>
+                          <div className='category-icon-grid'>
+                              {visibleIconOptions.length === 0 ? (
+                                  <div className='category-icon-empty'>
+                                      No icons found
+                                  </div>
+                              ) : (
+                                  visibleIconOptions.map((iconOption) => {
+                                      const OptionIcon = iconOption.Icon;
+                                      const isSelected =
+                                          iconOption.iconName ===
+                                          categoryData.iconName;
+
+                                      return (
+                                          <button
+                                              className='category-icon-option'
+                                              type='button'
+                                              aria-pressed={isSelected}
+                                              aria-label={`Use ${iconOption.label} icon`}
+                                              key={iconOption.iconName}
+                                              title={iconOption.label}
+                                              onClick={() => {
+                                                  selectCategoryIcon(
+                                                      iconOption.iconName
+                                                  );
+                                              }}
+                                          >
+                                              <OptionIcon
+                                                  className='category-icon-option-symbol'
+                                                  size={20}
+                                                  aria-hidden
+                                              />
+                                              {isSelected ? (
+                                                  <Check
+                                                      className='category-icon-option-check'
+                                                      size={12}
+                                                      aria-hidden
+                                                  />
+                                              ) : undefined}
+                                          </button>
+                                      );
+                                  })
+                              )}
+                          </div>
+                      </div>
+                  </div>,
+                  document.body
+              )
+            : undefined;
+
     return (
         <Fragment>
             <div className={categoryClassName}>
                 <div
                     className='category-icon-control'
-                    ref={iconControlRef}
                     onKeyDown={(event) => {
                         if (event.key === 'Escape') {
                             event.stopPropagation();
@@ -132,73 +218,6 @@ export const LinkCategory: React.FC<LinkCategoryProps> = ({
                             aria-hidden
                         />
                     </button>
-                    {isIconPickerOpen ? (
-                        <div
-                            className='category-icon-popover'
-                            id={iconPickerId}
-                        >
-                            <label className='category-icon-search'>
-                                <Search
-                                    className='category-icon-search-symbol'
-                                    size={16}
-                                    aria-hidden
-                                />
-                                <input
-                                    ref={iconSearchInputRef}
-                                    type='search'
-                                    value={iconSearch}
-                                    placeholder='Search icons'
-                                    aria-label='Search category icons'
-                                    onChange={(event) => {
-                                        setIconSearch(event.target.value);
-                                    }}
-                                />
-                            </label>
-                            <div className='category-icon-grid'>
-                                {visibleIconOptions.length === 0 ? (
-                                    <div className='category-icon-empty'>
-                                        No icons found
-                                    </div>
-                                ) : (
-                                    visibleIconOptions.map((iconOption) => {
-                                        const OptionIcon = iconOption.Icon;
-                                        const isSelected =
-                                            iconOption.iconName ===
-                                            categoryData.iconName;
-
-                                        return (
-                                            <button
-                                                className='category-icon-option'
-                                                type='button'
-                                                aria-pressed={isSelected}
-                                                aria-label={`Use ${iconOption.label} icon`}
-                                                key={iconOption.iconName}
-                                                title={iconOption.label}
-                                                onClick={() => {
-                                                    selectCategoryIcon(
-                                                        iconOption.iconName
-                                                    );
-                                                }}
-                                            >
-                                                <OptionIcon
-                                                    className='category-icon-option-symbol'
-                                                    size={20}
-                                                    aria-hidden
-                                                />
-                                                {isSelected ? (
-                                                    <Check
-                                                        className='category-icon-option-check'
-                                                        size={12}
-                                                        aria-hidden
-                                                    />
-                                                ) : undefined}
-                                            </button>
-                                        );
-                                    })
-                                )}
-                            </div>
-                        </div>
-                    ) : undefined}
                 </div>
                 <span className='category-title'>{categoryData.category}</span>
             </div>
@@ -232,6 +251,7 @@ export const LinkCategory: React.FC<LinkCategoryProps> = ({
                     );
                 })}
             </div>
+            {iconPickerDialog}
         </Fragment>
     );
 };
