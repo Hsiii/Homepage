@@ -1,7 +1,9 @@
 import React, { lazy, Suspense, useState } from 'react';
+import { useAuth } from '@clerk/nextjs';
 import { Search, X } from 'lucide-react';
 
 import { useBookmarks } from '@/hooks/useBookmarks';
+import type { BookmarkControls } from '@/hooks/useBookmarks';
 import { useBookmarkSearch } from '@/hooks/useBookmarkSearch';
 import { useHideLinks } from '@/hooks/useHideLinks';
 import { useTime } from '@/hooks/useTime';
@@ -34,7 +36,12 @@ interface CoverProps {
     onWallpaperChange: (wallpaper: WallpaperAsset | undefined) => void;
 }
 
-export const Cover: React.FC<CoverProps> = ({
+interface CoverContentProps extends CoverProps {
+    bookmarkControls: BookmarkControls;
+}
+
+const CoverContent: React.FC<CoverContentProps> = ({
+    bookmarkControls,
     hasInitialLocationCookie,
     initialAqi,
     initialLocationId,
@@ -45,7 +52,6 @@ export const Cover: React.FC<CoverProps> = ({
 }) => {
     const { time } = useTime();
     const { hideLinks } = useHideLinks();
-    const bookmarkControls = useBookmarks();
     const [isLinkPanelLocked, setIsLinkPanelLocked] = useState(false);
     const {
         blockedFeedsLinks,
@@ -206,4 +212,32 @@ export const Cover: React.FC<CoverProps> = ({
             </Suspense>
         </section>
     );
+};
+
+const CoverWithRemoteBookmarks: React.FC<CoverProps> = (props) => {
+    const { getToken, isLoaded, isSignedIn, userId } = useAuth();
+    const bookmarkControls = useBookmarks({
+        auth: {
+            getToken,
+            isLoaded,
+            isSignedIn,
+            userId,
+        },
+    });
+
+    return <CoverContent {...props} bookmarkControls={bookmarkControls} />;
+};
+
+const CoverWithLocalBookmarks: React.FC<CoverProps> = (props) => {
+    const bookmarkControls = useBookmarks();
+
+    return <CoverContent {...props} bookmarkControls={bookmarkControls} />;
+};
+
+export const Cover: React.FC<CoverProps> = (props) => {
+    if (props.isClerkEnabled) {
+        return <CoverWithRemoteBookmarks {...props} />;
+    }
+
+    return <CoverWithLocalBookmarks {...props} />;
 };
