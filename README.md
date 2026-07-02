@@ -1,35 +1,59 @@
 # [Homepage](https://homepage.hsichen.dev)
 
-A browser homepage providing frictionless, browser-agnostic bookmark access — with mouse hover navigation, keyboard hotkeys, and instant search, designed to minimize friction and maximize speed.
+A fast personal browser homepage for search, bookmarks, weather, and quick daily links.
 
 ![Homepage](https://raw.githubusercontent.com/Hsiii/homepage/main/docs/demo.webp)
 
-## Installation (requires [Node.js](https://nodejs.org/) 20.x)
+## What it does
 
-1. Clone the repository:
-    ```bash
-    git clone https://github.com/Hsiii/homepage.git
-    ```
-2. Navigate to the project directory:
-    ```bash
-    cd homepage
-    ```
-3. Install dependencies:
-    ```bash
-    bun i
-    ```
-4. Run the development server:
-    ```bash
-    bun dev
-    ```
+- Opens with the current time, local weather, and Taiwan AQI at a glance.
+- Searches saved bookmarks instantly, with Google fallback when no bookmark matches.
+- Keeps bookmark groups close by in a hoverable, lockable side panel and a mobile-friendly drawer.
+- Supports slash commands for repeat routines, including opening daily feed tabs.
+- Lets signed-in users upload a personal wallpaper while keeping the default mountain scene for guests.
 
-## Building for production
+## Related
 
-1. Generate a production build:
-    ```bash
-    bun run build
-    ```
-2. Preview the site:
-    ```bash
-    bun run preview
-    ```
+- [Comux](https://github.com/Hsiii/Comux) is the companion macOS menu bar app for checking Codex account usage. In this local workspace, it lives at `../../DevTools/Comux` from this repo, or `Projects/.../Comux` from the projects root.
+
+## Development
+
+### Current stack
+
+- **Runtime and package manager:** Bun.
+- **Frontend:** React 19, TypeScript, Vite, and component-level CSS files.
+- **Icons:** lucide-react.
+- **Auth and personalization:** Clerk for optional sign-in and user identity.
+- **Storage:** Neon Postgres for wallpaper records and Vercel Blob for wallpaper files.
+- **API layer:** Vercel Node functions in `api/`, with Vite dev middleware for weather and AQI.
+- **External data:** OpenWeatherMap for weather and Taiwan MOENV AQI data.
+- **Deployment:** Vercel.
+
+### Setup
+
+Requires Node.js 20.x and Bun.
+
+```bash
+git clone https://github.com/Hsiii/homepage.git
+cd homepage
+bun i
+bun dev
+```
+
+The app runs at `http://localhost:3000` by default.
+
+### Optional environment
+
+Copy `.env.example` to `.env.local` and fill only the services you want locally:
+
+- `OPENWEATHERMAP_API_KEY` for weather.
+- `MOENV_API_KEY` for AQI.
+- `VITE_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, and `CLERK_JWT_KEY` for sign-in.
+- `BLOB_READ_WRITE_TOKEN`, `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, and `NEON_BRANCH` for wallpaper persistence.
+
+### Production
+
+```bash
+bun run build
+bun run preview
+```
