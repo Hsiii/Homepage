@@ -559,18 +559,21 @@
     outline-color: transparent;
 }
 
-.settings-wallpaper-row {
+.settings-wallpaper-row,
+.settings-bookmark-row {
     grid-template-columns: minmax(0, 1fr) auto;
 }
 
-.settings-wallpaper-actions {
+.settings-wallpaper-actions,
+.settings-bookmark-actions {
     display: flex;
     align-items: center;
     gap: 0.5rem;
     justify-self: end;
 }
 
-.settings-wallpaper-input {
+.settings-wallpaper-input,
+.settings-bookmark-input {
     display: none;
 }
 
@@ -617,11 +620,16 @@
     display: block;
 }
 
-.settings-wallpaper-status {
+.settings-wallpaper-status,
+.settings-bookmark-status {
     min-height: 2rem;
     padding: 0 0.5rem;
     color: var(--clr-text-alpha);
     font: var(--fontBaseSm);
+}
+
+.settings-bookmark-status.error {
+    color: var(--clr-aqi-unhealthy);
 }
 
 .settings-swatch-amethyst {

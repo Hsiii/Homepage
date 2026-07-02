@@ -2,9 +2,11 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Check,
     ChevronDown,
+    Download,
     Image,
     Monitor,
     Moon,
+    RotateCcw,
     Settings,
     Sun,
     Trash2,
@@ -15,6 +17,7 @@ import { flushSync } from 'react-dom';
 
 import { isAppLocale, localeOptions } from '@/constants/i18n';
 import { getLocationLabel, taiwanLocations } from '@/constants/taiwanLocations';
+import type { BookmarkControls } from '@/hooks/useBookmarks';
 import { useLocale } from '@/hooks/useLocale';
 import { useTaiwanLocation } from '@/hooks/useTaiwanLocation';
 import type { WallpaperControls } from '@/hooks/useWallpaper';
@@ -295,12 +298,14 @@ const SettingsDropdown: React.FC<SettingsDropdownProps> = ({
 };
 
 interface SettingsMenuProps {
+    bookmarkControls: BookmarkControls;
     closeSignal?: number;
     placement?: 'above' | 'below';
     wallpaperControls?: WallpaperControls;
 }
 
 export const SettingsMenu: React.FC<SettingsMenuProps> = ({
+    bookmarkControls,
     closeSignal,
     placement = 'below',
     wallpaperControls,
@@ -332,6 +337,7 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({
         }
     );
     const [openDropdownId, setOpenDropdownId] = useState<string>();
+    const bookmarkInputRef = useRef<HTMLInputElement>(null);
     const menuRef = useRef<HTMLDivElement>(null);
     const wallpaperInputRef = useRef<HTMLInputElement>(null);
 
@@ -798,6 +804,78 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({
                             )}
                         </div>
                     )}
+
+                    <div className='settings-section'>
+                        <div className='settings-row settings-bookmark-row'>
+                            <span className='settings-row-label'>
+                                {t.bookmarks}
+                            </span>
+                            <div className='settings-bookmark-actions'>
+                                <input
+                                    className='settings-bookmark-input'
+                                    type='file'
+                                    accept='.html,.htm,text/html'
+                                    ref={bookmarkInputRef}
+                                    onChange={(event) => {
+                                        const file =
+                                            event.currentTarget.files?.[0];
+                                        if (bookmarkInputRef.current !== null) {
+                                            bookmarkInputRef.current.value = '';
+                                        }
+
+                                        if (file !== undefined) {
+                                            bookmarkControls
+                                                .importBookmarks(file)
+                                                .catch(() => undefined);
+                                        }
+                                    }}
+                                />
+                                <button
+                                    className='settings-icon-choice'
+                                    type='button'
+                                    aria-label={t.importBookmarks}
+                                    title={t.importBookmarks}
+                                    onClick={() => {
+                                        bookmarkInputRef.current?.click();
+                                    }}
+                                >
+                                    <Upload className='icon' size={18} />
+                                </button>
+                                <button
+                                    className='settings-icon-choice'
+                                    type='button'
+                                    aria-label={t.exportBookmarks}
+                                    title={t.exportBookmarks}
+                                    onClick={bookmarkControls.exportBookmarks}
+                                >
+                                    <Download className='icon' size={18} />
+                                </button>
+                                <button
+                                    className='settings-icon-choice'
+                                    type='button'
+                                    aria-label={t.resetBookmarks}
+                                    title={t.resetBookmarks}
+                                    disabled={!bookmarkControls.isCustom}
+                                    onClick={bookmarkControls.resetBookmarks}
+                                >
+                                    <RotateCcw className='icon' size={18} />
+                                </button>
+                            </div>
+                        </div>
+                        {bookmarkControls.status === undefined ? undefined : (
+                            <div
+                                className={[
+                                    'settings-bookmark-status',
+                                    bookmarkControls.status.type,
+                                ]
+                                    .filter(Boolean)
+                                    .join(' ')}
+                                role='status'
+                            >
+                                {t[bookmarkControls.status.messageKey]}
+                            </div>
+                        )}
+                    </div>
 
                     <div className='settings-section'>
                         <div className='settings-row settings-select-row'>

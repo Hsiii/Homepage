@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { PanelLeft, PanelLeftClose } from 'lucide-react';
 
 import { mobileViewportQuery } from '@/constants/breakpoints';
-import { linkTree } from '@/constants/linkTree';
+import { decorateBookmarkTree } from '@/constants/linkTree';
+import type { BookmarkControls } from '@/hooks/useBookmarks';
 import { useLinkNavigation } from '@/hooks/useLinkNavigation';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { isBrowser } from '@/utils/browserEnv';
@@ -13,6 +14,7 @@ import { UserFloatingBar } from './UserFloatingBar';
 
 interface LinkPanelProps {
     hidden: boolean;
+    bookmarkControls: BookmarkControls;
     isClerkEnabled: boolean;
     isLockedOpen: boolean;
     isSearchNav: boolean;
@@ -26,6 +28,7 @@ interface LinkPanelProps {
 
 export const LinkPanel: React.FC<LinkPanelProps> = ({
     hidden,
+    bookmarkControls,
     isClerkEnabled,
     isLockedOpen,
     isSearchNav,
@@ -50,6 +53,10 @@ export const LinkPanel: React.FC<LinkPanelProps> = ({
     const [isMobileOpen, setIsMobileOpen] = useState(false);
     const isMobileViewport = useMediaQuery(mobileViewportQuery);
     const isExpanded = selectedCategory !== 0;
+    const bookmarkTree = useMemo(
+        () => decorateBookmarkTree(bookmarkControls.bookmarkTree),
+        [bookmarkControls.bookmarkTree]
+    );
 
     useEffect(() => {
         const onResize = () => {
@@ -65,10 +72,11 @@ export const LinkPanel: React.FC<LinkPanelProps> = ({
         const remToPx = 16;
         const linkHeight = 3.5 * remToPx;
 
-        return linkTree.map((categoryData, categoryIndex) => {
+        return bookmarkTree.map((categoryData, categoryIndex) => {
             const headerPosition =
                 windowHeight / 2 +
-                (categoryIndex + 1 - linkTree.length / 2 - 0.5) * linkHeight;
+                (categoryIndex + 1 - bookmarkTree.length / 2 - 0.5) *
+                    linkHeight;
             const linksHeight = categoryData.links.length * linkHeight;
             let padding: number;
             padding =
@@ -80,7 +88,7 @@ export const LinkPanel: React.FC<LinkPanelProps> = ({
             }
             return `${padding}px`;
         });
-    }, [windowHeight]);
+    }, [bookmarkTree, windowHeight]);
 
     return (
         <nav
@@ -103,6 +111,7 @@ export const LinkPanel: React.FC<LinkPanelProps> = ({
         >
             {isMobileViewport && (
                 <MobileBookmarks
+                    bookmarkTree={bookmarkTree}
                     disabled={isSearchNav}
                     hidden={hidden}
                     onClearSearch={onClearSearch}
@@ -138,7 +147,7 @@ export const LinkPanel: React.FC<LinkPanelProps> = ({
                     .join(' ')}
             >
                 <div className='panel' />
-                {linkTree.map((categoryData, i) => (
+                {bookmarkTree.map((categoryData, i) => (
                     <LinkCategory
                         key={categoryData.category}
                         categoryData={categoryData}
@@ -146,10 +155,11 @@ export const LinkPanel: React.FC<LinkPanelProps> = ({
                         selectedCategory={selectedCategory}
                         isMouseNav={isMouseNav}
                         padding={panelPaddings[i]}
-                        highlightedLink={highlightedLink}
+                        highlightedLinkId={highlightedLink}
                     />
                 ))}
                 <UserFloatingBar
+                    bookmarkControls={bookmarkControls}
                     closeMenusSignal={mouseLeaveCloseSignal}
                     initialWallpaper={initialWallpaper}
                     isClerkEnabled={isClerkEnabled}

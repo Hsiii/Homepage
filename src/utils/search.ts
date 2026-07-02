@@ -1,9 +1,10 @@
-import type { LinkName } from '@/constants/links';
-import { linkTree } from '@/constants/linkTree';
+import type { BookmarkCategoryData } from '@/types/bookmarks';
 
 export interface LinkItem {
     category: number;
-    link: LinkName;
+    id: string;
+    title: string;
+    url: string;
 }
 
 export interface SearchSuggestionsPosition {
@@ -13,7 +14,7 @@ export interface SearchSuggestionsPosition {
 }
 
 export interface FeedsLink {
-    link: LinkName;
+    link: string;
     url: string;
 }
 
@@ -59,13 +60,17 @@ export const slashCommands = [
     },
 ] as const satisfies readonly SlashCommandItem[];
 
-export const getSearchItems = (): LinkItem[] =>
-    linkTree.flatMap((category, categoryIndex) => {
+export const getSearchItems = (
+    bookmarkTree: readonly BookmarkCategoryData[]
+): LinkItem[] =>
+    bookmarkTree.flatMap((category, categoryIndex) => {
         const categoryId = categoryIndex + 1;
 
-        return category.links.map((link) => ({
+        return category.links.map((bookmark) => ({
             category: categoryId,
-            link,
+            id: bookmark.id,
+            title: bookmark.title,
+            url: bookmark.url,
         }));
     });
 
@@ -168,15 +173,15 @@ const getBestTextSearchScore = (
 };
 
 const getSearchScore = (
-    link: LinkName,
+    title: string,
     query: string,
     keySequence: string
 ): number | undefined => {
-    const normalizedLink = link.toLowerCase();
+    const normalizedTitle = title.toLowerCase();
     const normalizedQuery = query.toLowerCase();
     const normalizedKeySequence = keySequence.toLowerCase();
 
-    return getBestTextSearchScore(normalizedLink, [
+    return getBestTextSearchScore(normalizedTitle, [
         normalizedQuery,
         getLatinKeySequenceAlias(normalizedQuery) ?? '',
         normalizedKeySequence,
@@ -196,7 +201,7 @@ export const getSearchResults = (
     return items
         .map((item) => ({
             item,
-            score: getSearchScore(item.link, trimmedQuery, keySequence.trim()),
+            score: getSearchScore(item.title, trimmedQuery, keySequence.trim()),
         }))
         .filter(
             (result): result is { item: LinkItem; score: number } =>
@@ -204,7 +209,7 @@ export const getSearchResults = (
         )
         .toSorted(
             (a, b) =>
-                a.score - b.score || a.item.link.localeCompare(b.item.link)
+                a.score - b.score || a.item.title.localeCompare(b.item.title)
         )
         .slice(0, maxSearchResults)
         .map(({ item }) => item);

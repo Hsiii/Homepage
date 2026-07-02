@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Bookmark, ChevronLeft } from 'lucide-react';
 
-import { links } from '@/constants/links';
-import { linkTree } from '@/constants/linkTree';
+import type { CategoryData } from '@/constants/linkTree';
 
 interface MobileBookmarksProps {
     disabled: boolean;
     hidden: boolean;
+    bookmarkTree: CategoryData[];
     onClearSearch: () => void;
     onOpenChange: (isOpen: boolean) => void;
 }
@@ -16,6 +16,7 @@ const closeSwipeThreshold = 72;
 export const MobileBookmarks: React.FC<MobileBookmarksProps> = ({
     disabled,
     hidden,
+    bookmarkTree,
     onClearSearch,
     onOpenChange,
 }) => {
@@ -100,7 +101,7 @@ export const MobileBookmarks: React.FC<MobileBookmarksProps> = ({
                     <span>Bookmarks</span>
                 </div>
                 <div className='mobile-bookmark-list'>
-                    {linkTree.map((categoryData) => (
+                    {bookmarkTree.map((categoryData) => (
                         <section
                             className='mobile-bookmark-category'
                             key={categoryData.category}
@@ -110,13 +111,13 @@ export const MobileBookmarks: React.FC<MobileBookmarksProps> = ({
                                 <span>{categoryData.category}</span>
                             </div>
                             <div className='mobile-bookmark-links'>
-                                {categoryData.links.map((link) => (
+                                {categoryData.links.map((bookmark) => (
                                     <a
                                         className='mobile-bookmark-link'
-                                        href={links[link]}
-                                        key={link}
+                                        href={bookmark.url}
+                                        key={bookmark.id}
                                     >
-                                        {link}
+                                        {bookmark.title}
                                     </a>
                                 ))}
                             </div>

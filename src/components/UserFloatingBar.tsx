@@ -2,11 +2,13 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useClerk, useUser } from '@clerk/nextjs';
 import { LogIn, LogOut, Mail, UserRound, UserRoundPlus } from 'lucide-react';
 
+import type { BookmarkControls } from '@/hooks/useBookmarks';
 import type { WallpaperAsset } from '../../shared/wallpaper';
 import { SettingsMenu } from './SettingsMenu';
 import { WallpaperSettingsMenu } from './WallpaperSettingsMenu';
 
 interface UserFloatingBarProps {
+    bookmarkControls: BookmarkControls;
     closeMenusSignal?: number;
     initialWallpaper: WallpaperAsset | undefined;
     isClerkEnabled: boolean;
@@ -14,6 +16,7 @@ interface UserFloatingBarProps {
 }
 
 interface CloseableMenuProps {
+    bookmarkControls: BookmarkControls;
     closeMenusSignal?: number;
     initialWallpaper?: WallpaperAsset | undefined;
     onWallpaperChange?: (wallpaper: WallpaperAsset | undefined) => void;
@@ -32,6 +35,7 @@ const getDisplayName = (emailAddress?: string, name?: string | null) => {
 };
 
 const UserFloatingBarContent: React.FC<CloseableMenuProps> = ({
+    bookmarkControls,
     closeMenusSignal,
     initialWallpaper,
     onWallpaperChange,
@@ -165,6 +169,7 @@ const UserFloatingBarContent: React.FC<CloseableMenuProps> = ({
                 ) : undefined}
             </div>
             <WallpaperSettingsMenu
+                bookmarkControls={bookmarkControls}
                 closeSignal={closeMenusSignal}
                 initialWallpaper={initialWallpaper}
                 onWallpaperChange={onWallpaperChange}
@@ -175,6 +180,7 @@ const UserFloatingBarContent: React.FC<CloseableMenuProps> = ({
 };
 
 const UserFloatingBarFallback: React.FC<CloseableMenuProps> = ({
+    bookmarkControls,
     closeMenusSignal,
 }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -239,12 +245,17 @@ const UserFloatingBarFallback: React.FC<CloseableMenuProps> = ({
                     </div>
                 ) : undefined}
             </div>
-            <SettingsMenu closeSignal={closeMenusSignal} placement='above' />
+            <SettingsMenu
+                bookmarkControls={bookmarkControls}
+                closeSignal={closeMenusSignal}
+                placement='above'
+            />
         </div>
     );
 };
 
 export const UserFloatingBar: React.FC<UserFloatingBarProps> = ({
+    bookmarkControls,
     closeMenusSignal,
     initialWallpaper,
     isClerkEnabled,
@@ -253,6 +264,7 @@ export const UserFloatingBar: React.FC<UserFloatingBarProps> = ({
     if (isClerkEnabled) {
         return (
             <UserFloatingBarContent
+                bookmarkControls={bookmarkControls}
                 closeMenusSignal={closeMenusSignal}
                 initialWallpaper={initialWallpaper}
                 onWallpaperChange={onWallpaperChange}
@@ -260,5 +272,10 @@ export const UserFloatingBar: React.FC<UserFloatingBarProps> = ({
         );
     }
 
-    return <UserFloatingBarFallback closeMenusSignal={closeMenusSignal} />;
+    return (
+        <UserFloatingBarFallback
+            bookmarkControls={bookmarkControls}
+            closeMenusSignal={closeMenusSignal}
+        />
+    );
 };

@@ -1,6 +1,7 @@
 import React, { lazy, Suspense, useState } from 'react';
 import { Search, X } from 'lucide-react';
 
+import { useBookmarks } from '@/hooks/useBookmarks';
 import { useBookmarkSearch } from '@/hooks/useBookmarkSearch';
 import { useHideLinks } from '@/hooks/useHideLinks';
 import { useTime } from '@/hooks/useTime';
@@ -44,6 +45,7 @@ export const Cover: React.FC<CoverProps> = ({
 }) => {
     const { time } = useTime();
     const { hideLinks } = useHideLinks();
+    const bookmarkControls = useBookmarks();
     const [isLinkPanelLocked, setIsLinkPanelLocked] = useState(false);
     const {
         blockedFeedsLinks,
@@ -76,7 +78,7 @@ export const Cover: React.FC<CoverProps> = ({
         selectedSearchResult,
         slashCommandResults,
         trimmedSearchValue,
-    } = useBookmarkSearch();
+    } = useBookmarkSearch(bookmarkControls.bookmarkTree);
 
     return (
         <section className='cover'>
@@ -173,7 +175,7 @@ export const Cover: React.FC<CoverProps> = ({
                     <div className='feeds-fallback-links'>
                         {blockedFeedsLinks.map(({ link, url }) => (
                             <a
-                                key={link}
+                                key={`${link}:${url}`}
                                 href={url}
                                 target='_blank'
                                 rel='noopener noreferrer'
@@ -187,12 +189,13 @@ export const Cover: React.FC<CoverProps> = ({
 
             <Suspense fallback={undefined}>
                 <LinkPanel
+                    bookmarkControls={bookmarkControls}
                     hidden={hideLinks}
                     initialWallpaper={initialWallpaper}
                     isClerkEnabled={isClerkEnabled}
                     isLockedOpen={isLinkPanelLocked}
                     isSearchNav={inputFocused}
-                    highlightedLink={selectedSearchResult?.link}
+                    highlightedLink={selectedSearchResult?.id}
                     highlightedCategory={selectedSearchResult?.category}
                     onClearSearch={clearSearch}
                     onToggleLockedOpen={() => {

@@ -1,10 +1,12 @@
 import React from 'react';
 import { PanelLeft, PanelLeftClose } from 'lucide-react';
 
+import type { BookmarkControls } from '@/hooks/useBookmarks';
 import type { WallpaperAsset } from '../../shared/wallpaper';
 import { UserFloatingBar } from './UserFloatingBar';
 
 interface ControlsProps {
+    bookmarkControls: BookmarkControls;
     initialWallpaper: WallpaperAsset | undefined;
     isClerkEnabled: boolean;
     isLinkPanelLocked: boolean;
@@ -13,6 +15,7 @@ interface ControlsProps {
 }
 
 export const Controls: React.FC<ControlsProps> = ({
+    bookmarkControls,
     initialWallpaper,
     isClerkEnabled,
     isLinkPanelLocked,
@@ -40,6 +43,7 @@ export const Controls: React.FC<ControlsProps> = ({
             </button>
         </div>
         <UserFloatingBar
+            bookmarkControls={bookmarkControls}
             initialWallpaper={initialWallpaper}
             isClerkEnabled={isClerkEnabled}
             onWallpaperChange={onWallpaperChange}

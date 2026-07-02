@@ -9,8 +9,7 @@ import {
 } from 'react';
 import type React from 'react';
 
-import type { LinkName } from '@/constants/links';
-import { links } from '@/constants/links';
+import type { BookmarkCategoryData, BookmarkLinkData } from '@/types/bookmarks';
 import type {
     FeedsLink,
     LinkItem,
@@ -60,7 +59,7 @@ const feedLinks = [
     'YouTube',
     'Anigamer',
     'Supercell Store',
-] as const satisfies readonly LinkName[];
+] as const;
 
 const getFeedsWindowKey = (date = new Date()): string => {
     const shiftedTimestamp =
@@ -71,7 +70,7 @@ const getFeedsWindowKey = (date = new Date()): string => {
     return shiftedDate.toISOString().slice(0, 10);
 };
 
-const shouldOpenFeedLink = (link: LinkName, windowKey: string): boolean => {
+const shouldOpenFeedLink = (link: string, windowKey: string): boolean => {
     if (link !== 'Supercell Store') {
         return true;
     }
@@ -86,7 +85,7 @@ const shouldOpenFeedLink = (link: LinkName, windowKey: string): boolean => {
     }
 };
 
-const recordOpenedFeedLink = (link: LinkName, windowKey: string): void => {
+const recordOpenedFeedLink = (link: string, windowKey: string): void => {
     if (link !== 'Supercell Store') {
         return;
     }
@@ -127,7 +126,25 @@ const getElementMotionDuration = (element: HTMLElement): number => {
     );
 };
 
-export const useBookmarkSearch = (): {
+const findBookmarkByTitle = (
+    bookmarkTree: readonly BookmarkCategoryData[],
+    title: string
+): BookmarkLinkData | undefined => {
+    for (const categoryData of bookmarkTree) {
+        const bookmark = categoryData.links.find(
+            (link) => link.title === title
+        );
+        if (bookmark !== undefined) {
+            return bookmark;
+        }
+    }
+
+    return undefined;
+};
+
+export const useBookmarkSearch = (
+    bookmarkTree: readonly BookmarkCategoryData[]
+): {
     blockedFeedsLinks: FeedsLink[];
     clearSearch: () => void;
     clearBlockedFeedsLinks: () => void;
@@ -217,7 +234,12 @@ export const useBookmarkSearch = (): {
                 continue;
             }
 
-            const openedTab = globalThis.open(links[link], '_blank');
+            const bookmark = findBookmarkByTitle(bookmarkTree, link);
+            if (bookmark === undefined) {
+                continue;
+            }
+
+            const openedTab = globalThis.open(bookmark.url, '_blank');
             if (openedTab) {
                 openedTab.opener = undefined;
                 recordOpenedFeedLink(link, windowKey);
@@ -226,7 +248,7 @@ export const useBookmarkSearch = (): {
 
             nextBlockedLinks.push({
                 link,
-                url: links[link],
+                url: bookmark.url,
             });
         }
 
@@ -237,7 +259,7 @@ export const useBookmarkSearch = (): {
         }
 
         setBlockedFeedsLinks(nextBlockedLinks);
-    }, []);
+    }, [bookmarkTree]);
 
     const executeSlashCommand = useCallback(
         (_command: SlashCommandItem) => {
@@ -247,8 +269,8 @@ export const useBookmarkSearch = (): {
     );
 
     const flattenedSearchItems = useMemo<LinkItem[]>(
-        () => getSearchItems(),
-        []
+        () => getSearchItems(bookmarkTree),
+        [bookmarkTree]
     );
 
     useEffect(() => {
@@ -397,7 +419,7 @@ export const useBookmarkSearch = (): {
 
     const navigateToSearchResult = useCallback((result?: LinkItem) => {
         if (result) {
-            globalThis.location.href = links[result.link];
+            globalThis.location.href = result.url;
         }
     }, []);
 

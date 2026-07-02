@@ -3,6 +3,7 @@ import {
     BookOpenText,
     Brush,
     CodeXml,
+    Folder,
     Gamepad2,
     LayoutGrid,
     MessagesSquare,
@@ -12,14 +13,22 @@ import {
 } from 'lucide-react';
 
 import type { LinkName } from '@/constants/links';
+import { links } from '@/constants/links';
+import type { BookmarkCategoryData, BookmarkLinkData } from '@/types/bookmarks';
 
 export type CategoryData = {
     category: string;
     icon?: ReactElement;
+    links: BookmarkLinkData[];
+};
+
+type DefaultCategoryData = {
+    category: string;
+    icon: ReactElement;
     links: LinkName[];
 };
 
-export const linkTree: CategoryData[] = [
+const defaultCategoryData = [
     {
         category: 'Study',
         icon: <BookOpenText className='icon' />,
@@ -119,4 +128,37 @@ export const linkTree: CategoryData[] = [
             'Calendar',
         ],
     },
-];
+] as const satisfies readonly DefaultCategoryData[];
+
+export const defaultBookmarkTree: BookmarkCategoryData[] =
+    defaultCategoryData.map((categoryData) => ({
+        category: categoryData.category,
+        links: categoryData.links.map((link) => ({
+            id: link,
+            title: link,
+            url: links[link],
+        })),
+    }));
+
+const categoryIconByName = new Map<string, ReactElement>(
+    defaultCategoryData.map((categoryData) => [
+        categoryData.category,
+        categoryData.icon,
+    ])
+);
+
+const fallbackCategoryIcon = <Folder className='icon' />;
+
+export const decorateBookmarkTree = (
+    bookmarkTree: readonly BookmarkCategoryData[]
+): CategoryData[] =>
+    bookmarkTree.map((categoryData) => ({
+        category: categoryData.category,
+        icon:
+            categoryIconByName.get(categoryData.category) ??
+            fallbackCategoryIcon,
+        links: [...categoryData.links],
+    }));
+
+export const linkTree: CategoryData[] =
+    decorateBookmarkTree(defaultBookmarkTree);

@@ -1,6 +1,5 @@
 import React, { Fragment } from 'react';
 
-import { links } from '@/constants/links';
 import type { CategoryData } from '@/constants/linkTree';
 
 interface LinkCategoryProps {
@@ -9,7 +8,7 @@ interface LinkCategoryProps {
     selectedCategory?: number;
     isMouseNav: boolean;
     padding: string;
-    highlightedLink?: string;
+    highlightedLinkId?: string;
 }
 
 export const LinkCategory: React.FC<LinkCategoryProps> = ({
@@ -18,7 +17,7 @@ export const LinkCategory: React.FC<LinkCategoryProps> = ({
     selectedCategory,
     isMouseNav,
     padding,
-    highlightedLink,
+    highlightedLinkId,
 }) => {
     const isCategorySelected = selectedCategory === index + 1;
 
@@ -41,9 +40,9 @@ export const LinkCategory: React.FC<LinkCategoryProps> = ({
                 style={{ '--padding': padding } as React.CSSProperties}
             >
                 <div className='panel' />
-                {categoryData.links.map((link) => {
-                    const isDisabled = !(link in links);
-                    const isHighlighted = highlightedLink === link;
+                {categoryData.links.map((bookmark) => {
+                    const isDisabled = bookmark.url.trim() === '';
+                    const isHighlighted = highlightedLinkId === bookmark.id;
 
                     const linkClassName = [
                         'link',
@@ -56,12 +55,12 @@ export const LinkCategory: React.FC<LinkCategoryProps> = ({
 
                     return (
                         <a
-                            key={link}
-                            id={link}
-                            href={links[link]}
+                            key={bookmark.id}
+                            id={bookmark.id}
+                            href={isDisabled ? undefined : bookmark.url}
                             className={linkClassName}
                         >
-                            <span>{link}</span>
+                            <span>{bookmark.title}</span>
                         </a>
                     );
                 })}

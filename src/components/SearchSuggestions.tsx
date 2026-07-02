@@ -97,7 +97,7 @@ export const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
 
                 return (
                     <button
-                        key={result.link}
+                        key={result.id}
                         className={`search-suggestion ${
                             isSelected ? 'selected' : ''
                         }`}
@@ -122,7 +122,7 @@ export const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
                             <Bookmark className='icon' size={24} />
                         </span>
                         <span className='search-suggestion-text'>
-                            {result.link}
+                            {result.title}
                         </span>
                     </button>
                 );
