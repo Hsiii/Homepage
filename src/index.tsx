@@ -21,9 +21,18 @@ if (!root) {
     throw new Error('Root element not found');
 }
 
-const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
-const isClerkEnabled =
-    clerkPublishableKey !== undefined && clerkPublishableKey !== '';
+const readOptionalEnv = (value: string | undefined): string | undefined => {
+    const normalizedValue = value?.trim();
+
+    return normalizedValue === undefined || normalizedValue === ''
+        ? undefined
+        : normalizedValue;
+};
+
+const clerkPublishableKey =
+    readOptionalEnv(import.meta.env.VITE_CLERK_PUBLISHABLE_KEY) ??
+    readOptionalEnv(import.meta.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
+const isClerkEnabled = clerkPublishableKey !== undefined;
 const app = <Main isClerkEnabled={isClerkEnabled} />;
 
 createRoot(root).render(

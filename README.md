@@ -66,7 +66,7 @@ Copy `.env.example` to `.env.local` and fill only the services you want locally:
 
 - `OPENWEATHERMAP_API_KEY` for weather.
 - `MOENV_API_KEY` for AQI.
-- `VITE_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, and `CLERK_JWT_KEY` for sign-in.
+- `VITE_CLERK_PUBLISHABLE_KEY` or Vercel's `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, plus `CLERK_SECRET_KEY` and `CLERK_JWT_KEY`, for sign-in.
 - `BLOB_READ_WRITE_TOKEN`, `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, and `NEON_BRANCH` for wallpaper persistence.
 
 ### Production
