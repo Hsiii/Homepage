@@ -1,11 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useClerk, useUser } from '@clerk/react';
+import { useClerk, useUser } from '@clerk/nextjs';
 import { LogIn, LogOut, Mail, UserRound, UserRoundPlus } from 'lucide-react';
 
 import { SettingsMenu } from './SettingsMenu';
 import { WallpaperSettingsMenu } from './WallpaperSettingsMenu';
-
-import './Controls.css';
 
 interface UserFloatingBarProps {
     closeMenusSignal?: number;

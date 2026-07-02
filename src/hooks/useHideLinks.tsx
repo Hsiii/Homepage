@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { isBrowser } from '@/utils/browserEnv';
+
 export const useHideLinks = (): { hideLinks: boolean } => {
     const ticking = useRef(false);
     const [hideLinks, setHideLinks] = useState(
-        () => typeof globalThis !== 'undefined' && globalThis.scrollY !== 0
+        () => isBrowser() && globalThis.scrollY !== 0
     );
 
     const handleScroll = useCallback(() => {

@@ -1,11 +1,11 @@
-import { useState } from 'react';
-
-import './MobileWarning.css';
+import { useEffect, useState } from 'react';
 
 export const MobileWarning: React.FC = () => {
-    const [isVisible, setIsVisible] = useState(
-        () => globalThis.innerWidth < 600
-    );
+    const [isVisible, setIsVisible] = useState(false);
+
+    useEffect(() => {
+        setIsVisible(window.innerWidth < 600);
+    }, []);
 
     return (
         isVisible && (

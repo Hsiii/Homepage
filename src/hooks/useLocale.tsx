@@ -2,11 +2,16 @@ import { useCallback, useEffect, useState } from 'react';
 
 import type { AppLocale } from '@/constants/i18n';
 import { defaultLocale, getMessages, isAppLocale } from '@/constants/i18n';
+import { isBrowser } from '@/utils/browserEnv';
 
 const LOCALE_CHANGE_EVENT = 'homepage-locale-change';
 const LOCALE_STORAGE_KEY = 'homepage_locale';
 
 function getInitialLocale(): AppLocale {
+    if (!isBrowser()) {
+        return defaultLocale;
+    }
+
     const savedLocale = globalThis.localStorage.getItem(LOCALE_STORAGE_KEY);
 
     return isAppLocale(savedLocale) ? savedLocale : defaultLocale;

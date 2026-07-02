@@ -7,8 +7,6 @@ import { useTime } from '@/hooks/useTime';
 import { Mountains } from './Mountains';
 import { SearchSuggestions } from './SearchSuggestions';
 
-import './Cover.css';
-
 const LinkPanel = lazy(
     async () =>
         await import('./LinkPanel').then((module) => ({

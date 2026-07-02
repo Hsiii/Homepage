@@ -322,7 +322,10 @@ export const useBookmarkSearch = (): {
         const motionElements = [
             searchRef.current,
             searchFormRef.current,
-        ].filter((element): element is HTMLElement => element !== null);
+        ].filter(
+            (element): element is HTMLDivElement | HTMLFormElement =>
+                element !== null
+        );
         let animationFrame: number | undefined;
         let motionTrackingEndsAt = 0;
 

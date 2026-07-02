@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { useTaiwanLocation } from '@/hooks/useTaiwanLocation';
+import { isBrowser } from '@/utils/browserEnv';
 
 export type AqiData = {
     siteName: string;
@@ -24,6 +25,10 @@ const AQI_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 const BASE_API_URL = '/api/aqi';
 
 function readJson(key: string): unknown {
+    if (!isBrowser()) {
+        return undefined;
+    }
+
     const value = globalThis.localStorage.getItem(key);
 
     if (value === null) {

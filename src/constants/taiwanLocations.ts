@@ -320,7 +320,7 @@ export function findNearestTaiwanLocation(
     lat: number,
     lon: number
 ): TaiwanLocation {
-    let nearestLocation = taiwanLocations[0];
+    let nearestLocation: TaiwanLocation = taiwanLocations[0];
     let nearestDistance = getDistanceSquared(lat, lon, nearestLocation);
 
     for (const location of taiwanLocations.slice(1)) {

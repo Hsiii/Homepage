@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 
+import { isBrowser } from '@/utils/browserEnv';
+
 const getMediaQueryMatch = (query: string): boolean =>
-    globalThis.matchMedia(query).matches;
+    isBrowser() && globalThis.matchMedia(query).matches;
 
 export const useMediaQuery = (query: string): boolean => {
     const [matches, setMatches] = useState(() => getMediaQueryMatch(query));

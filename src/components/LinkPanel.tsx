@@ -5,11 +5,10 @@ import { mobileViewportQuery } from '@/constants/breakpoints';
 import { linkTree } from '@/constants/linkTree';
 import { useLinkNavigation } from '@/hooks/useLinkNavigation';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { isBrowser } from '@/utils/browserEnv';
 import { LinkCategory } from './LinkCategory';
 import { MobileBookmarks } from './MobileBookmarks';
 import { UserFloatingBar } from './UserFloatingBar';
-
-import './LinkPanel.css';
 
 interface LinkPanelProps {
     hidden: boolean;
@@ -40,7 +39,9 @@ export const LinkPanel: React.FC<LinkPanelProps> = ({
         endMouseNav,
     } = useLinkNavigation(isSearchNav, onClearSearch, highlightedCategory);
 
-    const [windowHeight, setWindowHeight] = useState(globalThis.innerHeight);
+    const [windowHeight, setWindowHeight] = useState(() =>
+        isBrowser() ? globalThis.innerHeight : 768
+    );
     const [isMobileOpen, setIsMobileOpen] = useState(false);
     const isMobileViewport = useMediaQuery(mobileViewportQuery);
     const isExpanded = selectedCategory !== 0;

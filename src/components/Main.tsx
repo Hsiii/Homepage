@@ -3,8 +3,6 @@ import React from 'react';
 import { footerCredit, footerLink } from '@/constants/footer';
 import { Cover } from './Cover';
 
-import './Main.css';
-
 interface MainProps {
     isClerkEnabled: boolean;
 }

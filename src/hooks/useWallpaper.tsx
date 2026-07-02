@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useAuth } from '@clerk/react';
+import { useAuth } from '@clerk/nextjs';
 import { upload } from '@vercel/blob/client';
 
 import type {

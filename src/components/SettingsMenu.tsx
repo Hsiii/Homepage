@@ -18,6 +18,7 @@ import { getLocationLabel, taiwanLocations } from '@/constants/taiwanLocations';
 import { useLocale } from '@/hooks/useLocale';
 import { useTaiwanLocation } from '@/hooks/useTaiwanLocation';
 import type { WallpaperControls } from '@/hooks/useWallpaper';
+import { isBrowser } from '@/utils/browserEnv';
 import { runThemeTransition } from '@/utils/themeTransition';
 import { wallpaperAcceptedContentTypes } from '../../shared/wallpaper';
 
@@ -72,6 +73,10 @@ const isThemeMode = (value: string | null): value is ThemeMode =>
     value === 'system' || value === 'light' || value === 'dark';
 
 const getInitialAnimationMode = (): AnimationMode => {
+    if (!isBrowser()) {
+        return normalAnimationMode;
+    }
+
     const savedAnimationMode =
         globalThis.document.documentElement.dataset.animationMode ??
         globalThis.localStorage.getItem(animationStorageKey);
@@ -82,13 +87,19 @@ const getInitialAnimationMode = (): AnimationMode => {
 };
 
 const getInitialThemeMode = (): ThemeMode => {
+    if (!isBrowser()) {
+        return 'system';
+    }
+
     const savedThemeMode = globalThis.localStorage.getItem(themeStorageKey);
 
     return isThemeMode(savedThemeMode) ? savedThemeMode : 'system';
 };
 
 const getSystemTheme = (): Exclude<ThemeMode, 'system'> =>
-    globalThis.matchMedia(systemThemeQuery).matches ? 'dark' : 'light';
+    isBrowser() && globalThis.matchMedia(systemThemeQuery).matches
+        ? 'dark'
+        : 'light';
 
 const resolveThemeMode = (
     themeMode: ThemeMode
@@ -307,6 +318,10 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({
     );
     const [selectedThemeColor, setSelectedThemeColor] = useState<ThemeColor>(
         () => {
+            if (!isBrowser()) {
+                return defaultThemeColor;
+            }
+
             const savedThemeColor =
                 globalThis.localStorage.getItem(themeColorStorageKey);
 

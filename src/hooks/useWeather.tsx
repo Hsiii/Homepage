@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { TaiwanLocation } from '@/constants/taiwanLocations';
 import type { GeolocationPermissionState } from '@/hooks/useTaiwanLocation';
 import { useTaiwanLocation } from '@/hooks/useTaiwanLocation';
+import { isBrowser } from '@/utils/browserEnv';
 
 export type WeatherData = {
     weatherType: string;
@@ -21,6 +22,10 @@ const WEATHER_CACHE_KEY_PREFIX = 'weather_cache';
 const weatherRequests = new Map<string, Promise<WeatherData>>();
 
 function readJson(key: string): unknown {
+    if (!isBrowser()) {
+        return undefined;
+    }
+
     const value = globalThis.localStorage.getItem(key);
 
     if (value === null) {

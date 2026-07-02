@@ -10,8 +10,6 @@ import {
     Sun,
 } from 'lucide-react';
 
-import './Weather.css';
-
 import { aqiRankLabels, getAqiRank } from '@/constants/aqi';
 import { getDateLocale } from '@/constants/i18n';
 import { getLocationLabel } from '@/constants/taiwanLocations';
@@ -65,7 +63,7 @@ export const Weather: React.FC = () => {
     const showLocationControl = showLocationTrigger || showLocationGranted;
     const hasWeatherRowContent = hasWeather || hasAqi || showLocationControl;
     const locationControlState = showLocationGranted ? 'granted' : 'request';
-    let locationControlLabel = t.myLocation;
+    let locationControlLabel: string = t.myLocation;
 
     if (showLocationGranted) {
         locationControlLabel = locationLabel;

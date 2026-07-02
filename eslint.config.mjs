@@ -6,13 +6,40 @@ export default defineConfig(
     ...completeConfigBase,
 
     {
-        ignores: ['public/theme-init.js', 'vite.config.ts'],
+        ignores: ['.next/**', 'next-env.d.ts', 'public/theme-init.js'],
     },
 
     {
         files: ['**/*.d.ts'],
         rules: {
             'import-x/no-default-export': 'off',
+            'import-x/no-unassigned-import': 'off',
+        },
+    },
+
+    {
+        files: [
+            'next.config.ts',
+            'src/app/**/{error,layout,loading,not-found,page}.tsx',
+            'src/proxy.ts',
+        ],
+        rules: {
+            'import-x/no-default-export': 'off',
+        },
+    },
+
+    {
+        files: ['next.config.ts'],
+        rules: {
+            '@typescript-eslint/require-await': 'off',
+            'complete/no-mutable-return': 'off',
+        },
+    },
+
+    {
+        files: ['src/proxy.ts'],
+        rules: {
+            'unicorn/prefer-string-raw': 'off',
         },
     },
 

@@ -7,6 +7,7 @@ import {
     findTaiwanLocationByAqiSiteName,
     findTaiwanLocationByWeatherName,
 } from '@/constants/taiwanLocations';
+import { isBrowser } from '@/utils/browserEnv';
 
 const LOCATION_CHANGE_EVENT = 'homepage-location-change';
 const LOCATION_STORAGE_KEY = 'homepage_location_id';
@@ -20,6 +21,10 @@ export type GeolocationPermissionState =
     | typeof unsupportedGeolocationPermission;
 
 function readJson(key: string): unknown {
+    if (!isBrowser()) {
+        return undefined;
+    }
+
     const value = globalThis.localStorage.getItem(key);
 
     if (value === null) {
@@ -57,6 +62,10 @@ function getLegacyWeatherName(): string | undefined {
 }
 
 function getInitialLocation(): TaiwanLocation {
+    if (!isBrowser()) {
+        return findTaiwanLocation(undefined);
+    }
+
     const savedLocation = globalThis.localStorage.getItem(LOCATION_STORAGE_KEY);
 
     if (savedLocation !== null) {
@@ -104,7 +113,7 @@ export const useTaiwanLocation = (): {
         useState(getInitialLocation);
     const [geolocationPermission, setGeolocationPermission] =
         useState<GeolocationPermissionState>(
-            'geolocation' in navigator
+            typeof navigator !== 'undefined' && 'geolocation' in navigator
                 ? 'prompt'
                 : unsupportedGeolocationPermission
         );

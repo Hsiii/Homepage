@@ -6,12 +6,11 @@
     "license": "MIT",
     "author": "",
     "type": "module",
-    "main": "src/index.tsx",
     "scripts": {
-        "build": "vite build",
-        "dev": "vite",
+        "build": "next build",
+        "dev": "next dev --turbopack",
         "lint": "eslint .",
-        "preview": "bun run build && vite preview",
+        "preview": "bun run build && next start",
         "prepare": "husky"
     },
     "lint-staged": {
@@ -41,7 +40,6 @@
         "@types/react": "^19.2.9",
         "@types/react-dom": "^19.2.3",
         "@vercel/node": "^5.5.28",
-        "@vitejs/plugin-react": "^4.7.0",
         "complete-lint": "^5.1.5",
         "complete-node": "^1.1.0",
         "eslint": "^9.39.1",
@@ -55,7 +53,6 @@
         "lint-staged": "^16.3.1",
         "prettier": "^3.8.1",
         "typescript": "^5.9.3",
-        "typescript-eslint": "^8.53.1",
-        "vite": "^6.4.1"
+        "typescript-eslint": "^8.53.1"
     }
 }

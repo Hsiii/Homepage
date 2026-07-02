@@ -1,12 +1,5 @@
 {
     "buildCommand": "bun run build",
-    "devCommand": "vite",
-    "outputDirectory": "dist",
-    "framework": "vite",
-    "rewrites": [
-        {
-            "source": "/((?!api/|robots\\.txt$|sitemap\\.xml$).*)",
-            "destination": "/index.html"
-        }
-    ]
+    "devCommand": "next dev --turbopack",
+    "framework": "nextjs"
 }

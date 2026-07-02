@@ -3,8 +3,6 @@ import { PanelLeft, PanelLeftClose } from 'lucide-react';
 
 import { UserFloatingBar } from './UserFloatingBar';
 
-import './Controls.css';
-
 interface ControlsProps {
     isClerkEnabled: boolean;
     isLinkPanelLocked: boolean;
