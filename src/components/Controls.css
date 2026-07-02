@@ -17,8 +17,6 @@
         color var(--motion-duration-fast) var(--motion-ease-out),
         scale var(--motion-duration-fast) var(--motion-ease-out);
 
-    animation: rise-show var(--rise-show-duration) ease-out;
-
     display: grid;
     place-items: center;
 
@@ -54,8 +52,6 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-
-    animation: rise-show var(--rise-show-duration) ease-out;
 }
 
 .user-menu-control {
