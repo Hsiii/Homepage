@@ -51,7 +51,10 @@ function getWeatherCacheKey(locationId: string): string {
     return `${WEATHER_CACHE_KEY_PREFIX}_${locationId}`;
 }
 
-function getCachedWeather(locationId: string): CachedWeather | undefined {
+function getCachedWeather(
+    locationId: string,
+    { allowStale = false }: { allowStale?: boolean } = {}
+): CachedWeather | undefined {
     const cached = readJson(getWeatherCacheKey(locationId)) as
         | CachedWeather
         | undefined;
@@ -59,7 +62,7 @@ function getCachedWeather(locationId: string): CachedWeather | undefined {
     if (
         cached === undefined ||
         cached.locationId !== locationId ||
-        !isCacheFresh(cached.timestamp, CACHE_TTL)
+        (!allowStale && !isCacheFresh(cached.timestamp, CACHE_TTL))
     ) {
         return undefined;
     }
@@ -179,6 +182,15 @@ export const useWeatherWithInitialData = ({
 
                 if (data !== undefined) {
                     updateCache(data, location);
+                    return;
+                }
+
+                const cached = getCachedWeather(location.id, {
+                    allowStale: true,
+                });
+
+                if (cached !== undefined) {
+                    setCachedWeather(cached);
                 }
             } catch (error) {
                 console.error(error);
@@ -208,6 +220,14 @@ export const useWeatherWithInitialData = ({
         }
 
         setCachedWeather(undefined);
+        const staleCached = getCachedWeather(selectedLocation.id, {
+            allowStale: true,
+        });
+
+        if (staleCached !== undefined) {
+            setCachedWeather(staleCached);
+        }
+
         fetchWeather(selectedLocation).catch(console.error);
     }, [fetchWeather, selectedLocation, updateCache]);
 

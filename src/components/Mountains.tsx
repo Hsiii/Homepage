@@ -1,8 +1,15 @@
+import type { StaticImageData } from 'next/image';
+
 import { getWallpaperStyle } from '@/utils/wallpaperStyle';
 import type { WallpaperAsset } from '../../shared/wallpaper';
 import backSrc from '../assets/images/mountain/back.svg';
 import frontSrc from '../assets/images/mountain/front.svg';
 import midSrc from '../assets/images/mountain/mid.svg';
+
+type ImageAsset = StaticImageData | string;
+
+const getImageSrc = (asset: ImageAsset): string =>
+    typeof asset === 'string' ? asset : asset.src;
 
 interface MountainsProps {
     initialWallpaper: WallpaperAsset | undefined;
@@ -16,7 +23,7 @@ export const Mountains: React.FC<MountainsProps> = ({ initialWallpaper }) => (
     >
         <img
             className='parallax-back'
-            src={backSrc}
+            src={getImageSrc(backSrc)}
             loading='eager'
             decoding='async'
             fetchPriority='low'
@@ -24,14 +31,14 @@ export const Mountains: React.FC<MountainsProps> = ({ initialWallpaper }) => (
         />
         <img
             className='parallax-mid'
-            src={midSrc}
+            src={getImageSrc(midSrc)}
             loading='eager'
             decoding='async'
             fetchPriority='low'
             alt='a flat-color mountain in the middle'
         />
         <img
-            src={frontSrc}
+            src={getImageSrc(frontSrc)}
             loading='eager'
             decoding='async'
             fetchPriority='high'

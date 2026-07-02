@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { ClerkProvider } from '@clerk/nextjs';
 import type { Metadata } from 'next';
+import { Quicksand as loadQuicksand } from 'next/font/google';
 import Script from 'next/script';
 
 import '@/index.css';
@@ -15,6 +16,12 @@ import '@/components/Weather.css';
 const clerkPublishableKey =
     process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ??
     process.env.VITE_CLERK_PUBLISHABLE_KEY;
+const quicksand = loadQuicksand({
+    display: 'swap',
+    subsets: ['latin'],
+    variable: '--font-quicksand',
+    weight: ['500', '700'],
+});
 
 export const metadata: Metadata = {
     description:
@@ -28,7 +35,7 @@ export default function RootLayout({
     children: ReactNode;
 }>): ReactNode {
     const documentMarkup = (
-        <html lang='en' suppressHydrationWarning>
+        <html lang='en' className={quicksand.variable} suppressHydrationWarning>
             <body>
                 <Script src='/theme-init.js' strategy='beforeInteractive' />
                 {children}

@@ -14,10 +14,27 @@ interface WeatherPayload {
     }>;
 }
 
+interface OpenMeteoWeatherPayload {
+    current?: {
+        temperature_2m?: number;
+        weather_code?: number;
+    };
+}
+
 const moenvAqiUrl = 'https://data.moenv.gov.tw/api/v2/aqx_p_432';
+const openMeteoUrl = 'https://api.open-meteo.com/v1/forecast';
 const openWeatherUrl = 'https://api.openweathermap.org/data/2.5/weather';
 const sharedDataRevalidateSeconds = 300;
 const siteListRevalidateSeconds = 3600;
+
+const getOpenWeatherApiKey = (): string | undefined =>
+    process.env.OPENWEATHERMAP_API_KEY ??
+    process.env.VITE_OPENWEATHERMAP_API_KEY ??
+    process.env.OPENWEATHER_API_KEY ??
+    process.env.VITE_OPENWEATHER_API_KEY;
+
+const getMoenvApiKey = (): string | undefined =>
+    process.env.MOENV_API_KEY ?? process.env.VITE_MOENV_API_KEY;
 
 const readString = (record: AqiRecord, key: string): string => {
     const value = record[key];
@@ -113,14 +130,93 @@ const uniqueSites = (
     );
 };
 
+const mapOpenMeteoWeatherCode = (weatherCode: number | undefined): string => {
+    if (weatherCode === 0) {
+        return 'Clear';
+    }
+
+    if (
+        weatherCode === 71 ||
+        weatherCode === 73 ||
+        weatherCode === 75 ||
+        weatherCode === 77 ||
+        weatherCode === 85 ||
+        weatherCode === 86
+    ) {
+        return 'Snow';
+    }
+
+    if (
+        weatherCode === 51 ||
+        weatherCode === 53 ||
+        weatherCode === 55 ||
+        weatherCode === 56 ||
+        weatherCode === 57
+    ) {
+        return 'Drizzle';
+    }
+
+    if (
+        weatherCode === 61 ||
+        weatherCode === 63 ||
+        weatherCode === 65 ||
+        weatherCode === 66 ||
+        weatherCode === 67 ||
+        weatherCode === 80 ||
+        weatherCode === 81 ||
+        weatherCode === 82
+    ) {
+        return 'Rain';
+    }
+
+    if (weatherCode === 95 || weatherCode === 96 || weatherCode === 99) {
+        return 'Thunderstorm';
+    }
+
+    return 'Clouds';
+};
+
+const fetchOpenMeteoWeatherByCoordinates = async (
+    lat: number,
+    lon: number
+): Promise<WeatherData> => {
+    const url = new URL(openMeteoUrl);
+    url.searchParams.set('latitude', lat.toFixed(4));
+    url.searchParams.set('longitude', lon.toFixed(4));
+    url.searchParams.set('current', 'temperature_2m,weather_code');
+    url.searchParams.set('timezone', 'Asia/Taipei');
+
+    const response = await fetch(url, {
+        next: { revalidate: sharedDataRevalidateSeconds },
+    });
+
+    if (!response.ok) {
+        throw new Error(
+            `Open-Meteo API responded with status ${response.status}`
+        );
+    }
+
+    const payload = (await response.json()) as OpenMeteoWeatherPayload;
+    const temp = payload.current?.temperature_2m;
+
+    if (typeof temp !== 'number') {
+        throw new TypeError('Open-Meteo API returned an unexpected payload.');
+    }
+
+    return {
+        temp,
+        weatherType: mapOpenMeteoWeatherCode(payload.current?.weather_code),
+    };
+};
+
 export const fetchWeatherByCoordinates = async (
     lat: number,
     lon: number
 ): Promise<WeatherData | undefined> => {
-    const apiKey = process.env.OPENWEATHERMAP_API_KEY;
+    const apiKey = getOpenWeatherApiKey();
 
     if (apiKey === undefined || apiKey.trim() === '') {
-        return undefined;
+        return await fetchOpenMeteoWeatherByCoordinates(lat, lon);
     }
 
     const url = new URL(openWeatherUrl);
@@ -159,7 +255,7 @@ export const fetchWeatherData = async (
 export const fetchAqiData = async (
     siteName: string
 ): Promise<AqiData | undefined> => {
-    const apiKey = process.env.MOENV_API_KEY;
+    const apiKey = getMoenvApiKey();
 
     if (apiKey === undefined || apiKey.trim() === '') {
         return undefined;
@@ -176,7 +272,7 @@ export const fetchAqiData = async (
 };
 
 export const fetchAqiSites = async (): Promise<readonly AqiSiteOption[]> => {
-    const apiKey = process.env.MOENV_API_KEY;
+    const apiKey = getMoenvApiKey();
 
     if (apiKey === undefined || apiKey.trim() === '') {
         return [];

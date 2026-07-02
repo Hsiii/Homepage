@@ -48,7 +48,10 @@ function isCacheFresh(timestamp: number, ttl: number): boolean {
     return Date.now() - timestamp < ttl;
 }
 
-function getCachedAqi(locationId: string): AqiData | undefined {
+function getCachedAqi(
+    locationId: string,
+    { allowStale = false }: { allowStale?: boolean } = {}
+): AqiData | undefined {
     const cached = readJson(getAqiCacheKey(locationId)) as
         | CachedAqi
         | undefined;
@@ -56,7 +59,7 @@ function getCachedAqi(locationId: string): AqiData | undefined {
     if (
         cached === undefined ||
         cached.locationId !== locationId ||
-        !isCacheFresh(cached.timestamp, AQI_CACHE_TTL)
+        (!allowStale && !isCacheFresh(cached.timestamp, AQI_CACHE_TTL))
     ) {
         return undefined;
     }
@@ -108,7 +111,14 @@ export const useAqiWithInitialData = ({
             const res = await fetch(`${BASE_API_URL}?${params.toString()}`);
 
             if (res.status === 204) {
-                setAqi(undefined);
+                const cached = getCachedAqi(selectedLocation.id, {
+                    allowStale: true,
+                });
+
+                if (cached !== undefined) {
+                    setAqi(cached);
+                }
+
                 return;
             }
 
@@ -155,7 +165,16 @@ export const useAqiWithInitialData = ({
             return;
         }
 
-        setAqi(undefined);
+        const staleCached = getCachedAqi(selectedLocation.id, {
+            allowStale: true,
+        });
+
+        if (staleCached === undefined) {
+            setAqi(undefined);
+        } else {
+            setAqi(staleCached);
+        }
+
         fetchAqi().catch(console.error);
     }, [fetchAqi, selectedLocation.id]);
 
