@@ -311,29 +311,30 @@
 
 .category-icon-control {
     position: relative;
-    width: 2.75rem;
+    width: var(--font-size);
     height: 100%;
     margin-left: 1rem;
+    margin-right: 0.75rem;
     flex: 0 0 auto;
 
     display: flex;
     align-items: center;
-    gap: 0.25rem;
 }
 
 .category-icon-edit {
+    position: absolute;
+    left: -1.75rem;
     width: 1.5rem;
     height: 1.5rem;
-    border-radius: 50%;
-    background-color: var(--clr-panel-bg);
-    box-shadow: var(--shadow-panel);
+    border-radius: 0;
+    background-color: transparent;
+    box-shadow: none;
     color: var(--clr-text-alpha);
     cursor: pointer;
     opacity: 0;
     pointer-events: none;
-    translate: -0.25rem 0;
+    translate: -0.5rem 0;
     transition:
-        background-color var(--motion-duration-fast) var(--motion-ease-out),
         color var(--motion-duration-fast) var(--motion-ease-out),
         opacity var(--motion-duration-fast) var(--motion-ease-out),
         scale var(--motion-duration-fast) var(--motion-ease-out),
@@ -343,8 +344,10 @@
     place-items: center;
 }
 
-.category-icon-control:hover .category-icon-edit,
-.category-icon-control:focus-within .category-icon-edit,
+.hoverEffective .category:hover .category-icon-edit,
+.hoverEffective .category:has(+ .links:hover) .category-icon-edit,
+.category.selected .category-icon-edit,
+.category:focus-within .category-icon-edit,
 .category-icon-edit[aria-expanded='true'] {
     opacity: 1;
     pointer-events: auto;
@@ -354,7 +357,6 @@
 .category-icon-edit:hover,
 .category-icon-edit:focus-visible,
 .category-icon-edit[aria-expanded='true'] {
-    background-color: var(--clr-text-alpha-2);
     color: var(--clr-primary);
 }
 
