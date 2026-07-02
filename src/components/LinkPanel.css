@@ -337,6 +337,7 @@
         var(--motion-duration-fast) var(--motion-ease-out);
 
     z-index: 8;
+    pointer-events: none;
 
     .panel {
         width: calc(var(--width) * 2);
@@ -393,6 +394,7 @@
 .hoverEffective .links:hover,
 .links:has(:focus-visible) {
     translate: var(--width);
+    pointer-events: all;
 }
 
 .hoverEffective .link:hover,
