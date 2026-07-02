@@ -289,14 +289,9 @@ function createWeatherDevApi(apiKey: string | undefined): Plugin {
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, process.cwd(), '');
-    const clerkPublishableKey =
-        env.VITE_CLERK_PUBLISHABLE_KEY ?? env.CLERK_PUBLISHABLE_KEY ?? '';
 
     return {
         base: '/',
-        define: {
-            CLERK_PUBLISHABLE_KEY: JSON.stringify(clerkPublishableKey),
-        },
         plugins: [
             react(),
             createAqiDevApi(env.MOENV_API_KEY),

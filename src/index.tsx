@@ -1,5 +1,5 @@
 import { StrictMode } from 'react';
-import { ClerkProvider } from '@clerk/clerk-react';
+import { ClerkProvider } from '@clerk/react';
 import { createRoot } from 'react-dom/client';
 
 import { Main } from './components/Main';
@@ -21,8 +21,9 @@ if (!root) {
     throw new Error('Root element not found');
 }
 
-const clerkPublishableKey = CLERK_PUBLISHABLE_KEY;
-const isClerkEnabled = clerkPublishableKey !== '';
+const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+const isClerkEnabled =
+    clerkPublishableKey !== undefined && clerkPublishableKey !== '';
 const app = <Main isClerkEnabled={isClerkEnabled} />;
 
 createRoot(root).render(

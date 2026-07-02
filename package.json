@@ -23,7 +23,7 @@
         ]
     },
     "dependencies": {
-        "@clerk/clerk-react": "^5.61.3",
+        "@clerk/react": "^6.11.3",
         "lucide-react": "^1.21.0",
         "react": "^19.0.0",
         "react-dom": "^19.0.0"

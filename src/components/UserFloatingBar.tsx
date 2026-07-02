@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useClerk, useUser } from '@clerk/clerk-react';
+import { useClerk, useUser } from '@clerk/react';
 import { LogIn, LogOut, Mail, UserRound, UserRoundPlus } from 'lucide-react';
 
 import { SettingsMenu } from './SettingsMenu';
