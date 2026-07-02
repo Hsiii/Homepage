@@ -550,6 +550,84 @@
     translate: 1.5rem 0;
 }
 
+.settings-icon-choice:disabled {
+    color: var(--clr-disabled);
+    cursor: not-allowed;
+    opacity: 0.56;
+    scale: 1;
+}
+
+.settings-icon-choice:disabled:hover,
+.settings-icon-choice:disabled:focus-visible {
+    color: var(--clr-disabled);
+    outline-color: transparent;
+}
+
+.settings-wallpaper-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.settings-wallpaper-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    justify-self: end;
+}
+
+.settings-wallpaper-input {
+    display: none;
+}
+
+.settings-wallpaper-preview {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.75rem;
+    background-color: var(--clr-text-alpha-2);
+    color: var(--clr-text-alpha);
+    overflow: hidden;
+
+    display: grid;
+    place-items: center;
+}
+
+.settings-wallpaper-preview.has-wallpaper {
+    background-image: var(--settings-wallpaper-preview);
+    background-position: center;
+    background-size: cover;
+    box-shadow: var(--shadow-panel);
+    color: var(--clr-on-dark);
+}
+
+.settings-wallpaper-preview.has-wallpaper .icon {
+    opacity: 0;
+}
+
+.settings-wallpaper-meter {
+    height: 0.25rem;
+    margin: 0 0.5rem;
+    border-radius: 999px;
+    background-color: var(--clr-text-alpha-2);
+    overflow: hidden;
+}
+
+.settings-wallpaper-meter::before {
+    content: '';
+    width: var(--settings-wallpaper-progress, 0%);
+    height: 100%;
+    border-radius: inherit;
+    background-color: var(--clr-primary);
+    transition: width var(--motion-duration-fast) var(--motion-ease-out);
+
+    display: block;
+}
+
+.settings-wallpaper-status {
+    min-height: 2rem;
+    padding: 0 0.5rem;
+    color: var(--clr-text-alpha);
+    font: var(--fontBaseSm);
+}
+
 .settings-swatch-amethyst {
     --settings-swatch-color: var(--clr-swatch-amethyst);
 }

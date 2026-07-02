@@ -94,6 +94,7 @@
     --clr-panel-bg: var(--clr-neutral-light-alpha);
     --clr-panel-border: var(--clr-neutral-light-alpha);
     --clr-overlay: #0005;
+    --clr-wallpaper-overlay: hsla(0, 0%, 13%, 0.16);
     --clr-trigger: #52a5;
     --clr-footer-bg: hsl(0, 0%, 13%);
     --shadow-search-field: none;
@@ -153,6 +154,7 @@
     --clr-panel-bg: hsla(228, 19%, 14%, 0.78);
     --clr-panel-border: hsla(262, 69%, 74%, 0.24);
     --clr-overlay: #0008;
+    --clr-wallpaper-overlay: hsla(226, 26%, 9%, 0.32);
     --clr-trigger: var(--clr-primary-alpha);
     --clr-footer-bg: hsl(226, 26%, 9%);
 

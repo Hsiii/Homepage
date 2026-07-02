@@ -29,6 +29,21 @@ html[data-animation-mode='skip'] .mountains {
     background-position: center 100%;
 }
 
+:root[data-wallpaper='custom'] .mountains {
+    background: var(--wallpaper-image) center / cover no-repeat
+        var(--clr-neutral-dark);
+    animation: none;
+}
+
+:root[data-wallpaper='custom'] .mountains::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    background-color: var(--clr-wallpaper-overlay);
+    pointer-events: none;
+}
+
 .mountains img {
     width: 100%;
     object-fit: cover;
@@ -53,6 +68,10 @@ html[data-animation-mode='skip'] .mountains {
     animation-timeline: auto, scroll(root);
     animation-range: auto, exit;
     animation-fill-mode: forwards;
+}
+
+:root[data-wallpaper='custom'] .mountains img {
+    opacity: 0;
 }
 
 :root[data-theme='dark'] .mountains img {

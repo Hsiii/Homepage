@@ -3,6 +3,7 @@ import { useClerk, useUser } from '@clerk/react';
 import { LogIn, LogOut, Mail, UserRound, UserRoundPlus } from 'lucide-react';
 
 import { SettingsMenu } from './SettingsMenu';
+import { WallpaperSettingsMenu } from './WallpaperSettingsMenu';
 
 import './Controls.css';
 
@@ -143,7 +144,7 @@ const UserFloatingBarContent: React.FC = () => {
                     </div>
                 ) : undefined}
             </div>
-            <SettingsMenu placement='above' />
+            <WallpaperSettingsMenu placement='above' />
         </div>
     );
 };

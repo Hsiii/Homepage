@@ -2,10 +2,13 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Check,
     ChevronDown,
+    Image,
     Monitor,
     Moon,
     Settings,
     Sun,
+    Trash2,
+    Upload,
     X,
 } from 'lucide-react';
 import { flushSync } from 'react-dom';
@@ -14,7 +17,9 @@ import { isAppLocale, localeOptions } from '@/constants/i18n';
 import { getLocationLabel, taiwanLocations } from '@/constants/taiwanLocations';
 import { useLocale } from '@/hooks/useLocale';
 import { useTaiwanLocation } from '@/hooks/useTaiwanLocation';
+import type { WallpaperControls } from '@/hooks/useWallpaper';
 import { runThemeTransition } from '@/utils/themeTransition';
+import { wallpaperAcceptedContentTypes } from '../../shared/wallpaper';
 
 const animationStorageKey = 'animation-mode';
 const defaultThemeColor = 'amethyst';
@@ -279,10 +284,12 @@ const SettingsDropdown: React.FC<SettingsDropdownProps> = ({
 
 interface SettingsMenuProps {
     placement?: 'above' | 'below';
+    wallpaperControls?: WallpaperControls;
 }
 
 export const SettingsMenu: React.FC<SettingsMenuProps> = ({
     placement = 'below',
+    wallpaperControls,
 }) => {
     const {
         isSyncingLocation,
@@ -308,6 +315,7 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({
     );
     const [openDropdownId, setOpenDropdownId] = useState<string>();
     const menuRef = useRef<HTMLDivElement>(null);
+    const wallpaperInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         if (!isOpen) {
@@ -444,6 +452,10 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({
     const getDropdownOpenHandler = (id: string) => (nextIsOpen: boolean) => {
         setOpenDropdownId(nextIsOpen ? id : undefined);
     };
+    const wallpaperProgress =
+        wallpaperControls?.progress === undefined
+            ? undefined
+            : Math.round(wallpaperControls.progress);
 
     return (
         <div className={`settings-control ${placement}`} ref={menuRef}>
@@ -616,6 +628,145 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({
                             </button>
                         </div>
                     </div>
+
+                    {wallpaperControls === undefined ? undefined : (
+                        <div className='settings-section'>
+                            <div className='settings-row settings-wallpaper-row'>
+                                <span className='settings-row-label'>
+                                    {t.wallpaper}
+                                </span>
+                                <div className='settings-wallpaper-actions'>
+                                    <input
+                                        className='settings-wallpaper-input'
+                                        type='file'
+                                        accept={wallpaperAcceptedContentTypes.join(
+                                            ','
+                                        )}
+                                        ref={wallpaperInputRef}
+                                        onChange={(event) => {
+                                            const file =
+                                                event.currentTarget.files?.[0];
+                                            if (
+                                                wallpaperInputRef.current !==
+                                                null
+                                            ) {
+                                                wallpaperInputRef.current.value =
+                                                    '';
+                                            }
+
+                                            if (file !== undefined) {
+                                                wallpaperControls
+                                                    .uploadWallpaper(file)
+                                                    .catch(() => undefined);
+                                            }
+                                        }}
+                                    />
+                                    <button
+                                        className={[
+                                            'settings-wallpaper-preview',
+                                            wallpaperControls.wallpaper !==
+                                                undefined && 'has-wallpaper',
+                                        ]
+                                            .filter(Boolean)
+                                            .join(' ')}
+                                        type='button'
+                                        aria-label={
+                                            wallpaperControls.wallpaper ===
+                                            undefined
+                                                ? t.wallpaper
+                                                : `${t.wallpaper}: ${wallpaperControls.wallpaper.width}x${wallpaperControls.wallpaper.height}`
+                                        }
+                                        title={
+                                            wallpaperControls.wallpaper ===
+                                            undefined
+                                                ? t.wallpaper
+                                                : `${wallpaperControls.wallpaper.width}x${wallpaperControls.wallpaper.height}`
+                                        }
+                                        style={
+                                            wallpaperControls.wallpaper ===
+                                            undefined
+                                                ? undefined
+                                                : ({
+                                                      '--settings-wallpaper-preview': `url("${wallpaperControls.wallpaper.url}")`,
+                                                  } as React.CSSProperties &
+                                                      Record<
+                                                          '--settings-wallpaper-preview',
+                                                          string
+                                                      >)
+                                        }
+                                        disabled
+                                    >
+                                        <Image className='icon' size={18} />
+                                    </button>
+                                    <button
+                                        className='settings-icon-choice'
+                                        type='button'
+                                        aria-label={t.uploadWallpaper}
+                                        title={
+                                            wallpaperControls.isAvailable
+                                                ? t.uploadWallpaper
+                                                : t.wallpaperUnavailable
+                                        }
+                                        disabled={
+                                            !wallpaperControls.isAvailable ||
+                                            wallpaperControls.isBusy
+                                        }
+                                        onClick={() => {
+                                            wallpaperInputRef.current?.click();
+                                        }}
+                                    >
+                                        <Upload className='icon' size={18} />
+                                    </button>
+                                    <button
+                                        className='settings-icon-choice'
+                                        type='button'
+                                        aria-label={t.removeWallpaper}
+                                        title={t.removeWallpaper}
+                                        disabled={
+                                            wallpaperControls.wallpaper ===
+                                                undefined ||
+                                            wallpaperControls.isBusy
+                                        }
+                                        onClick={() => {
+                                            wallpaperControls
+                                                .clearWallpaper()
+                                                .catch(() => undefined);
+                                        }}
+                                    >
+                                        <Trash2 className='icon' size={18} />
+                                    </button>
+                                </div>
+                            </div>
+                            {wallpaperControls.isBusy ? (
+                                <div
+                                    className='settings-wallpaper-meter'
+                                    role='progressbar'
+                                    aria-label={t.wallpaperUploading}
+                                    aria-valuemin={0}
+                                    aria-valuemax={100}
+                                    aria-valuenow={wallpaperProgress ?? 0}
+                                    style={
+                                        {
+                                            '--settings-wallpaper-progress': `${wallpaperProgress ?? 0}%`,
+                                        } as React.CSSProperties &
+                                            Record<
+                                                '--settings-wallpaper-progress',
+                                                string
+                                            >
+                                    }
+                                />
+                            ) : undefined}
+                            {wallpaperControls.error ===
+                            undefined ? undefined : (
+                                <div
+                                    className='settings-wallpaper-status'
+                                    role='status'
+                                >
+                                    {wallpaperControls.error}
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     <div className='settings-section'>
                         <div className='settings-row settings-select-row'>
