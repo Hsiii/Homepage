@@ -13,6 +13,11 @@ const LOCATION_STORAGE_KEY = 'homepage_location_id';
 const LEGACY_AQI_SITE_STORAGE_KEY = 'aqi_site';
 const LEGACY_WEATHER_LOCATION_STORAGE_KEY = 'weather_location';
 const locationSyncTimeout = 10_000;
+const unsupportedGeolocationPermission = 'unsupported';
+
+export type GeolocationPermissionState =
+    | PermissionState
+    | typeof unsupportedGeolocationPermission;
 
 function readJson(key: string): unknown {
     const value = globalThis.localStorage.getItem(key);
@@ -88,13 +93,24 @@ function getLocationFromEvent(event: Event): TaiwanLocation | undefined {
 
 export const useTaiwanLocation = (): {
     selectedLocation: TaiwanLocation;
+    geolocationPermission: GeolocationPermissionState;
+    isGeolocationAvailable: boolean;
     isSyncingLocation: boolean;
+    lastLocationSyncSucceededAt: number | undefined;
     selectLocationId: (locationId: string) => void;
     syncCurrentLocation: () => void;
 } => {
     const [selectedLocation, setSelectedLocation] =
         useState(getInitialLocation);
+    const [geolocationPermission, setGeolocationPermission] =
+        useState<GeolocationPermissionState>(
+            'geolocation' in navigator
+                ? 'prompt'
+                : unsupportedGeolocationPermission
+        );
     const [isSyncingLocation, setIsSyncingLocation] = useState(false);
+    const [lastLocationSyncSucceededAt, setLastLocationSyncSucceededAt] =
+        useState<number>();
 
     const selectLocation = useCallback((location: TaiwanLocation) => {
         globalThis.localStorage.setItem(LOCATION_STORAGE_KEY, location.id);
@@ -113,6 +129,7 @@ export const useTaiwanLocation = (): {
 
     const syncCurrentLocation = useCallback(() => {
         if (!('geolocation' in navigator)) {
+            setGeolocationPermission(unsupportedGeolocationPermission);
             return;
         }
 
@@ -121,10 +138,15 @@ export const useTaiwanLocation = (): {
             (position) => {
                 const { latitude, longitude } = position.coords;
                 selectLocation(findNearestTaiwanLocation(latitude, longitude));
+                setGeolocationPermission('granted');
                 setIsSyncingLocation(false);
+                setLastLocationSyncSucceededAt(Date.now());
             },
             (error) => {
                 console.error(error);
+                if (error.code === error.PERMISSION_DENIED) {
+                    setGeolocationPermission('denied');
+                }
                 setIsSyncingLocation(false);
             },
             {
@@ -133,6 +155,43 @@ export const useTaiwanLocation = (): {
             }
         );
     }, [selectLocation]);
+
+    useEffect(() => {
+        if (!('geolocation' in navigator)) {
+            setGeolocationPermission(unsupportedGeolocationPermission);
+            return undefined;
+        }
+
+        if (!('permissions' in navigator)) {
+            return undefined;
+        }
+
+        let permissionStatus: PermissionStatus | undefined;
+        let isSubscribed = true;
+        const updatePermission = () => {
+            if (permissionStatus !== undefined) {
+                setGeolocationPermission(permissionStatus.state);
+            }
+        };
+
+        navigator.permissions
+            .query({ name: 'geolocation' })
+            .then((status) => {
+                if (!isSubscribed) {
+                    return;
+                }
+
+                permissionStatus = status;
+                updatePermission();
+                permissionStatus.addEventListener('change', updatePermission);
+            })
+            .catch(console.error);
+
+        return () => {
+            isSubscribed = false;
+            permissionStatus?.removeEventListener('change', updatePermission);
+        };
+    }, []);
 
     useEffect(() => {
         const onLocationChange = (event: Event) => {
@@ -154,7 +213,10 @@ export const useTaiwanLocation = (): {
 
     return {
         selectedLocation,
+        geolocationPermission,
+        isGeolocationAvailable: geolocationPermission !== 'unsupported',
         isSyncingLocation,
+        lastLocationSyncSucceededAt,
         selectLocationId,
         syncCurrentLocation,
     };

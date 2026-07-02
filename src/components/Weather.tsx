@@ -1,9 +1,12 @@
+import { useEffect, useState } from 'react';
 import {
     Cloud,
     CloudDrizzle,
     CloudLightning,
     CloudRain,
     CloudSnow,
+    LocateFixed,
+    MapPinCheck,
     Sun,
 } from 'lucide-react';
 
@@ -24,11 +27,21 @@ const weatherIcons = {
     Clear: <Sun size={20} />,
     Clouds: <Cloud size={20} />,
 };
+const locationGrantFeedbackDuration = 1600;
 
 export const Weather: React.FC = () => {
-    const { weather, selectedLocation } = useWeather();
+    const {
+        weather,
+        geolocationPermission,
+        isGeolocationAvailable,
+        isSyncingLocation,
+        lastLocationSyncSucceededAt,
+        selectedLocation,
+        syncCurrentLocation,
+    } = useWeather();
     const { aqi } = useAqi();
     const { locale, t } = useLocale();
+    const [showLocationGranted, setShowLocationGranted] = useState(false);
     const hasWeather = weather !== undefined;
     const hasAqi = aqi !== undefined;
     const locationLabel = getLocationLabel(selectedLocation, locale);
@@ -47,11 +60,47 @@ export const Weather: React.FC = () => {
         weather.weatherType in weatherIcons
             ? weatherIcons[weather.weatherType as keyof typeof weatherIcons]
             : weatherIcons.Clouds;
+    const showLocationTrigger =
+        isGeolocationAvailable && geolocationPermission !== 'granted';
+    const showLocationControl = showLocationTrigger || showLocationGranted;
+    const hasWeatherRowContent = hasWeather || hasAqi || showLocationControl;
+    const locationControlState = showLocationGranted ? 'granted' : 'request';
+    let locationControlLabel = t.myLocation;
+
+    if (showLocationGranted) {
+        locationControlLabel = locationLabel;
+    } else if (isSyncingLocation) {
+        locationControlLabel = t.syncing;
+    }
+
+    useEffect(() => {
+        if (
+            lastLocationSyncSucceededAt === undefined ||
+            geolocationPermission !== 'granted'
+        ) {
+            return undefined;
+        }
+
+        setShowLocationGranted(true);
+        const timeoutId = setTimeout(() => {
+            setShowLocationGranted(false);
+        }, locationGrantFeedbackDuration);
+
+        return () => {
+            clearTimeout(timeoutId);
+        };
+    }, [geolocationPermission, lastLocationSyncSucceededAt]);
 
     return (
         <div
-            className={`weather-container ${!hasWeather && !hasAqi ? 'placeholder' : ''}`}
-            aria-hidden={!hasWeather && !hasAqi}
+            className={[
+                'weather-container',
+                !hasWeatherRowContent && 'placeholder',
+                showLocationControl && 'with-location-control',
+            ]
+                .filter(Boolean)
+                .join(' ')}
+            aria-hidden={!hasWeatherRowContent}
         >
             <span className='weather-date'>{dateStr}</span>
             <span className='weather-metrics'>
@@ -73,6 +122,29 @@ export const Weather: React.FC = () => {
                     </span>
                 )}
             </span>
+            {showLocationControl && (
+                <button
+                    className='weather-location-sync'
+                    type='button'
+                    aria-label={locationControlLabel}
+                    title={locationControlLabel}
+                    data-state={locationControlState}
+                    data-syncing={isSyncingLocation}
+                    disabled={isSyncingLocation || showLocationGranted}
+                    onClick={syncCurrentLocation}
+                >
+                    <span className='weather-location-sync-icons' aria-hidden>
+                        <LocateFixed
+                            className='weather-location-sync-icon weather-location-sync-icon-locate'
+                            size={20}
+                        />
+                        <MapPinCheck
+                            className='weather-location-sync-icon weather-location-sync-icon-granted'
+                            size={20}
+                        />
+                    </span>
+                </button>
+            )}
         </div>
     );
 };

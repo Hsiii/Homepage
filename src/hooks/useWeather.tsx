@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import type { TaiwanLocation } from '@/constants/taiwanLocations';
+import type { GeolocationPermissionState } from '@/hooks/useTaiwanLocation';
 import { useTaiwanLocation } from '@/hooks/useTaiwanLocation';
 
 export type WeatherData = {
@@ -86,10 +87,22 @@ async function requestWeather(location: TaiwanLocation): Promise<WeatherData> {
 
 export const useWeather = (): {
     weather: WeatherData | undefined;
+    geolocationPermission: GeolocationPermissionState;
     isLoading: boolean;
+    isGeolocationAvailable: boolean;
+    isSyncingLocation: boolean;
+    lastLocationSyncSucceededAt: number | undefined;
     selectedLocation: TaiwanLocation;
+    syncCurrentLocation: () => void;
 } => {
-    const { selectedLocation } = useTaiwanLocation();
+    const {
+        selectedLocation,
+        geolocationPermission,
+        isGeolocationAvailable,
+        isSyncingLocation,
+        lastLocationSyncSucceededAt,
+        syncCurrentLocation,
+    } = useTaiwanLocation();
     const [cachedWeather, setCachedWeather] = useState<
         CachedWeather | undefined
     >(() => getCachedWeather(selectedLocation.id));
@@ -142,7 +155,12 @@ export const useWeather = (): {
 
     return {
         weather,
+        geolocationPermission,
         isLoading,
+        isGeolocationAvailable,
+        isSyncingLocation,
+        lastLocationSyncSucceededAt,
         selectedLocation,
+        syncCurrentLocation,
     };
 };
