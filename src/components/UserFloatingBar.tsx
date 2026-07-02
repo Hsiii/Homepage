@@ -8,7 +8,12 @@ import { WallpaperSettingsMenu } from './WallpaperSettingsMenu';
 import './Controls.css';
 
 interface UserFloatingBarProps {
+    closeMenusSignal?: number;
     isClerkEnabled: boolean;
+}
+
+interface CloseableMenuProps {
+    closeMenusSignal?: number;
 }
 
 const getDisplayName = (emailAddress?: string, name?: string | null) => {
@@ -23,7 +28,9 @@ const getDisplayName = (emailAddress?: string, name?: string | null) => {
     return 'Guest';
 };
 
-const UserFloatingBarContent: React.FC = () => {
+const UserFloatingBarContent: React.FC<CloseableMenuProps> = ({
+    closeMenusSignal,
+}) => {
     const { isLoaded, isSignedIn, user } = useUser();
     const { openSignIn, openSignUp, signOut } = useClerk();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -50,6 +57,14 @@ const UserFloatingBarContent: React.FC = () => {
             globalThis.document.removeEventListener('click', onClickOutside);
         };
     }, [isMenuOpen]);
+
+    useEffect(() => {
+        if (closeMenusSignal === undefined) {
+            return;
+        }
+
+        setIsMenuOpen(false);
+    }, [closeMenusSignal]);
 
     return (
         <div className='user-floating-bar'>
@@ -144,12 +159,17 @@ const UserFloatingBarContent: React.FC = () => {
                     </div>
                 ) : undefined}
             </div>
-            <WallpaperSettingsMenu placement='above' />
+            <WallpaperSettingsMenu
+                closeSignal={closeMenusSignal}
+                placement='above'
+            />
         </div>
     );
 };
 
-const UserFloatingBarFallback: React.FC = () => {
+const UserFloatingBarFallback: React.FC<CloseableMenuProps> = ({
+    closeMenusSignal,
+}) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
 
@@ -169,6 +189,14 @@ const UserFloatingBarFallback: React.FC = () => {
             globalThis.document.removeEventListener('click', onClickOutside);
         };
     }, [isMenuOpen]);
+
+    useEffect(() => {
+        if (closeMenusSignal === undefined) {
+            return;
+        }
+
+        setIsMenuOpen(false);
+    }, [closeMenusSignal]);
 
     return (
         <div className='user-floating-bar'>
@@ -204,17 +232,18 @@ const UserFloatingBarFallback: React.FC = () => {
                     </div>
                 ) : undefined}
             </div>
-            <SettingsMenu placement='above' />
+            <SettingsMenu closeSignal={closeMenusSignal} placement='above' />
         </div>
     );
 };
 
 export const UserFloatingBar: React.FC<UserFloatingBarProps> = ({
+    closeMenusSignal,
     isClerkEnabled,
 }) => {
     if (isClerkEnabled) {
-        return <UserFloatingBarContent />;
+        return <UserFloatingBarContent closeMenusSignal={closeMenusSignal} />;
     }
 
-    return <UserFloatingBarFallback />;
+    return <UserFloatingBarFallback closeMenusSignal={closeMenusSignal} />;
 };

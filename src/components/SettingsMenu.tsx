@@ -283,11 +283,13 @@ const SettingsDropdown: React.FC<SettingsDropdownProps> = ({
 };
 
 interface SettingsMenuProps {
+    closeSignal?: number;
     placement?: 'above' | 'below';
     wallpaperControls?: WallpaperControls;
 }
 
 export const SettingsMenu: React.FC<SettingsMenuProps> = ({
+    closeSignal,
     placement = 'below',
     wallpaperControls,
 }) => {
@@ -339,6 +341,15 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({
             setOpenDropdownId(undefined);
         }
     }, [isOpen]);
+
+    useEffect(() => {
+        if (closeSignal === undefined) {
+            return;
+        }
+
+        setIsOpen(false);
+        setOpenDropdownId(undefined);
+    }, [closeSignal]);
 
     useEffect(() => {
         if (themeMode !== 'system') {

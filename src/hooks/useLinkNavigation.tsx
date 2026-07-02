@@ -7,6 +7,7 @@ export const useLinkNavigation = (
 ): {
     selectedCategory: number;
     isMouseNav: boolean;
+    mouseLeaveCloseSignal: number;
     startMouseNav: () => void;
     endMouseNav: () => void;
 } => {
@@ -15,6 +16,7 @@ export const useLinkNavigation = (
     >(undefined);
     const selectedCategory = highlightedCategory ?? 0;
     const [isMouseNav, setIsMouseNav] = useState(false);
+    const [mouseLeaveCloseSignal, setMouseLeaveCloseSignal] = useState(0);
 
     useEffect(() => {
         if (isSearchNav) {
@@ -46,6 +48,7 @@ export const useLinkNavigation = (
         }
         hoverExitTimeoutRef.current = setTimeout(() => {
             setIsMouseNav(false);
+            setMouseLeaveCloseSignal((signal) => signal + 1);
             hoverExitTimeoutRef.current = undefined;
         }, 40);
     }, []);
@@ -53,6 +56,7 @@ export const useLinkNavigation = (
     return {
         selectedCategory,
         isMouseNav,
+        mouseLeaveCloseSignal,
         startMouseNav,
         endMouseNav,
     };

@@ -32,8 +32,13 @@ export const LinkPanel: React.FC<LinkPanelProps> = ({
     onClearSearch,
     onToggleLockedOpen,
 }) => {
-    const { selectedCategory, isMouseNav, startMouseNav, endMouseNav } =
-        useLinkNavigation(isSearchNav, onClearSearch, highlightedCategory);
+    const {
+        selectedCategory,
+        isMouseNav,
+        mouseLeaveCloseSignal,
+        startMouseNav,
+        endMouseNav,
+    } = useLinkNavigation(isSearchNav, onClearSearch, highlightedCategory);
 
     const [windowHeight, setWindowHeight] = useState(globalThis.innerHeight);
     const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -138,7 +143,10 @@ export const LinkPanel: React.FC<LinkPanelProps> = ({
                         highlightedLink={highlightedLink}
                     />
                 ))}
-                <UserFloatingBar isClerkEnabled={isClerkEnabled} />
+                <UserFloatingBar
+                    closeMenusSignal={mouseLeaveCloseSignal}
+                    isClerkEnabled={isClerkEnabled}
+                />
             </div>
         </nav>
     );
