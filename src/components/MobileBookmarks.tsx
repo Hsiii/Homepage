@@ -101,10 +101,10 @@ export const MobileBookmarks: React.FC<MobileBookmarksProps> = ({
                     <span>Bookmarks</span>
                 </div>
                 <div className='mobile-bookmark-list'>
-                    {bookmarkTree.map((categoryData) => (
+                    {bookmarkTree.map((categoryData, categoryIndex) => (
                         <section
                             className='mobile-bookmark-category'
-                            key={categoryData.category}
+                            key={`${categoryData.category}-${categoryIndex}`}
                         >
                             <div className='mobile-bookmark-category-title'>
                                 {categoryData.icon}

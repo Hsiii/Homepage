@@ -28,13 +28,37 @@ export interface BookmarkStatus {
     type: 'error' | 'success';
 }
 
+export interface BookmarkCategoryInput {
+    category: string;
+    icon?: string;
+}
+
+export interface BookmarkInput {
+    title: string;
+    url: string;
+}
+
 export interface BookmarkControls {
+    addBookmark: (categoryIndex: number, bookmark: BookmarkInput) => boolean;
+    addCategory: (category: BookmarkCategoryInput) => boolean;
     bookmarkTree: BookmarkCategoryData[];
+    deleteBookmark: (categoryIndex: number, bookmarkId: string) => boolean;
+    deleteCategory: (categoryIndex: number) => boolean;
     exportBookmarks: () => void;
     importBookmarks: (file: File) => Promise<void>;
     isCustom: boolean;
     resetBookmarks: () => void;
     status?: BookmarkStatus;
+    updateBookmark: (
+        categoryIndex: number,
+        bookmarkId: string,
+        bookmark: BookmarkInput,
+        nextCategoryIndex?: number
+    ) => boolean;
+    updateCategory: (
+        categoryIndex: number,
+        category: BookmarkCategoryInput
+    ) => boolean;
     updateCategoryIcon: (categoryIndex: number, icon: string) => void;
 }
 
@@ -114,6 +138,22 @@ const storeBookmarkTree = (
 
 const removeStoredBookmarkTree = (userId?: string): void => {
     globalThis.localStorage.removeItem(getBookmarkStorageKey(userId));
+};
+
+const normalizeInputText = (value: string): string =>
+    value.replaceAll(/\s+/g, ' ').trim();
+
+const createBookmarkId = (): string => {
+    if (typeof globalThis.crypto.randomUUID === 'function') {
+        return `bookmark-${globalThis.crypto.randomUUID()}`;
+    }
+
+    return `bookmark-${Date.now().toString(36)}`;
+};
+
+const fallbackCategory: BookmarkCategoryData = {
+    category: 'Bookmarks',
+    links: [],
 };
 
 const readBookmarkResponse = async (
@@ -259,6 +299,27 @@ export const useBookmarks = (
         }
     }, [getAuthHeaders]);
 
+    const commitBookmarkTree = useCallback(
+        (nextBookmarkTree: readonly BookmarkCategoryData[]) => {
+            try {
+                storeBookmarkTree(nextBookmarkTree, remoteUserId);
+            } catch {
+                setStatus({
+                    messageKey: 'bookmarksStorageFailed',
+                    type: 'error',
+                });
+                return false;
+            }
+
+            mutationVersionRef.current++;
+            setBookmarkTree([...nextBookmarkTree]);
+            setIsCustom(true);
+            saveRemoteBookmarkTree(nextBookmarkTree).catch(() => undefined);
+            return true;
+        },
+        [remoteUserId, saveRemoteBookmarkTree]
+    );
+
     useEffect(() => {
         if (getToken === undefined || !isAuthLoaded) {
             return undefined;
@@ -363,21 +424,12 @@ export const useBookmarks = (
                     return;
                 }
 
-                try {
-                    storeBookmarkTree(nextBookmarkTree, remoteUserId);
-                } catch {
+                if (commitBookmarkTree(nextBookmarkTree)) {
                     setStatus({
-                        messageKey: 'bookmarksStorageFailed',
-                        type: 'error',
+                        messageKey: 'bookmarksImported',
+                        type: 'success',
                     });
-                    return;
                 }
-
-                mutationVersionRef.current++;
-                setBookmarkTree(nextBookmarkTree);
-                setIsCustom(true);
-                setStatus({ messageKey: 'bookmarksImported', type: 'success' });
-                await saveRemoteBookmarkTree(nextBookmarkTree);
             } catch {
                 setStatus({
                     messageKey: 'bookmarksImportFailed',
@@ -385,7 +437,7 @@ export const useBookmarks = (
                 });
             }
         },
-        [remoteUserId, saveRemoteBookmarkTree]
+        [commitBookmarkTree]
     );
 
     const resetBookmarks = useCallback(() => {
@@ -406,6 +458,211 @@ export const useBookmarks = (
         clearRemoteBookmarks().catch(() => undefined);
     }, [clearRemoteBookmarks, remoteUserId]);
 
+    const addCategory = useCallback(
+        (categoryInput: BookmarkCategoryInput) => {
+            const category = normalizeInputText(categoryInput.category);
+            const icon = normalizeInputText(categoryInput.icon ?? '');
+
+            if (category === '') {
+                return false;
+            }
+
+            return commitBookmarkTree([
+                ...bookmarkTree,
+                {
+                    category,
+                    ...(icon === '' ? {} : { icon }),
+                    links: [],
+                },
+            ]);
+        },
+        [bookmarkTree, commitBookmarkTree]
+    );
+
+    const updateCategory = useCallback(
+        (categoryIndex: number, categoryInput: BookmarkCategoryInput) => {
+            const category = normalizeInputText(categoryInput.category);
+            const icon = normalizeInputText(categoryInput.icon ?? '');
+
+            if (
+                category === '' ||
+                categoryIndex < 0 ||
+                categoryIndex >= bookmarkTree.length
+            ) {
+                return false;
+            }
+
+            return commitBookmarkTree(
+                bookmarkTree.map((categoryData, currentIndex) =>
+                    currentIndex === categoryIndex
+                        ? {
+                              ...categoryData,
+                              category,
+                              ...(icon === '' ? {} : { icon }),
+                          }
+                        : categoryData
+                )
+            );
+        },
+        [bookmarkTree, commitBookmarkTree]
+    );
+
+    const deleteCategory = useCallback(
+        (categoryIndex: number) => {
+            if (categoryIndex < 0 || categoryIndex >= bookmarkTree.length) {
+                return false;
+            }
+
+            const nextBookmarkTree = bookmarkTree.filter(
+                (_categoryData, currentIndex) => currentIndex !== categoryIndex
+            );
+
+            return commitBookmarkTree(
+                nextBookmarkTree.length === 0
+                    ? [fallbackCategory]
+                    : nextBookmarkTree
+            );
+        },
+        [bookmarkTree, commitBookmarkTree]
+    );
+
+    const addBookmark = useCallback(
+        (categoryIndex: number, bookmarkInput: BookmarkInput) => {
+            const title = normalizeInputText(bookmarkInput.title);
+            const url = bookmarkInput.url.trim();
+
+            if (
+                title === '' ||
+                url === '' ||
+                categoryIndex < 0 ||
+                categoryIndex >= bookmarkTree.length
+            ) {
+                return false;
+            }
+
+            return commitBookmarkTree(
+                bookmarkTree.map((categoryData, currentIndex) =>
+                    currentIndex === categoryIndex
+                        ? {
+                              ...categoryData,
+                              links: [
+                                  ...categoryData.links,
+                                  {
+                                      id: createBookmarkId(),
+                                      title,
+                                      url,
+                                  },
+                              ],
+                          }
+                        : categoryData
+                )
+            );
+        },
+        [bookmarkTree, commitBookmarkTree]
+    );
+
+    const updateBookmark = useCallback(
+        (
+            categoryIndex: number,
+            bookmarkId: string,
+            bookmarkInput: BookmarkInput,
+            nextCategoryIndex = categoryIndex
+        ) => {
+            const title = normalizeInputText(bookmarkInput.title);
+            const url = bookmarkInput.url.trim();
+            const sourceCategory = bookmarkTree.at(categoryIndex);
+            const targetCategory = bookmarkTree.at(nextCategoryIndex);
+            const bookmark = sourceCategory?.links.find(
+                (linkData) => linkData.id === bookmarkId
+            );
+
+            if (
+                title === '' ||
+                url === '' ||
+                sourceCategory === undefined ||
+                targetCategory === undefined ||
+                bookmark === undefined
+            ) {
+                return false;
+            }
+
+            const nextBookmark = {
+                ...bookmark,
+                title,
+                url,
+            };
+
+            if (categoryIndex === nextCategoryIndex) {
+                return commitBookmarkTree(
+                    bookmarkTree.map((categoryData, currentIndex) =>
+                        currentIndex === categoryIndex
+                            ? {
+                                  ...categoryData,
+                                  links: categoryData.links.map((linkData) =>
+                                      linkData.id === bookmarkId
+                                          ? nextBookmark
+                                          : linkData
+                                  ),
+                              }
+                            : categoryData
+                    )
+                );
+            }
+
+            return commitBookmarkTree(
+                bookmarkTree.map((categoryData, currentIndex) => {
+                    if (currentIndex === categoryIndex) {
+                        return {
+                            ...categoryData,
+                            links: categoryData.links.filter(
+                                (linkData) => linkData.id !== bookmarkId
+                            ),
+                        };
+                    }
+
+                    if (currentIndex === nextCategoryIndex) {
+                        return {
+                            ...categoryData,
+                            links: [...categoryData.links, nextBookmark],
+                        };
+                    }
+
+                    return categoryData;
+                })
+            );
+        },
+        [bookmarkTree, commitBookmarkTree]
+    );
+
+    const deleteBookmark = useCallback(
+        (categoryIndex: number, bookmarkId: string) => {
+            const categoryData = bookmarkTree.at(categoryIndex);
+
+            if (
+                categoryData === undefined ||
+                !categoryData.links.some(
+                    (linkData) => linkData.id === bookmarkId
+                )
+            ) {
+                return false;
+            }
+
+            return commitBookmarkTree(
+                bookmarkTree.map((currentCategoryData, currentIndex) =>
+                    currentIndex === categoryIndex
+                        ? {
+                              ...currentCategoryData,
+                              links: currentCategoryData.links.filter(
+                                  (linkData) => linkData.id !== bookmarkId
+                              ),
+                          }
+                        : currentCategoryData
+                )
+            );
+        },
+        [bookmarkTree, commitBookmarkTree]
+    );
+
     const updateCategoryIcon = useCallback(
         (categoryIndex: number, icon: string) => {
             if (
@@ -423,31 +680,24 @@ export const useBookmarks = (
                         : categoryData
             );
 
-            try {
-                storeBookmarkTree(nextBookmarkTree, remoteUserId);
-            } catch {
-                setStatus({
-                    messageKey: 'bookmarksStorageFailed',
-                    type: 'error',
-                });
-                return;
-            }
-
-            mutationVersionRef.current++;
-            setBookmarkTree(nextBookmarkTree);
-            setIsCustom(true);
-            saveRemoteBookmarkTree(nextBookmarkTree).catch(() => undefined);
+            commitBookmarkTree(nextBookmarkTree);
         },
-        [bookmarkTree, remoteUserId, saveRemoteBookmarkTree]
+        [bookmarkTree, commitBookmarkTree]
     );
 
     return {
+        addBookmark,
+        addCategory,
         bookmarkTree,
+        deleteBookmark,
+        deleteCategory,
         exportBookmarks,
         importBookmarks,
         isCustom,
         resetBookmarks,
         status,
+        updateBookmark,
+        updateCategory,
         updateCategoryIcon,
     };
 };

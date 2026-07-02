@@ -149,7 +149,7 @@ export const LinkPanel: React.FC<LinkPanelProps> = ({
                 <div className='panel' />
                 {bookmarkTree.map((categoryData, i) => (
                     <LinkCategory
-                        key={categoryData.category}
+                        key={`${categoryData.category}-${i}`}
                         categoryData={categoryData}
                         index={i}
                         selectedCategory={selectedCategory}
