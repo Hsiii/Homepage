@@ -12,10 +12,6 @@ A fast personal browser homepage for search, bookmarks, weather, and quick daily
 - Supports slash commands for repeat routines, including opening daily feed tabs.
 - Lets signed-in users upload a personal wallpaper while keeping the default mountain scene for guests.
 
-## Related
-
-- [Comux](https://github.com/Hsiii/Comux) is the companion macOS menu bar app for checking Codex account usage. In this local workspace, it lives at `../../DevTools/Comux` from this repo, or `Projects/.../Comux` from the projects root.
-
 ## Development
 
 ### Current stack
