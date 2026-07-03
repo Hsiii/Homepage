@@ -53,7 +53,7 @@ const bopomofoToLatinKeyMap: Partial<Record<string, string>> = {
     ㄣ: 'p',
 };
 
-export const slashCommands = [
+const slashCommands = [
     {
         command: 'feeds',
         label: '/feeds',
@@ -73,9 +73,6 @@ export const getSearchItems = (
             url: bookmark.url,
         }));
     });
-
-export const isFeedsSearch = (value: string): boolean =>
-    value.trim().toLowerCase() === '/feeds';
 
 export const isSlashCommandSearch = (value: string): boolean =>
     value.trim().startsWith('/');

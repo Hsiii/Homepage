@@ -20,7 +20,7 @@ export interface WallpaperAsset {
 
 export const wallpaperMaxDimensionPx = 5120;
 export const wallpaperMaxFileSizeBytes = 32 * 1024 * 1024;
-export const wallpaperStoragePrefix = 'homepage-assets';
+const wallpaperStoragePrefix = 'homepage-assets';
 export const wallpaperUploadCacheMaxAgeSeconds = 60 * 60 * 24 * 365;
 export const wallpaperUploadTokenTtlMs = 10 * 60 * 1000;
 
@@ -29,7 +29,7 @@ export const isWallpaperContentType = (
 ): value is WallpaperContentType =>
     wallpaperAcceptedContentTypes.includes(value as WallpaperContentType);
 
-export const getWallpaperFileExtension = (
+const getWallpaperFileExtension = (
     contentType: WallpaperContentType
 ): 'jpg' | 'png' | 'webp' => {
     if (contentType === 'image/jpeg') {

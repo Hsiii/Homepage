@@ -43,7 +43,7 @@ const createUniqueIdGetter = (): ((id: string) => string) => {
     };
 };
 
-export const normalizeBookmarkTree = (
+const normalizeBookmarkTree = (
     bookmarkTree: readonly BookmarkCategoryData[]
 ): BookmarkCategoryData[] => {
     const getUniqueId = createUniqueIdGetter();

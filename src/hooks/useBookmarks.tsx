@@ -14,7 +14,7 @@ const bookmarkStorageKey = 'homepage.bookmarks';
 const bookmarkUserStorageKeyPrefix = 'homepage.bookmarks.user';
 const bookmarkStorageVersion = 1;
 
-export type BookmarkStatusMessageKey =
+type BookmarkStatusMessageKey =
     | 'bookmarksExported'
     | 'bookmarksImportEmpty'
     | 'bookmarksImportFailed'

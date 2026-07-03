@@ -4,8 +4,6 @@ import { useTaiwanLocation } from '@/hooks/useTaiwanLocation';
 import type { AqiData } from '@/types/environment';
 import { isBrowser } from '@/utils/browserEnv';
 
-export type { AqiData } from '@/types/environment';
-
 interface CachedAqi {
     data: AqiData;
     locationId: string;
@@ -66,12 +64,6 @@ function getCachedAqi(
 
     return cached.data;
 }
-
-export const useAqi = (): {
-    aqi: AqiData | undefined;
-    isLoading: boolean;
-    refreshAqi: () => void;
-} => useAqiWithInitialData({});
 
 export const useAqiWithInitialData = ({
     hasInitialLocationCookie,

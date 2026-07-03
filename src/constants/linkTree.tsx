@@ -220,6 +220,3 @@ export const decorateBookmarkTree = (
             links: [...categoryData.links],
         };
     });
-
-export const linkTree: CategoryData[] =
-    decorateBookmarkTree(defaultBookmarkTree);

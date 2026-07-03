@@ -9,7 +9,7 @@ export type TaiwanLocation = {
     labels: Record<AppLocale, string>;
 };
 
-export const defaultLocationId = 'taipei-city';
+const defaultLocationId = 'taipei-city';
 export const taiwanLocationCookieName = 'homepage_location_id';
 
 export const taiwanLocations = [

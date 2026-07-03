@@ -6,8 +6,6 @@ import { useTaiwanLocation } from '@/hooks/useTaiwanLocation';
 import type { WeatherData } from '@/types/environment';
 import { isBrowser } from '@/utils/browserEnv';
 
-export type { WeatherData } from '@/types/environment';
-
 interface CachedWeather {
     data: WeatherData;
     locationId: string;
@@ -102,17 +100,6 @@ async function requestWeather(
     weatherRequests.set(location.id, request);
     return await request;
 }
-
-export const useWeather = (): {
-    weather: WeatherData | undefined;
-    geolocationPermission: GeolocationPermissionState;
-    isLoading: boolean;
-    isGeolocationAvailable: boolean;
-    isSyncingLocation: boolean;
-    lastLocationSyncSucceededAt: number | undefined;
-    selectedLocation: TaiwanLocation;
-    syncCurrentLocation: () => void;
-} => useWeatherWithInitialData({});
 
 export const useWeatherWithInitialData = ({
     hasInitialLocationCookie,
