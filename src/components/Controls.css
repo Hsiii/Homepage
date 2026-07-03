@@ -718,6 +718,10 @@
     gap: 0.5rem;
 }
 
+.bookmark-manager-section-header {
+    padding-inline: 0.25rem;
+}
+
 .bookmark-manager-section-header,
 .bookmark-manager-bookmark-toolbar {
     justify-content: space-between;
