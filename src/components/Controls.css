@@ -1133,7 +1133,11 @@
 
 .bookmark-manager-bookmark-toolbar {
     min-width: 0;
-    justify-content: flex-end;
+}
+
+.bookmark-manager-bookmark-label {
+    color: var(--clr-text);
+    font: var(--fontBoldMd);
 }
 
 .bookmark-manager-bookmark-form {

@@ -551,6 +551,9 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                                 </section>
                                 <section className='bookmark-manager-bookmarks'>
                                     <div className='bookmark-manager-bookmark-toolbar'>
+                                        <span className='bookmark-manager-bookmark-label'>
+                                            {t.bookmarks}
+                                        </span>
                                         <button
                                             className='bookmark-manager-action-button'
                                             type='button'
