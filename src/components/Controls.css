@@ -738,6 +738,10 @@
     gap: 0.25rem;
 }
 
+.bookmark-manager-link-list {
+    gap: 0.5rem;
+}
+
 .bookmark-manager-category-card {
     position: relative;
     min-width: 0;
@@ -1164,6 +1168,8 @@
 
 .bookmark-manager-link-row {
     grid-template-columns: 1rem minmax(0, 1fr) auto auto;
+    min-height: 4rem;
+    padding-block: 0.75rem;
 }
 
 .bookmark-manager-link-row > svg {
@@ -1173,7 +1179,8 @@
 .bookmark-manager-link-copy {
     min-width: 0;
     display: grid;
-    gap: 0.125rem;
+    align-self: center;
+    gap: 0.25rem;
 }
 
 .bookmark-manager-link-copy span {
