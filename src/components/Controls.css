@@ -851,15 +851,14 @@
 
 .bookmark-manager-category-delete-button {
     position: absolute;
-    top: 0;
+    top: 50%;
     right: 0.5rem;
     width: 2.5rem;
-    min-height: 2.75rem;
     padding: 0.5rem;
     opacity: 0;
     pointer-events: none;
     color: var(--clr-aqi-unhealthy);
-    translate: 0.5rem 0;
+    translate: 0.5rem -50%;
     transition:
         background-color var(--motion-duration-fast) var(--motion-ease-out),
         color var(--motion-duration-fast) var(--motion-ease-out),
@@ -875,7 +874,7 @@
     .bookmark-manager-category-delete-button {
     opacity: 1;
     pointer-events: auto;
-    translate: 0;
+    translate: 0 -50%;
 }
 
 .bookmark-manager-action-button,
