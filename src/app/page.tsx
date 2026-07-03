@@ -11,9 +11,7 @@ import { getUserWallpaper } from '@/server/wallpaperStore';
 import type { WallpaperAsset } from '../../shared/wallpaper';
 import { HomePageClient } from './HomePageClient';
 
-const clerkPublishableKey =
-    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ??
-    process.env.VITE_CLERK_PUBLISHABLE_KEY;
+const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 const isClerkEnabled =
     clerkPublishableKey !== undefined && clerkPublishableKey.trim() !== '';
 

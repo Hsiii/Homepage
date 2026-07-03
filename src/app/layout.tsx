@@ -12,9 +12,7 @@ import '@/components/Main.css';
 import '@/components/Mountains.css';
 import '@/components/Weather.css';
 
-const clerkPublishableKey =
-    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ??
-    process.env.VITE_CLERK_PUBLISHABLE_KEY;
+const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 const quicksand = loadQuicksand({
     display: 'swap',
     subsets: ['latin'],

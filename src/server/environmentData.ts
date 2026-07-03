@@ -27,13 +27,9 @@ const openWeatherUrl = 'https://api.openweathermap.org/data/2.5/weather';
 const sharedDataRevalidateSeconds = 300;
 
 const getOpenWeatherApiKey = (): string | undefined =>
-    process.env.OPENWEATHERMAP_API_KEY ??
-    process.env.VITE_OPENWEATHERMAP_API_KEY ??
-    process.env.OPENWEATHER_API_KEY ??
-    process.env.VITE_OPENWEATHER_API_KEY;
+    process.env.OPENWEATHERMAP_API_KEY ?? process.env.OPENWEATHER_API_KEY;
 
-const getMoenvApiKey = (): string | undefined =>
-    process.env.MOENV_API_KEY ?? process.env.VITE_MOENV_API_KEY;
+const getMoenvApiKey = (): string | undefined => process.env.MOENV_API_KEY;
 
 const readString = (record: AqiRecord, key: string): string => {
     const value = record[key];

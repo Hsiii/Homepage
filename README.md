@@ -31,6 +31,7 @@ cd homepage
 bun i
 bun dev
 ```
+
 ### Stack Map
 
 - **Runtime:** Bun, Next.js 16 App Router, React 19, TypeScript, Turbopack in dev.
