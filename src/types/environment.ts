@@ -9,12 +9,6 @@ export interface AqiData {
     publishTime: string;
 }
 
-export interface AqiSiteOption {
-    siteName: string;
-    county: string;
-    siteId: string;
-}
-
 export interface WeatherData {
     weatherType: string;
     temp: number;

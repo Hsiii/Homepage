@@ -1,9 +1,8 @@
-import { fetchAqiData, fetchAqiSites } from '@/server/environmentData';
+import { fetchAqiData } from '@/server/environmentData';
 
 const aqiCacheControl = 's-maxage=300, stale-while-revalidate=600';
 const defaultSiteName = '新竹';
 const maxSiteNameLength = 32;
-const siteListCacheControl = 's-maxage=3600, stale-while-revalidate=86400';
 
 const parseSiteName = (value: string | null): string | undefined => {
     const siteName = (value ?? defaultSiteName).trim();
@@ -19,17 +18,6 @@ export const GET = async (request: Request): Promise<Response> => {
     const requestUrl = new URL(request.url);
 
     try {
-        if (requestUrl.searchParams.get('mode') === 'sites') {
-            return Response.json(
-                { sites: await fetchAqiSites() },
-                {
-                    headers: {
-                        'Cache-Control': siteListCacheControl,
-                    },
-                }
-            );
-        }
-
         const siteName = parseSiteName(requestUrl.searchParams.get('site'));
 
         if (siteName === undefined) {

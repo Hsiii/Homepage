@@ -1,7 +1,7 @@
 import 'server-only';
 
 import type { TaiwanLocation } from '@/constants/taiwanLocations';
-import type { AqiData, AqiSiteOption, WeatherData } from '@/types/environment';
+import type { AqiData, WeatherData } from '@/types/environment';
 
 type AqiRecord = Readonly<Record<string, unknown>>;
 
@@ -25,7 +25,6 @@ const moenvAqiUrl = 'https://data.moenv.gov.tw/api/v2/aqx_p_432';
 const openMeteoUrl = 'https://api.open-meteo.com/v1/forecast';
 const openWeatherUrl = 'https://api.openweathermap.org/data/2.5/weather';
 const sharedDataRevalidateSeconds = 300;
-const siteListRevalidateSeconds = 3600;
 
 const getOpenWeatherApiKey = (): string | undefined =>
     process.env.OPENWEATHERMAP_API_KEY ??
@@ -97,38 +96,6 @@ const mapAqiRecord = (record: AqiRecord): AqiData => ({
     siteName: readString(record, 'sitename'),
     status: readString(record, 'status'),
 });
-
-const mapSiteOption = (record: AqiRecord): AqiSiteOption | undefined => {
-    const siteName = readString(record, 'sitename');
-
-    if (siteName === '') {
-        return undefined;
-    }
-
-    return {
-        county: readString(record, 'county'),
-        siteId: readString(record, 'siteid'),
-        siteName,
-    };
-};
-
-const uniqueSites = (
-    records: readonly AqiRecord[]
-): readonly AqiSiteOption[] => {
-    const sites = new Map<string, AqiSiteOption>();
-
-    for (const record of records) {
-        const site = mapSiteOption(record);
-
-        if (site !== undefined) {
-            sites.set(site.siteName, site);
-        }
-    }
-
-    return [...sites.values()].toSorted((a, b) =>
-        `${a.county}${a.siteName}`.localeCompare(`${b.county}${b.siteName}`)
-    );
-};
 
 const mapOpenMeteoWeatherCode = (weatherCode: number | undefined): string => {
     if (weatherCode === 0) {
@@ -269,32 +236,4 @@ export const fetchAqiData = async (
     const record = records.at(0);
 
     return record === undefined ? undefined : mapAqiRecord(record);
-};
-
-export const fetchAqiSites = async (): Promise<readonly AqiSiteOption[]> => {
-    const apiKey = getMoenvApiKey();
-
-    if (apiKey === undefined || apiKey.trim() === '') {
-        return [];
-    }
-
-    const url = buildMoenvUrl(apiKey);
-    url.searchParams.set('fields', 'sitename,county,siteid');
-    url.searchParams.set('limit', '1000');
-
-    const response = await fetch(url, {
-        next: { revalidate: siteListRevalidateSeconds },
-    });
-
-    if (!response.ok) {
-        throw new Error(`MOENV API responded with status ${response.status}`);
-    }
-
-    const payload = (await response.json()) as unknown;
-
-    if (!isRecordArray(payload)) {
-        throw new TypeError('MOENV API returned an unexpected payload.');
-    }
-
-    return uniqueSites(payload);
 };
