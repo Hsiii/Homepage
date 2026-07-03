@@ -6,7 +6,13 @@ export default defineConfig(
     ...completeConfigBase,
 
     {
-        ignores: ['.next/**', 'next-env.d.ts', 'public/theme-init.js'],
+        ignores: [
+            '.next/**',
+            '.vercel/**',
+            'dist/**',
+            'next-env.d.ts',
+            'public/theme-init.js',
+        ],
     },
 
     {

@@ -1,5 +1,6 @@
 {
     "buildCommand": "bun run build",
     "devCommand": "next dev --turbopack",
-    "framework": "nextjs"
+    "framework": "nextjs",
+    "outputDirectory": "dist"
 }

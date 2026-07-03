@@ -28,6 +28,7 @@ const nextConfig: NextConfig = {
             },
         ];
     },
+    distDir: 'dist',
     poweredByHeader: false,
     reactStrictMode: true,
 };
