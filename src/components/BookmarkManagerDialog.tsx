@@ -88,7 +88,6 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
     const [categoryIconName, setCategoryIconName] = useState(defaultIconName);
     const [iconSearch, setIconSearch] = useState('');
     const [isIconPickerOpen, setIsIconPickerOpen] = useState(false);
-    const [bookmarkSearch, setBookmarkSearch] = useState('');
     const [bookmarkDraft, setBookmarkDraft] = useState<BookmarkDraft>();
     const [bookmarkError, setBookmarkError] = useState<string>();
     const [confirmDeleteCategoryIndex, setConfirmDeleteCategoryIndex] =
@@ -107,19 +106,6 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
             (iconOption) => iconOption.iconName === categoryIconName
         ) ?? categoryIconOptions[0];
     const SelectedIcon = selectedIconOption.Icon;
-    const normalizedBookmarkSearch = bookmarkSearch.trim().toLowerCase();
-    const visibleBookmarks =
-        selectedCategory === undefined
-            ? []
-            : selectedCategory.links.filter((bookmark) => {
-                  if (normalizedBookmarkSearch === '') {
-                      return true;
-                  }
-
-                  return `${bookmark.title} ${bookmark.url}`
-                      .toLowerCase()
-                      .includes(normalizedBookmarkSearch);
-              });
     const visibleIconOptions = useMemo(() => {
         const normalizedSearch = normalizeCategoryIconSearch(iconSearch);
         const filteredIconOptions =
@@ -183,7 +169,6 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
         ) {
             setSelectedCategoryIndex(bookmarkTree.length);
             setBookmarkDraft(undefined);
-            setBookmarkSearch('');
         }
     };
 
@@ -198,25 +183,30 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
         });
     };
 
-    const deleteCategory = () => {
-        if (selectedCategory === undefined) {
-            return;
-        }
+    const openDeleteCategoryConfirm = (categoryIndex: number) => {
+        setConfirmDeleteCategoryIndex(categoryIndex);
+    };
 
+    const confirmDeleteCategory = (categoryIndex: number) => {
         if (
-            confirmDeleteCategoryIndex !== selectedCategoryIndex &&
-            selectedCategory.links.length > 0
+            categoryIndex < 0 ||
+            categoryIndex >= decoratedBookmarkTree.length
         ) {
-            setConfirmDeleteCategoryIndex(selectedCategoryIndex);
             return;
         }
 
-        if (bookmarkControls.deleteCategory(selectedCategoryIndex)) {
-            setSelectedCategoryIndex((currentIndex) =>
-                Math.max(0, currentIndex - 1)
-            );
+        if (bookmarkControls.deleteCategory(categoryIndex)) {
+            setSelectedCategoryIndex((currentIndex) => {
+                if (categoryIndex < currentIndex) {
+                    return currentIndex - 1;
+                }
+
+                return categoryIndex === currentIndex
+                    ? Math.max(0, currentIndex - 1)
+                    : currentIndex;
+            });
             setBookmarkDraft(undefined);
-            setBookmarkSearch('');
+            setConfirmDeleteCategoryIndex(undefined);
         }
     };
 
@@ -332,9 +322,6 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                         >
                             {t.manageBookmarks}
                         </span>
-                        <span className='bookmark-manager-count'>
-                            {bookmarkTree.length} {t.categories}
-                        </span>
                     </div>
                     <button
                         className='bookmark-manager-icon-button'
@@ -368,27 +355,103 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                                 (categoryData, categoryIndex) => {
                                     const isSelected =
                                         categoryIndex === selectedCategoryIndex;
+                                    const isConfirming =
+                                        confirmDeleteCategoryIndex ===
+                                        categoryIndex;
 
                                     return (
-                                        <button
-                                            className='bookmark-manager-category-option'
-                                            type='button'
-                                            role='option'
-                                            aria-selected={isSelected}
+                                        <div
+                                            className='bookmark-manager-category-card'
+                                            data-confirming={
+                                                isConfirming
+                                                    ? 'true'
+                                                    : undefined
+                                            }
                                             key={`${categoryData.category}-${categoryIndex}`}
-                                            onClick={() => {
-                                                setSelectedCategoryIndex(
-                                                    categoryIndex
-                                                );
-                                                setBookmarkDraft(undefined);
-                                            }}
                                         >
-                                            {categoryData.icon}
-                                            <span>{categoryData.category}</span>
-                                            <span className='bookmark-manager-category-count'>
-                                                {categoryData.links.length}
-                                            </span>
-                                        </button>
+                                            <button
+                                                className='bookmark-manager-category-option'
+                                                type='button'
+                                                role='option'
+                                                aria-selected={isSelected}
+                                                onClick={() => {
+                                                    setSelectedCategoryIndex(
+                                                        categoryIndex
+                                                    );
+                                                    setBookmarkDraft(undefined);
+                                                }}
+                                            >
+                                                {categoryData.icon}
+                                                <span>
+                                                    {categoryData.category}
+                                                </span>
+                                                <span className='bookmark-manager-category-count'>
+                                                    {categoryData.links.length}
+                                                </span>
+                                            </button>
+                                            <button
+                                                className='bookmark-manager-category-delete-button'
+                                                type='button'
+                                                aria-label={`${t.deleteCategory}: ${categoryData.category}`}
+                                                title={t.deleteCategory}
+                                                onClick={() => {
+                                                    openDeleteCategoryConfirm(
+                                                        categoryIndex
+                                                    );
+                                                }}
+                                                onKeyDown={(event) => {
+                                                    if (
+                                                        event.key !== 'Enter' &&
+                                                        event.key !== ' ' &&
+                                                        event.key !== 'Space'
+                                                    ) {
+                                                        return;
+                                                    }
+
+                                                    event.preventDefault();
+                                                    openDeleteCategoryConfirm(
+                                                        categoryIndex
+                                                    );
+                                                }}
+                                            >
+                                                <Trash2 size={16} aria-hidden />
+                                            </button>
+                                            {isConfirming ? (
+                                                <div
+                                                    className='bookmark-manager-category-confirm'
+                                                    role='dialog'
+                                                    aria-label={`${t.deleteCategory}: ${categoryData.category}`}
+                                                >
+                                                    <span>
+                                                        {
+                                                            t.deleteCategoryConfirm
+                                                        }
+                                                    </span>
+                                                    <div className='bookmark-manager-category-confirm-actions'>
+                                                        <button
+                                                            type='button'
+                                                            onClick={() => {
+                                                                setConfirmDeleteCategoryIndex(
+                                                                    undefined
+                                                                );
+                                                            }}
+                                                        >
+                                                            {t.cancel}
+                                                        </button>
+                                                        <button
+                                                            type='button'
+                                                            onClick={() => {
+                                                                confirmDeleteCategory(
+                                                                    categoryIndex
+                                                                );
+                                                            }}
+                                                        >
+                                                            {t.deleteCategory}
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ) : undefined}
+                                        </div>
                                     );
                                 }
                             )}
@@ -398,21 +461,15 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                         {selectedCategory === undefined ? undefined : (
                             <>
                                 <section className='bookmark-manager-category-editor'>
-                                    <label className='bookmark-manager-field bookmark-manager-category-name'>
-                                        <span>{t.categoryName}</span>
-                                        <input
-                                            value={categoryName}
-                                            onChange={(event) => {
-                                                setCategoryName(
-                                                    event.target.value
-                                                );
-                                            }}
-                                        />
-                                    </label>
                                     <div className='bookmark-manager-icon-field'>
+                                        <span className='bookmark-manager-field-label'>
+                                            {t.categoryIcon}
+                                        </span>
                                         <button
                                             className='bookmark-manager-icon-picker-trigger'
                                             type='button'
+                                            aria-label={`${t.categoryIcon}: ${selectedIconOption.label}`}
+                                            title={selectedIconOption.label}
                                             aria-expanded={isIconPickerOpen}
                                             onClick={() => {
                                                 setIsIconPickerOpen(
@@ -424,9 +481,6 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                                                 size={18}
                                                 aria-hidden
                                             />
-                                            <span>
-                                                {selectedIconOption.label}
-                                            </span>
                                         </button>
                                         {isIconPickerOpen ? (
                                             <div className='bookmark-manager-icon-picker'>
@@ -500,6 +554,17 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                                             </div>
                                         ) : undefined}
                                     </div>
+                                    <label className='bookmark-manager-field bookmark-manager-category-name'>
+                                        <span>{t.categoryName}</span>
+                                        <input
+                                            value={categoryName}
+                                            onChange={(event) => {
+                                                setCategoryName(
+                                                    event.target.value
+                                                );
+                                            }}
+                                        />
+                                    </label>
                                     <div className='bookmark-manager-category-actions'>
                                         <button
                                             className='bookmark-manager-action-button'
@@ -513,80 +578,10 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                                             <Check size={16} aria-hidden />
                                             <span>{t.save}</span>
                                         </button>
-                                        <button
-                                            className='bookmark-manager-danger-button'
-                                            type='button'
-                                            onClick={deleteCategory}
-                                        >
-                                            <Trash2 size={16} aria-hidden />
-                                            <span>{t.deleteCategory}</span>
-                                        </button>
                                     </div>
-                                    {confirmDeleteCategoryIndex ===
-                                    selectedCategoryIndex ? (
-                                        <div
-                                            className='bookmark-manager-confirm'
-                                            role='status'
-                                        >
-                                            <span>
-                                                {t.deleteCategoryConfirm}
-                                            </span>
-                                            <button
-                                                type='button'
-                                                onClick={() => {
-                                                    setConfirmDeleteCategoryIndex(
-                                                        undefined
-                                                    );
-                                                }}
-                                            >
-                                                {t.cancel}
-                                            </button>
-                                            <button
-                                                type='button'
-                                                onClick={() => {
-                                                    if (
-                                                        bookmarkControls.deleteCategory(
-                                                            selectedCategoryIndex
-                                                        )
-                                                    ) {
-                                                        setSelectedCategoryIndex(
-                                                            (currentIndex) =>
-                                                                Math.max(
-                                                                    0,
-                                                                    currentIndex -
-                                                                        1
-                                                                )
-                                                        );
-                                                        setBookmarkDraft(
-                                                            undefined
-                                                        );
-                                                        setBookmarkSearch('');
-                                                        setConfirmDeleteCategoryIndex(
-                                                            undefined
-                                                        );
-                                                    }
-                                                }}
-                                            >
-                                                {t.deleteCategory}
-                                            </button>
-                                        </div>
-                                    ) : undefined}
                                 </section>
                                 <section className='bookmark-manager-bookmarks'>
                                     <div className='bookmark-manager-bookmark-toolbar'>
-                                        <label className='bookmark-manager-search'>
-                                            <Search size={16} aria-hidden />
-                                            <input
-                                                type='search'
-                                                value={bookmarkSearch}
-                                                placeholder={t.searchBookmarks}
-                                                onChange={(event) => {
-                                                    setBookmarkSearch(
-                                                        event.target.value
-                                                    );
-                                                }}
-                                            />
-                                        </label>
                                         <button
                                             className='bookmark-manager-action-button'
                                             type='button'
@@ -702,70 +697,78 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                                         </form>
                                     )}
                                     <div className='bookmark-manager-link-list'>
-                                        {visibleBookmarks.length === 0 ? (
+                                        {selectedCategory.links.length === 0 ? (
                                             <div className='bookmark-manager-empty'>
                                                 {t.bookmarksEmpty}
                                             </div>
                                         ) : (
-                                            visibleBookmarks.map((bookmark) => (
-                                                <div
-                                                    className='bookmark-manager-link-row'
-                                                    key={bookmark.id}
-                                                >
-                                                    <LinkIcon
-                                                        size={16}
-                                                        aria-hidden
-                                                    />
-                                                    <div className='bookmark-manager-link-copy'>
-                                                        <span>
-                                                            {bookmark.title}
-                                                        </span>
-                                                        <a
-                                                            href={bookmark.url}
-                                                            target='_blank'
-                                                            rel='noreferrer'
+                                            selectedCategory.links.map(
+                                                (bookmark) => (
+                                                    <div
+                                                        className='bookmark-manager-link-row'
+                                                        key={bookmark.id}
+                                                    >
+                                                        <LinkIcon
+                                                            size={16}
+                                                            aria-hidden
+                                                        />
+                                                        <div className='bookmark-manager-link-copy'>
+                                                            <span>
+                                                                {bookmark.title}
+                                                            </span>
+                                                            <a
+                                                                href={
+                                                                    bookmark.url
+                                                                }
+                                                                target='_blank'
+                                                                rel='noreferrer'
+                                                            >
+                                                                {bookmark.url}
+                                                            </a>
+                                                        </div>
+                                                        <button
+                                                            className='bookmark-manager-icon-button'
+                                                            type='button'
+                                                            aria-label={
+                                                                t.editBookmark
+                                                            }
+                                                            title={
+                                                                t.editBookmark
+                                                            }
+                                                            onClick={() => {
+                                                                startEditBookmark(
+                                                                    bookmark.id
+                                                                );
+                                                            }}
                                                         >
-                                                            {bookmark.url}
-                                                        </a>
+                                                            <Pencil
+                                                                size={16}
+                                                                aria-hidden
+                                                            />
+                                                        </button>
+                                                        <button
+                                                            className='bookmark-manager-icon-button danger'
+                                                            type='button'
+                                                            aria-label={
+                                                                t.deleteBookmark
+                                                            }
+                                                            title={
+                                                                t.deleteBookmark
+                                                            }
+                                                            onClick={() => {
+                                                                deleteBookmark(
+                                                                    bookmark.id
+                                                                );
+                                                            }}
+                                                        >
+                                                            <Trash2
+                                                                size={16}
+                                                                aria-hidden
+                                                            />
+                                                        </button>
                                                     </div>
-                                                    <button
-                                                        className='bookmark-manager-icon-button'
-                                                        type='button'
-                                                        aria-label={
-                                                            t.editBookmark
-                                                        }
-                                                        title={t.editBookmark}
-                                                        onClick={() => {
-                                                            startEditBookmark(
-                                                                bookmark.id
-                                                            );
-                                                        }}
-                                                    >
-                                                        <Pencil
-                                                            size={16}
-                                                            aria-hidden
-                                                        />
-                                                    </button>
-                                                    <button
-                                                        className='bookmark-manager-icon-button danger'
-                                                        type='button'
-                                                        aria-label={
-                                                            t.deleteBookmark
-                                                        }
-                                                        title={t.deleteBookmark}
-                                                        onClick={() => {
-                                                            deleteBookmark(
-                                                                bookmark.id
-                                                            );
-                                                        }}
-                                                    >
-                                                        <Trash2
-                                                            size={16}
-                                                            aria-hidden
-                                                        />
-                                                    </button>
-                                                </div>
-                                            ))
+                                                )
+                                            )
                                         )}
                                     </div>
                                 </section>
