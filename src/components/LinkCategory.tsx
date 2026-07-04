@@ -242,7 +242,7 @@ export const LinkCategory: React.FC<LinkCategoryProps> = ({
                     return (
                         <a
                             key={bookmark.id}
-                            id={bookmark.id}
+                            data-bookmark-id={bookmark.id}
                             href={isDisabled ? undefined : bookmark.url}
                             className={linkClassName}
                         >
