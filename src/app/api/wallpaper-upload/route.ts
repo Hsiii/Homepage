@@ -3,6 +3,7 @@ import type { HandleUploadBody } from '@vercel/blob/client';
 import { handleUpload } from '@vercel/blob/client';
 
 import { ApiError, createApiErrorResponse } from '@/server/apiError';
+import { getWallpaperBlobToken } from '@/server/wallpaperBlob';
 import {
     getWallpaperUploadPrefix,
     wallpaperAcceptedContentTypes,
@@ -28,6 +29,7 @@ export const POST = async (request: Request): Promise<Response> => {
 
         const uploadResponse = await handleUpload({
             body,
+            token: getWallpaperBlobToken(),
             request,
             onBeforeGenerateToken: async (pathname) => {
                 await Promise.resolve();

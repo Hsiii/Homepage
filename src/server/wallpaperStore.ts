@@ -4,6 +4,7 @@ import { del } from '@vercel/blob';
 
 import { ApiError } from '@/server/apiError';
 import { getDatabase } from '@/server/database';
+import { getWallpaperBlobTokenOptions } from '@/server/wallpaperBlob';
 import type { WallpaperAsset } from '../../shared/wallpaper';
 import {
     getWallpaperUploadPrefix,
@@ -213,9 +214,11 @@ export const saveUserWallpaper = async (
         previousRow.url !== asset.url &&
         previousRow.url.endsWith('.blob.vercel-storage.com')
     ) {
-        await del(previousRow.url).catch((error: unknown) => {
-            console.error('Failed to delete previous wallpaper:', error);
-        });
+        await del(previousRow.url, getWallpaperBlobTokenOptions()).catch(
+            (error: unknown) => {
+                console.error('Failed to delete previous wallpaper:', error);
+            }
+        );
     }
 
     return mapWallpaperRow(row);
@@ -235,8 +238,10 @@ export const clearUserWallpaper = async (userId: string): Promise<void> => {
         row?.url !== undefined &&
         row.url.endsWith('.blob.vercel-storage.com')
     ) {
-        await del(row.url).catch((error: unknown) => {
-            console.error('Failed to delete wallpaper:', error);
-        });
+        await del(row.url, getWallpaperBlobTokenOptions()).catch(
+            (error: unknown) => {
+                console.error('Failed to delete wallpaper:', error);
+            }
+        );
     }
 };
