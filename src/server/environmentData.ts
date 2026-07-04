@@ -21,15 +21,56 @@ interface OpenMeteoWeatherPayload {
     };
 }
 
+interface CachedData<T> {
+    updatedAt: number;
+    value: T;
+}
+
 const moenvAqiUrl = 'https://data.moenv.gov.tw/api/v2/aqx_p_432';
 const openMeteoUrl = 'https://api.open-meteo.com/v1/forecast';
 const openWeatherUrl = 'https://api.openweathermap.org/data/2.5/weather';
 const sharedDataRevalidateSeconds = 300;
+const staleCacheMaxAgeMs = 30 * 60 * 1000;
+const weatherCache = new Map<string, CachedData<WeatherData>>();
+const aqiCache = new Map<string, CachedData<AqiData>>();
 
 const getOpenWeatherApiKey = (): string | undefined =>
     process.env.OPENWEATHERMAP_API_KEY ?? process.env.OPENWEATHER_API_KEY;
 
 const getMoenvApiKey = (): string | undefined => process.env.MOENV_API_KEY;
+
+const readCachedData = <T>(
+    cache: ReadonlyMap<string, CachedData<T>>,
+    key: string
+): T | undefined => {
+    const cachedData = cache.get(key);
+
+    if (cachedData === undefined) {
+        return undefined;
+    }
+
+    if (Date.now() - cachedData.updatedAt > staleCacheMaxAgeMs) {
+        return undefined;
+    }
+
+    return cachedData.value;
+};
+
+const createCachedData = <T>(
+    value: T | undefined
+): CachedData<T> | undefined => {
+    if (value === undefined) {
+        return undefined;
+    }
+
+    return {
+        updatedAt: Date.now(),
+        value,
+    };
+};
+
+const getWeatherCacheKey = (lat: number, lon: number): string =>
+    `${lat.toFixed(4)},${lon.toFixed(4)}`;
 
 const readString = (record: AqiRecord, key: string): string => {
     const value = record[key];
@@ -176,38 +217,69 @@ export const fetchWeatherByCoordinates = async (
     lat: number,
     lon: number
 ): Promise<WeatherData | undefined> => {
+    const cacheKey = getWeatherCacheKey(lat, lon);
     const apiKey = getOpenWeatherApiKey();
 
-    if (apiKey === undefined || apiKey.trim() === '') {
-        return await fetchOpenMeteoWeatherByCoordinates(lat, lon);
+    try {
+        if (apiKey === undefined || apiKey.trim() === '') {
+            const openMeteoWeather = await fetchOpenMeteoWeatherByCoordinates(
+                lat,
+                lon
+            );
+
+            const cachedOpenMeteoWeather = createCachedData(openMeteoWeather);
+            if (cachedOpenMeteoWeather !== undefined) {
+                weatherCache.set(cacheKey, cachedOpenMeteoWeather);
+            }
+
+            return openMeteoWeather;
+        }
+
+        const url = new URL(openWeatherUrl);
+        url.searchParams.set('lat', lat.toFixed(4));
+        url.searchParams.set('lon', lon.toFixed(4));
+        url.searchParams.set('units', 'metric');
+        url.searchParams.set('appid', apiKey);
+
+        const response = await fetch(url, {
+            next: { revalidate: sharedDataRevalidateSeconds },
+        });
+
+        if (!response.ok) {
+            throw new Error(
+                `Weather API responded with status ${response.status}`
+            );
+        }
+
+        const payload = (await response.json()) as WeatherPayload;
+        const temp = payload.main?.temp;
+        const weatherType = payload.weather?.at(0)?.main;
+
+        if (typeof temp !== 'number' || typeof weatherType !== 'string') {
+            throw new TypeError('Weather API returned an unexpected payload.');
+        }
+
+        const weather = {
+            temp,
+            weatherType,
+        };
+
+        const cachedWeather = createCachedData(weather);
+        if (cachedWeather !== undefined) {
+            weatherCache.set(cacheKey, cachedWeather);
+        }
+
+        return weather;
+    } catch (error) {
+        const cachedWeather = readCachedData(weatherCache, cacheKey);
+
+        if (cachedWeather !== undefined) {
+            console.error('Weather fetch failed; using stale cache:', error);
+            return cachedWeather;
+        }
+
+        throw error;
     }
-
-    const url = new URL(openWeatherUrl);
-    url.searchParams.set('lat', lat.toFixed(4));
-    url.searchParams.set('lon', lon.toFixed(4));
-    url.searchParams.set('units', 'metric');
-    url.searchParams.set('appid', apiKey);
-
-    const response = await fetch(url, {
-        next: { revalidate: sharedDataRevalidateSeconds },
-    });
-
-    if (!response.ok) {
-        throw new Error(`Weather API responded with status ${response.status}`);
-    }
-
-    const payload = (await response.json()) as WeatherPayload;
-    const temp = payload.main?.temp;
-    const weatherType = payload.weather?.at(0)?.main;
-
-    if (typeof temp !== 'number' || typeof weatherType !== 'string') {
-        throw new TypeError('Weather API returned an unexpected payload.');
-    }
-
-    return {
-        temp,
-        weatherType,
-    };
 };
 
 export const fetchWeatherData = async (
@@ -224,12 +296,29 @@ export const fetchAqiData = async (
         return undefined;
     }
 
-    const url = buildMoenvUrl(apiKey);
-    url.searchParams.set('filters', `sitename,EQ,${siteName}`);
-    url.searchParams.set('limit', '1');
+    try {
+        const url = buildMoenvUrl(apiKey);
+        url.searchParams.set('filters', `sitename,EQ,${siteName}`);
+        url.searchParams.set('limit', '1');
 
-    const records = await fetchMoenvRecords(url);
-    const record = records.at(0);
+        const records = await fetchMoenvRecords(url);
+        const record = records.at(0);
+        const aqi = record === undefined ? undefined : mapAqiRecord(record);
 
-    return record === undefined ? undefined : mapAqiRecord(record);
+        const cachedAqi = createCachedData(aqi);
+        if (cachedAqi !== undefined) {
+            aqiCache.set(siteName, cachedAqi);
+        }
+
+        return aqi;
+    } catch (error) {
+        const cachedAqi = readCachedData(aqiCache, siteName);
+
+        if (cachedAqi !== undefined) {
+            console.error('AQI fetch failed; using stale cache:', error);
+            return cachedAqi;
+        }
+
+        throw error;
+    }
 };

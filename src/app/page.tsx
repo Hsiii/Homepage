@@ -5,6 +5,7 @@ import { findTaiwanLocation } from '@/constants/taiwanLocations';
 import { getUserBookmarks } from '@/server/bookmarkStore';
 import { fetchAqiData, fetchWeatherData } from '@/server/environmentData';
 import { readInitialAppPreferences } from '@/server/preferences';
+import { withServerTimeout } from '@/server/timeout';
 import { getUserWallpaper } from '@/server/wallpaperStore';
 import type { BookmarkCategoryData } from '@/types/bookmarks';
 import type { WallpaperAsset } from '../../shared/wallpaper';
@@ -13,11 +14,26 @@ import { HomePageClient } from './HomePageClient';
 const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 const isClerkEnabled =
     clerkPublishableKey !== undefined && clerkPublishableKey.trim() !== '';
+const initialEnvironmentTimeoutMs = 1200;
+const initialUserDataTimeoutMs = 1400;
 
 interface InitialUserData {
     bookmarks?: BookmarkCategoryData[];
     wallpaper?: WallpaperAsset;
 }
+
+const readOptionalInitialData = async <T,>(
+    label: string,
+    promise: Promise<T | undefined>,
+    timeoutMs: number
+): Promise<T | undefined> => {
+    try {
+        return await withServerTimeout(label, promise, timeoutMs);
+    } catch (error) {
+        console.error(`Failed to read initial ${label}:`, error);
+        return undefined;
+    }
+};
 
 const readInitialUserData = async (): Promise<InitialUserData> => {
     if (!isClerkEnabled) {
@@ -32,8 +48,16 @@ const readInitialUserData = async (): Promise<InitialUserData> => {
         }
 
         const [wallpaper, bookmarks] = await Promise.all([
-            getUserWallpaper(userId),
-            getUserBookmarks(userId),
+            readOptionalInitialData(
+                'wallpaper',
+                getUserWallpaper(userId),
+                initialUserDataTimeoutMs
+            ),
+            readOptionalInitialData(
+                'bookmarks',
+                getUserBookmarks(userId),
+                initialUserDataTimeoutMs
+            ),
         ]);
 
         return {
@@ -52,14 +76,16 @@ export default async function Page(): Promise<ReactNode> {
     const initialPreferences = await readInitialAppPreferences();
     const initialLocation = findTaiwanLocation(initialPreferences.locationId);
     const [initialWeather, initialAqi, initialUserData] = await Promise.all([
-        fetchWeatherData(initialLocation).catch((error: unknown) => {
-            console.error('Failed to read initial weather:', error);
-            return undefined;
-        }),
-        fetchAqiData(initialLocation.aqiSiteName).catch((error: unknown) => {
-            console.error('Failed to read initial AQI:', error);
-            return undefined;
-        }),
+        readOptionalInitialData(
+            'weather',
+            fetchWeatherData(initialLocation),
+            initialEnvironmentTimeoutMs
+        ),
+        readOptionalInitialData(
+            'AQI',
+            fetchAqiData(initialLocation.aqiSiteName),
+            initialEnvironmentTimeoutMs
+        ),
         readInitialUserData(),
     ]);
 
