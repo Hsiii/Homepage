@@ -1,10 +1,9 @@
 import 'server-only';
 
-import { neon } from '@neondatabase/serverless';
-import type { NeonQueryFunction } from '@neondatabase/serverless';
 import { del } from '@vercel/blob';
 
 import { ApiError } from '@/server/apiError';
+import { getDatabase } from '@/server/database';
 import type { WallpaperAsset } from '../../shared/wallpaper';
 import {
     getWallpaperUploadPrefix,
@@ -24,23 +23,7 @@ interface WallpaperRow {
     width: number;
 }
 
-let database: NeonQueryFunction<false, false> | undefined;
 let schemaReady: Promise<void> | undefined;
-
-const getDatabaseUrl = (): string => {
-    const databaseUrl = process.env.DATABASE_URL;
-
-    if (databaseUrl === undefined) {
-        throw new ApiError('DATABASE_URL is not configured.', 500);
-    }
-
-    return databaseUrl;
-};
-
-const getDatabase = (): NeonQueryFunction<false, false> => {
-    database ??= neon(getDatabaseUrl());
-    return database;
-};
 
 const ensureWallpaperSchema = async (): Promise<void> => {
     const sql = getDatabase();
