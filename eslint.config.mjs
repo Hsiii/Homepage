@@ -1,18 +1,12 @@
 import { completeConfigBase } from 'eslint-config-complete';
-import { defineConfig } from 'eslint/config';
 import sortKeys from 'eslint-plugin-sort-keys';
+import { defineConfig } from 'eslint/config';
 
 export default defineConfig(
     ...completeConfigBase,
 
     {
-        ignores: [
-            '.next/**',
-            '.vercel/**',
-            'dist/**',
-            'next-env.d.ts',
-            'public/theme-init.js',
-        ],
+        ignores: ['.next/**', '.vercel/**', 'dist/**', 'next-env.d.ts'],
     },
 
     {

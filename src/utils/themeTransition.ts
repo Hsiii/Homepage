@@ -1,11 +1,14 @@
+import type { ThemeMode } from '@/constants/theme';
+import { themeResolvedStorageKey, themeStorageKey } from '@/constants/theme';
 import { createBlobPath } from '@/hooks/themeTransitionUtils';
+import { writePreferenceCookie } from '@/utils/themeCookies';
 
 interface ThemeTransitionOptions {
     button: HTMLButtonElement;
     isDarkMode: boolean;
     nextDarkMode?: boolean;
     onCommit?: () => void;
-    themeMode?: 'system' | 'light' | 'dark';
+    themeMode?: ThemeMode;
 }
 
 const applyTheme = (
@@ -21,7 +24,9 @@ const applyTheme = (
         root.dataset.themeMode = themeMode;
     }
     root.style.colorScheme = nextTheme;
-    globalThis.localStorage.setItem('theme', themeMode ?? nextTheme);
+    globalThis.localStorage.setItem(themeStorageKey, themeMode ?? nextTheme);
+    writePreferenceCookie(themeStorageKey, themeMode ?? nextTheme);
+    writePreferenceCookie(themeResolvedStorageKey, nextTheme);
     onCommit?.();
 };
 
@@ -105,7 +110,12 @@ export const runThemeTransition = ({
             root.dataset.themeMode = themeMode;
         }
         root.style.colorScheme = nextTheme;
-        globalThis.localStorage.setItem('theme', themeMode ?? nextTheme);
+        globalThis.localStorage.setItem(
+            themeStorageKey,
+            themeMode ?? nextTheme
+        );
+        writePreferenceCookie(themeStorageKey, themeMode ?? nextTheme);
+        writePreferenceCookie(themeResolvedStorageKey, nextTheme);
         onCommit?.();
     };
 

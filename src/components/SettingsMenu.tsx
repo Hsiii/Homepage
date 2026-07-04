@@ -18,39 +18,36 @@ import { flushSync } from 'react-dom';
 
 import { isAppLocale, localeOptions } from '@/constants/i18n';
 import { getLocationLabel, taiwanLocations } from '@/constants/taiwanLocations';
+import type { AnimationMode, ThemeColor, ThemeMode } from '@/constants/theme';
+import {
+    animationStorageKey,
+    defaultThemeColor,
+    isAnimationMode,
+    isThemeColor,
+    isThemeMode,
+    normalAnimationMode,
+    skipAnimationMode,
+    systemThemeQuery,
+    themeColorOptions,
+    themeColorStorageKey,
+    themeResolvedStorageKey,
+    themeStorageKey,
+} from '@/constants/theme';
 import type { BookmarkControls } from '@/hooks/useBookmarks';
 import { useLocale } from '@/hooks/useLocale';
 import { useTaiwanLocation } from '@/hooks/useTaiwanLocation';
 import type { WallpaperControls } from '@/hooks/useWallpaper';
 import { isBrowser } from '@/utils/browserEnv';
+import {
+    clearPreferenceCookie,
+    writePreferenceCookie,
+} from '@/utils/themeCookies';
 import { runThemeTransition } from '@/utils/themeTransition';
 import { getCssUrlValue } from '@/utils/wallpaperStyle';
 import { wallpaperAcceptedContentTypes } from '../../shared/wallpaper';
 import { BookmarkManagerDialog } from './BookmarkManagerDialog';
 
-const animationStorageKey = 'animation-mode';
-const defaultThemeColor = 'amethyst';
-const normalAnimationMode = 'normal';
-const skipAnimationMode = 'skip';
-const themeStorageKey = 'theme';
-const themeColorStorageKey = 'theme-color';
-const systemThemeQuery = '(prefers-color-scheme: dark)';
 const myLocationOptionValue = 'my-location';
-
-const themeColorOptions = [
-    {
-        labelKey: 'amethyst',
-        value: 'amethyst',
-    },
-    {
-        labelKey: 'azure',
-        value: 'azure',
-    },
-] as const;
-
-type AnimationMode = typeof normalAnimationMode | typeof skipAnimationMode;
-type ThemeColor = (typeof themeColorOptions)[number]['value'];
-type ThemeMode = 'system' | 'light' | 'dark';
 
 interface SettingsDropdownOption {
     readonly disabled?: boolean;
@@ -68,15 +65,6 @@ interface SettingsDropdownProps {
     options: SettingsDropdownOption[];
     value: string;
 }
-
-const isThemeColor = (value: string | null): value is ThemeColor =>
-    themeColorOptions.some((option) => option.value === value);
-
-const isAnimationMode = (value: string | null): value is AnimationMode =>
-    value === normalAnimationMode || value === skipAnimationMode;
-
-const isThemeMode = (value: string | null): value is ThemeMode =>
-    value === 'system' || value === 'light' || value === 'dark';
 
 const getInitialAnimationMode = (): AnimationMode => {
     if (!isBrowser()) {
@@ -97,7 +85,9 @@ const getInitialThemeMode = (): ThemeMode => {
         return 'system';
     }
 
-    const savedThemeMode = globalThis.localStorage.getItem(themeStorageKey);
+    const savedThemeMode =
+        globalThis.document.documentElement.dataset.themeMode ??
+        globalThis.localStorage.getItem(themeStorageKey);
 
     return isThemeMode(savedThemeMode) ? savedThemeMode : 'system';
 };
@@ -121,10 +111,12 @@ const applyResolvedTheme = (
     root.dataset.theme = theme;
     root.dataset.themeMode = themeMode;
     root.style.colorScheme = theme;
+    writePreferenceCookie(themeResolvedStorageKey, theme);
 };
 
 const applyThemeMode = (themeMode: ThemeMode) => {
     globalThis.localStorage.setItem(themeStorageKey, themeMode);
+    writePreferenceCookie(themeStorageKey, themeMode);
     applyResolvedTheme(resolveThemeMode(themeMode), themeMode);
 };
 
@@ -146,11 +138,13 @@ const applyThemeColor = (themeColor: ThemeColor) => {
     if (themeColor === defaultThemeColor) {
         delete root.dataset.themeColor;
         globalThis.localStorage.removeItem(themeColorStorageKey);
+        clearPreferenceCookie(themeColorStorageKey);
         return;
     }
 
     root.dataset.themeColor = themeColor;
     globalThis.localStorage.setItem(themeColorStorageKey, themeColor);
+    writePreferenceCookie(themeColorStorageKey, themeColor);
 };
 
 const SettingsDropdown: React.FC<SettingsDropdownProps> = ({
@@ -332,6 +326,7 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({
             }
 
             const savedThemeColor =
+                globalThis.document.documentElement.dataset.themeColor ??
                 globalThis.localStorage.getItem(themeColorStorageKey);
 
             return isThemeColor(savedThemeColor)
@@ -442,6 +437,7 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({
                 animationStorageKey,
                 nextAnimationMode
             );
+            writePreferenceCookie(animationStorageKey, nextAnimationMode);
             setAnimationMode(nextAnimationMode);
         },
         []
