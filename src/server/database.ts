@@ -14,7 +14,7 @@ const databaseUrlVariableNames = [
 
 let database: NeonQueryFunction<false, false> | undefined;
 
-const getDatabaseUrl = (): string => {
+const readDatabaseUrl = (): string | undefined => {
     for (const variableName of databaseUrlVariableNames) {
         const databaseUrl = process.env[variableName]?.trim();
 
@@ -23,9 +23,22 @@ const getDatabaseUrl = (): string => {
         }
     }
 
+    return undefined;
+};
+
+export const isDatabaseConfigured = (): boolean =>
+    readDatabaseUrl() !== undefined;
+
+const getDatabaseUrl = (): string => {
+    const databaseUrl = readDatabaseUrl();
+
+    if (databaseUrl !== undefined) {
+        return databaseUrl;
+    }
+
     throw new ApiError(
         `${databaseUrlVariableNames.join(', ')} is not configured.`,
-        500
+        503
     );
 };
 

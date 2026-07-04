@@ -3,7 +3,7 @@ import 'server-only';
 import { del } from '@vercel/blob';
 
 import { ApiError } from '@/server/apiError';
-import { getDatabase } from '@/server/database';
+import { getDatabase, isDatabaseConfigured } from '@/server/database';
 import { getWallpaperBlobTokenOptions } from '@/server/wallpaperBlob';
 import type { WallpaperAsset } from '../../shared/wallpaper';
 import {
@@ -127,6 +127,10 @@ const validateWallpaperAsset = (
 export const getUserWallpaper = async (
     userId: string
 ): Promise<WallpaperAsset | undefined> => {
+    if (!isDatabaseConfigured()) {
+        return undefined;
+    }
+
     await ensureSchema();
 
     const rows = (await getDatabase()`
@@ -152,6 +156,10 @@ export const saveUserWallpaper = async (
     userId: string,
     asset: WallpaperAsset
 ): Promise<WallpaperAsset> => {
+    if (!isDatabaseConfigured()) {
+        throw new ApiError('Wallpaper sync is not configured.', 503);
+    }
+
     validateWallpaperAsset(userId, asset);
     await ensureSchema();
 
@@ -225,6 +233,10 @@ export const saveUserWallpaper = async (
 };
 
 export const clearUserWallpaper = async (userId: string): Promise<void> => {
+    if (!isDatabaseConfigured()) {
+        return;
+    }
+
     await ensureSchema();
 
     const rows = (await getDatabase()`

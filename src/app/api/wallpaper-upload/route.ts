@@ -3,6 +3,7 @@ import type { HandleUploadBody } from '@vercel/blob/client';
 import { handleUpload } from '@vercel/blob/client';
 
 import { ApiError, createApiErrorResponse } from '@/server/apiError';
+import { isDatabaseConfigured } from '@/server/database';
 import { getWallpaperBlobToken } from '@/server/wallpaperBlob';
 import {
     getWallpaperUploadPrefix,
@@ -26,6 +27,10 @@ export const POST = async (request: Request): Promise<Response> => {
     try {
         const userId = await requireUserId();
         const body = (await request.json()) as HandleUploadBody;
+
+        if (!isDatabaseConfigured()) {
+            throw new ApiError('Wallpaper sync is not configured.', 503);
+        }
 
         const uploadResponse = await handleUpload({
             body,
