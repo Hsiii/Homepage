@@ -1,6 +1,8 @@
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 import {
     Check,
+    ChevronRight,
+    Folder,
     FolderPlus,
     Link as LinkIcon,
     Pencil,
@@ -18,6 +20,13 @@ import {
 } from '@/constants/linkTree';
 import type { BookmarkControls } from '@/hooks/useBookmarks';
 import { useLocale } from '@/hooks/useLocale';
+import type {
+    BookmarkCategoryData,
+    BookmarkFolderData,
+    BookmarkLinkData,
+    BookmarkNodeData,
+} from '@/types/bookmarks';
+import { isBookmarkFolder, isBookmarkLink } from '@/utils/bookmarks';
 
 interface BookmarkManagerDialogProps {
     bookmarkControls: BookmarkControls;
@@ -27,14 +36,26 @@ interface BookmarkManagerDialogProps {
 interface BookmarkDraft {
     bookmarkId?: string;
     categoryIndex: number;
+    folderPath: string[];
     mode: 'add' | 'edit';
     sourceCategoryIndex: number;
+    sourceFolderPath: string[];
     title: string;
     url: string;
 }
 
+interface BookmarkDestinationOption {
+    key: string;
+    label: string;
+    location: {
+        categoryIndex: number;
+        folderPath: string[];
+    };
+}
+
 const defaultIconName = 'Folder';
 const maxVisibleIconOptions = 40;
+const folderPathSeparator = ' / ';
 
 const normalizeUrl = (value: string): string | undefined => {
     const trimmedValue = value.trim();
@@ -75,6 +96,125 @@ const getUniqueCategoryName = (categories: readonly string[]): string => {
     return name;
 };
 
+const getUniqueFolderName = (nodes: readonly BookmarkNodeData[]): string => {
+    const baseName = 'New folder';
+    const folderNames = new Set(
+        nodes.filter(isBookmarkFolder).map((folder) => folder.title)
+    );
+
+    if (!folderNames.has(baseName)) {
+        return baseName;
+    }
+
+    let index = 2;
+    let name = `${baseName} ${index}`;
+
+    while (folderNames.has(name)) {
+        index++;
+        name = `${baseName} ${index}`;
+    }
+
+    return name;
+};
+
+const getFolderAtPath = (
+    nodes: readonly BookmarkNodeData[],
+    folderPath: readonly string[]
+): BookmarkFolderData | undefined => {
+    if (folderPath.length === 0) {
+        return undefined;
+    }
+
+    const folderId = folderPath[0];
+    const remainingPath = folderPath.slice(1);
+    const folder = nodes.find(
+        (node): node is BookmarkFolderData =>
+            isBookmarkFolder(node) && node.id === folderId
+    );
+
+    if (folder === undefined || remainingPath.length === 0) {
+        return folder;
+    }
+
+    return getFolderAtPath(folder.children, remainingPath);
+};
+
+const getNodesAtPath = (
+    category: BookmarkCategoryData | undefined,
+    folderPath: readonly string[]
+): readonly BookmarkNodeData[] => {
+    if (category === undefined) {
+        return [];
+    }
+
+    if (folderPath.length === 0) {
+        return category.children;
+    }
+
+    return getFolderAtPath(category.children, folderPath)?.children ?? [];
+};
+
+const getBookmarkLocationKey = (
+    categoryIndex: number,
+    folderPath: readonly string[]
+): string => JSON.stringify([categoryIndex, ...folderPath]);
+
+const collectDestinationOptions = (
+    nodes: readonly BookmarkNodeData[],
+    categoryIndex: number,
+    parentLabel: string,
+    folderPath: readonly string[] = []
+): BookmarkDestinationOption[] => {
+    const options: BookmarkDestinationOption[] = [];
+
+    for (const node of nodes) {
+        if (!isBookmarkFolder(node)) {
+            continue;
+        }
+
+        const nextFolderPath = [...folderPath, node.id];
+        const label = `${parentLabel}${folderPathSeparator}${node.title}`;
+
+        options.push(
+            {
+                key: getBookmarkLocationKey(categoryIndex, nextFolderPath),
+                label,
+                location: {
+                    categoryIndex,
+                    folderPath: nextFolderPath,
+                },
+            },
+            ...collectDestinationOptions(
+                node.children,
+                categoryIndex,
+                label,
+                nextFolderPath
+            )
+        );
+    }
+
+    return options;
+};
+
+const getBookmarkDestinationOptions = (
+    bookmarkTree: readonly BookmarkCategoryData[]
+): BookmarkDestinationOption[] =>
+    bookmarkTree.flatMap((categoryData, categoryIndex) => [
+        {
+            key: getBookmarkLocationKey(categoryIndex, []),
+            label: categoryData.category,
+            location: {
+                categoryIndex,
+                folderPath: [],
+            },
+        },
+        ...collectDestinationOptions(
+            categoryData.children,
+            categoryIndex,
+            categoryData.category
+        ),
+    ]);
+
 export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
     bookmarkControls,
     onClose,
@@ -84,8 +224,10 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
     const dialogRef = useRef<HTMLDivElement>(null);
     const bookmarkTitleInputRef = useRef<HTMLInputElement>(null);
     const [selectedCategoryIndex, setSelectedCategoryIndex] = useState(0);
+    const [selectedFolderPath, setSelectedFolderPath] = useState<string[]>([]);
     const [categoryName, setCategoryName] = useState('');
     const [categoryIconName, setCategoryIconName] = useState(defaultIconName);
+    const [folderName, setFolderName] = useState('');
     const [iconSearch, setIconSearch] = useState('');
     const [isIconPickerOpen, setIsIconPickerOpen] = useState(false);
     const [bookmarkDraft, setBookmarkDraft] = useState<BookmarkDraft>();
@@ -98,8 +240,26 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
         [bookmarkTree]
     );
     const selectedCategory = bookmarkTree.at(selectedCategoryIndex);
+    const selectedFolder = getFolderAtPath(
+        selectedCategory?.children ?? [],
+        selectedFolderPath
+    );
+    const selectedNodes = getNodesAtPath(selectedCategory, selectedFolderPath);
+    const selectedFolders = selectedNodes.filter(isBookmarkFolder);
+    const selectedBookmarks = selectedNodes.filter(isBookmarkLink);
     const selectedDecoratedCategory = decoratedBookmarkTree.at(
         selectedCategoryIndex
+    );
+    const selectedLocation = {
+        categoryIndex: selectedCategoryIndex,
+        folderPath: selectedFolderPath,
+    };
+    const selectedLocationTitle =
+        selectedFolder?.title ?? selectedCategory?.category ?? t.bookmarks;
+    const selectedFolderPathKey = selectedFolderPath.join('\n');
+    const destinationOptions = useMemo(
+        () => getBookmarkDestinationOptions(bookmarkTree),
+        [bookmarkTree]
     );
     const selectedIconOption =
         categoryIconOptions.find(
@@ -125,6 +285,9 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
         selectedCategory !== undefined &&
         (categoryName.trim() !== selectedCategory.category ||
             categoryIconName !== selectedDecoratedCategory?.iconName);
+    const isFolderDirty =
+        selectedFolder !== undefined &&
+        folderName.trim() !== selectedFolder.title;
 
     useEffect(() => {
         dialogRef.current?.focus();
@@ -137,11 +300,26 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
     }, [bookmarkTree.length]);
 
     useEffect(() => {
+        if (
+            selectedFolderPath.length > 0 &&
+            (selectedCategory === undefined || selectedFolder === undefined)
+        ) {
+            setSelectedFolderPath([]);
+        }
+    }, [
+        selectedCategory,
+        selectedFolder,
+        selectedFolderPath.length,
+        selectedFolderPathKey,
+    ]);
+
+    useEffect(() => {
         setCategoryName(selectedCategory?.category ?? '');
         setCategoryIconName(
             selectedDecoratedCategory?.iconName ?? defaultIconName
         );
         setConfirmDeleteCategoryIndex(undefined);
+        setSelectedFolderPath([]);
         setIconSearch('');
         setIsIconPickerOpen(false);
     }, [
@@ -149,6 +327,10 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
         selectedCategoryIndex,
         selectedDecoratedCategory?.iconName,
     ]);
+
+    useEffect(() => {
+        setFolderName(selectedFolder?.title ?? '');
+    }, [selectedFolder?.title, selectedFolderPathKey]);
 
     useEffect(() => {
         if (bookmarkDraft === undefined) {
@@ -172,6 +354,7 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
             })
         ) {
             setSelectedCategoryIndex(bookmarkTree.length);
+            setSelectedFolderPath([]);
             setBookmarkDraft(undefined);
         }
     };
@@ -185,6 +368,46 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
             category: categoryName,
             icon: categoryIconName,
         });
+    };
+
+    const createFolder = () => {
+        if (selectedCategory === undefined) {
+            return;
+        }
+
+        bookmarkControls.addFolder(selectedLocation, {
+            title: getUniqueFolderName(selectedNodes),
+        });
+        setBookmarkDraft(undefined);
+    };
+
+    const saveFolder = () => {
+        if (selectedFolder === undefined) {
+            return;
+        }
+
+        bookmarkControls.updateFolder(selectedLocation, {
+            title: folderName,
+        });
+    };
+
+    const deleteFolder = (folderPath: readonly string[]) => {
+        if (
+            bookmarkControls.deleteFolder({
+                categoryIndex: selectedCategoryIndex,
+                folderPath: [...folderPath],
+            })
+        ) {
+            if (
+                selectedFolderPath.length >= folderPath.length &&
+                folderPath.every(
+                    (folderId, index) => selectedFolderPath[index] === folderId
+                )
+            ) {
+                setSelectedFolderPath(folderPath.slice(0, -1));
+            }
+            setBookmarkDraft(undefined);
+        }
     };
 
     const openDeleteCategoryConfirm = (categoryIndex: number) => {
@@ -217,8 +440,10 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
     const startAddBookmark = () => {
         setBookmarkDraft({
             categoryIndex: selectedCategoryIndex,
+            folderPath: [...selectedFolderPath],
             mode: 'add',
             sourceCategoryIndex: selectedCategoryIndex,
+            sourceFolderPath: [...selectedFolderPath],
             title: '',
             url: '',
         });
@@ -226,7 +451,7 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
     };
 
     const startEditBookmark = (bookmarkId: string) => {
-        const bookmark = selectedCategory?.links.find(
+        const bookmark = selectedBookmarks.find(
             (linkData) => linkData.id === bookmarkId
         );
 
@@ -237,8 +462,10 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
         setBookmarkDraft({
             bookmarkId,
             categoryIndex: selectedCategoryIndex,
+            folderPath: [...selectedFolderPath],
             mode: 'edit',
             sourceCategoryIndex: selectedCategoryIndex,
+            sourceFolderPath: [...selectedFolderPath],
             title: bookmark.title,
             url: bookmark.url,
         });
@@ -262,19 +489,29 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
         };
         const didSave =
             bookmarkDraft.mode === 'add'
-                ? bookmarkControls.addBookmark(
-                      bookmarkDraft.categoryIndex,
+                ? bookmarkControls.addBookmarkToLocation(
+                      {
+                          categoryIndex: bookmarkDraft.categoryIndex,
+                          folderPath: bookmarkDraft.folderPath,
+                      },
                       bookmarkInput
                   )
-                : bookmarkControls.updateBookmark(
-                      bookmarkDraft.sourceCategoryIndex,
+                : bookmarkControls.updateBookmarkInLocation(
+                      {
+                          categoryIndex: bookmarkDraft.sourceCategoryIndex,
+                          folderPath: bookmarkDraft.sourceFolderPath,
+                      },
                       bookmarkDraft.bookmarkId ?? '',
                       bookmarkInput,
-                      bookmarkDraft.categoryIndex
+                      {
+                          categoryIndex: bookmarkDraft.categoryIndex,
+                          folderPath: bookmarkDraft.folderPath,
+                      }
                   );
 
         if (didSave) {
             setSelectedCategoryIndex(bookmarkDraft.categoryIndex);
+            setSelectedFolderPath(bookmarkDraft.folderPath);
             setBookmarkDraft(undefined);
             setBookmarkError(undefined);
         }
@@ -382,6 +619,7 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                                                     setSelectedCategoryIndex(
                                                         categoryIndex
                                                     );
+                                                    setSelectedFolderPath([]);
                                                     setBookmarkDraft(undefined);
                                                 }}
                                             >
@@ -550,9 +788,180 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                                     </div>
                                 </section>
                                 <section className='bookmark-manager-bookmarks'>
+                                    <div className='bookmark-manager-folder-toolbar'>
+                                        <div className='bookmark-manager-folder-path'>
+                                            <button
+                                                type='button'
+                                                onClick={() => {
+                                                    setSelectedFolderPath([]);
+                                                    setBookmarkDraft(undefined);
+                                                }}
+                                            >
+                                                {selectedCategory.category}
+                                            </button>
+                                            {selectedFolderPath.map(
+                                                (folderId, folderIndex) => {
+                                                    const folderPath =
+                                                        selectedFolderPath.slice(
+                                                            0,
+                                                            folderIndex + 1
+                                                        );
+                                                    const folder =
+                                                        getFolderAtPath(
+                                                            selectedCategory.children,
+                                                            folderPath
+                                                        );
+
+                                                    if (folder === undefined) {
+                                                        return undefined;
+                                                    }
+
+                                                    return (
+                                                        <React.Fragment
+                                                            key={folderId}
+                                                        >
+                                                            <ChevronRight
+                                                                size={14}
+                                                                aria-hidden
+                                                            />
+                                                            <button
+                                                                type='button'
+                                                                onClick={() => {
+                                                                    setSelectedFolderPath(
+                                                                        folderPath
+                                                                    );
+                                                                    setBookmarkDraft(
+                                                                        undefined
+                                                                    );
+                                                                }}
+                                                            >
+                                                                {folder.title}
+                                                            </button>
+                                                        </React.Fragment>
+                                                    );
+                                                }
+                                            )}
+                                        </div>
+                                        <button
+                                            className='bookmark-manager-action-button'
+                                            type='button'
+                                            onClick={createFolder}
+                                        >
+                                            <FolderPlus size={16} aria-hidden />
+                                            <span>{t.addFolder}</span>
+                                        </button>
+                                    </div>
+                                    {selectedFolder ===
+                                    undefined ? undefined : (
+                                        <div className='bookmark-manager-folder-editor'>
+                                            <label className='bookmark-manager-field'>
+                                                <span>{t.folderName}</span>
+                                                <input
+                                                    value={folderName}
+                                                    onChange={(event) => {
+                                                        setFolderName(
+                                                            event.target.value
+                                                        );
+                                                    }}
+                                                />
+                                            </label>
+                                            <div className='bookmark-manager-folder-actions'>
+                                                <button
+                                                    className='bookmark-manager-action-button'
+                                                    type='button'
+                                                    disabled={
+                                                        !isFolderDirty ||
+                                                        folderName.trim() === ''
+                                                    }
+                                                    onClick={saveFolder}
+                                                >
+                                                    <Check
+                                                        size={16}
+                                                        aria-hidden
+                                                    />
+                                                    <span>{t.save}</span>
+                                                </button>
+                                                <button
+                                                    className='bookmark-manager-secondary-button danger'
+                                                    type='button'
+                                                    onClick={() => {
+                                                        deleteFolder(
+                                                            selectedFolderPath
+                                                        );
+                                                    }}
+                                                >
+                                                    <Trash2
+                                                        size={16}
+                                                        aria-hidden
+                                                    />
+                                                    <span>
+                                                        {t.deleteFolder}
+                                                    </span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                    <div className='bookmark-manager-folder-list'>
+                                        {selectedFolders.map((folder) => {
+                                            const folderPath = [
+                                                ...selectedFolderPath,
+                                                folder.id,
+                                            ];
+
+                                            return (
+                                                <div
+                                                    className='bookmark-manager-folder-row'
+                                                    key={folder.id}
+                                                >
+                                                    <button
+                                                        className='bookmark-manager-folder-option'
+                                                        type='button'
+                                                        onClick={() => {
+                                                            setSelectedFolderPath(
+                                                                folderPath
+                                                            );
+                                                            setBookmarkDraft(
+                                                                undefined
+                                                            );
+                                                        }}
+                                                    >
+                                                        <Folder
+                                                            size={16}
+                                                            aria-hidden
+                                                        />
+                                                        <span>
+                                                            {folder.title}
+                                                        </span>
+                                                        <span className='bookmark-manager-category-count'>
+                                                            {
+                                                                folder.children
+                                                                    .length
+                                                            }
+                                                        </span>
+                                                    </button>
+                                                    <button
+                                                        className='bookmark-manager-icon-button danger'
+                                                        type='button'
+                                                        aria-label={`${t.deleteFolder}: ${folder.title}`}
+                                                        title={t.deleteFolder}
+                                                        onClick={() => {
+                                                            deleteFolder(
+                                                                folderPath
+                                                            );
+                                                        }}
+                                                    >
+                                                        <Trash2
+                                                            size={16}
+                                                            aria-hidden
+                                                        />
+                                                    </button>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
                                     <div className='bookmark-manager-bookmark-toolbar'>
                                         <span className='bookmark-manager-bookmark-label'>
-                                            {t.bookmarks}
+                                            {selectedLocationTitle}
                                         </span>
                                         <button
                                             className='bookmark-manager-action-button'
@@ -604,32 +1013,46 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                                             <select
                                                 className='bookmark-manager-category-select'
                                                 aria-label={t.categories}
-                                                value={
-                                                    bookmarkDraft.categoryIndex
-                                                }
+                                                value={getBookmarkLocationKey(
+                                                    bookmarkDraft.categoryIndex,
+                                                    bookmarkDraft.folderPath
+                                                )}
                                                 onChange={(event) => {
+                                                    const nextDestination =
+                                                        destinationOptions.find(
+                                                            (option) =>
+                                                                option.key ===
+                                                                event.target
+                                                                    .value
+                                                        );
+                                                    if (
+                                                        nextDestination ===
+                                                        undefined
+                                                    ) {
+                                                        return;
+                                                    }
+
                                                     setBookmarkDraft({
                                                         ...bookmarkDraft,
-                                                        categoryIndex: Number(
-                                                            event.target.value
-                                                        ),
+                                                        categoryIndex:
+                                                            nextDestination
+                                                                .location
+                                                                .categoryIndex,
+                                                        folderPath: [
+                                                            ...nextDestination
+                                                                .location
+                                                                .folderPath,
+                                                        ],
                                                     });
                                                 }}
                                             >
-                                                {bookmarkTree.map(
-                                                    (
-                                                        categoryData,
-                                                        categoryIndex
-                                                    ) => (
+                                                {destinationOptions.map(
+                                                    (option) => (
                                                         <option
-                                                            key={`${categoryData.category}-${categoryIndex}`}
-                                                            value={
-                                                                categoryIndex
-                                                            }
+                                                            key={option.key}
+                                                            value={option.key}
                                                         >
-                                                            {
-                                                                categoryData.category
-                                                            }
+                                                            {option.label}
                                                         </option>
                                                     )
                                                 )}
@@ -669,13 +1092,15 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                                         </form>
                                     )}
                                     <div className='bookmark-manager-link-list'>
-                                        {selectedCategory.links.length === 0 ? (
+                                        {selectedBookmarks.length === 0 ? (
                                             <div className='bookmark-manager-empty'>
                                                 {t.bookmarksEmpty}
                                             </div>
                                         ) : (
-                                            selectedCategory.links.map(
-                                                (bookmark) => (
+                                            selectedBookmarks.map(
+                                                (
+                                                    bookmark: BookmarkLinkData
+                                                ) => (
                                                     <div
                                                         className='bookmark-manager-link-row'
                                                         key={bookmark.id}

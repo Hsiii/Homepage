@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { defaultBookmarkTree } from '@/constants/linkTree';
 import type {
     BookmarkCategoryData,
+    BookmarkFolderData,
     BookmarkLinkData,
     BookmarkNodeData,
 } from '@/types/bookmarks';
@@ -38,17 +39,35 @@ export interface BookmarkCategoryInput {
     icon?: string;
 }
 
+export interface BookmarkFolderInput {
+    title: string;
+}
+
 export interface BookmarkInput {
     title: string;
     url: string;
 }
 
+export interface BookmarkLocationInput {
+    categoryIndex: number;
+    folderPath?: string[];
+}
+
 export interface BookmarkControls {
     addBookmark: (categoryIndex: number, bookmark: BookmarkInput) => boolean;
+    addBookmarkToLocation: (
+        location: BookmarkLocationInput,
+        bookmark: BookmarkInput
+    ) => boolean;
     addCategory: (category: BookmarkCategoryInput) => boolean;
+    addFolder: (
+        location: BookmarkLocationInput,
+        folder: BookmarkFolderInput
+    ) => boolean;
     bookmarkTree: BookmarkCategoryData[];
     deleteBookmark: (categoryIndex: number, bookmarkId: string) => boolean;
     deleteCategory: (categoryIndex: number) => boolean;
+    deleteFolder: (location: BookmarkLocationInput) => boolean;
     exportBookmarks: () => void;
     importBookmarks: (file: File) => Promise<void>;
     isCustom: boolean;
@@ -60,11 +79,21 @@ export interface BookmarkControls {
         bookmark: BookmarkInput,
         nextCategoryIndex?: number
     ) => boolean;
+    updateBookmarkInLocation: (
+        location: BookmarkLocationInput,
+        bookmarkId: string,
+        bookmark: BookmarkInput,
+        nextLocation?: BookmarkLocationInput
+    ) => boolean;
     updateCategory: (
         categoryIndex: number,
         category: BookmarkCategoryInput
     ) => boolean;
     updateCategoryIcon: (categoryIndex: number, icon: string) => void;
+    updateFolder: (
+        location: BookmarkLocationInput,
+        folder: BookmarkFolderInput
+    ) => boolean;
 }
 
 interface BookmarkApiResponse {
@@ -159,6 +188,8 @@ const createEntityId = (prefix: string): string => {
 
 const createBookmarkId = (): string => createEntityId('bookmark');
 
+const createFolderId = (): string => createEntityId('folder');
+
 const fallbackCategory: BookmarkCategoryData = {
     category: 'Bookmarks',
     children: [],
@@ -209,6 +240,128 @@ const deleteBookmarkNodes = (
             },
         ];
     });
+
+const normalizeFolderPath = (location: BookmarkLocationInput): string[] =>
+    location.folderPath ?? [];
+
+const updateNodesAtFolderPath = (
+    nodes: readonly BookmarkNodeData[],
+    folderPath: readonly string[],
+    updateNodes: (
+        nodes: readonly BookmarkNodeData[]
+    ) => BookmarkNodeData[] | undefined
+): BookmarkNodeData[] | undefined => {
+    if (folderPath.length === 0) {
+        return updateNodes(nodes);
+    }
+
+    const folderId = folderPath[0];
+    const remainingPath = folderPath.slice(1);
+
+    for (const [nodeIndex, node] of nodes.entries()) {
+        if (node.type !== 'folder' || node.id !== folderId) {
+            continue;
+        }
+
+        const nextChildren = updateNodesAtFolderPath(
+            node.children,
+            remainingPath,
+            updateNodes
+        );
+
+        if (nextChildren === undefined) {
+            return undefined;
+        }
+
+        return nodes.map((currentNode, currentIndex) =>
+            currentIndex === nodeIndex
+                ? {
+                      ...node,
+                      children: nextChildren,
+                  }
+                : currentNode
+        );
+    }
+
+    return undefined;
+};
+
+const updateFolderAtPath = (
+    nodes: readonly BookmarkNodeData[],
+    folderPath: readonly string[],
+    updateFolder: (folder: BookmarkFolderData) => BookmarkFolderData
+): BookmarkNodeData[] | undefined => {
+    if (folderPath.length === 0) {
+        return undefined;
+    }
+
+    const folderId = folderPath[0];
+    const remainingPath = folderPath.slice(1);
+
+    for (const [nodeIndex, node] of nodes.entries()) {
+        if (node.type !== 'folder' || node.id !== folderId) {
+            continue;
+        }
+
+        if (remainingPath.length === 0) {
+            return nodes.map((currentNode, currentIndex) =>
+                currentIndex === nodeIndex ? updateFolder(node) : currentNode
+            );
+        }
+
+        const nextChildren = updateFolderAtPath(
+            node.children,
+            remainingPath,
+            updateFolder
+        );
+
+        if (nextChildren === undefined) {
+            return undefined;
+        }
+
+        return nodes.map((currentNode, currentIndex) =>
+            currentIndex === nodeIndex
+                ? {
+                      ...node,
+                      children: nextChildren,
+                  }
+                : currentNode
+        );
+    }
+
+    return undefined;
+};
+
+const deleteFolderAtPath = (
+    nodes: readonly BookmarkNodeData[],
+    folderPath: readonly string[]
+): BookmarkNodeData[] | undefined => {
+    if (folderPath.length === 0) {
+        return undefined;
+    }
+
+    const folderId = folderPath[0];
+    const remainingPath = folderPath.slice(1);
+
+    if (remainingPath.length === 0) {
+        const nextNodes = nodes.filter(
+            (node) => node.type !== 'folder' || node.id !== folderId
+        );
+
+        return nextNodes.length === nodes.length ? undefined : nextNodes;
+    }
+
+    return updateFolderAtPath(nodes, [folderId], (folder) => {
+        const nextChildren = deleteFolderAtPath(folder.children, remainingPath);
+
+        return nextChildren === undefined
+            ? folder
+            : {
+                  ...folder,
+                  children: nextChildren,
+              };
+    });
+};
 
 const areBookmarkTreesEqual = (
     firstBookmarkTree: readonly BookmarkCategoryData[],
@@ -662,17 +815,145 @@ export const useBookmarks = (
         [bookmarkTree, commitBookmarkTree]
     );
 
-    const addBookmark = useCallback(
-        (categoryIndex: number, bookmarkInput: BookmarkInput) => {
+    const updateBookmarkLocation = useCallback(
+        (
+            location: BookmarkLocationInput,
+            updateNodes: (
+                nodes: readonly BookmarkNodeData[]
+            ) => BookmarkNodeData[] | undefined
+        ) => {
+            const categoryData = bookmarkTree.at(location.categoryIndex);
+            if (categoryData === undefined) {
+                return false;
+            }
+
+            const nextChildren = updateNodesAtFolderPath(
+                categoryData.children,
+                normalizeFolderPath(location),
+                updateNodes
+            );
+
+            if (nextChildren === undefined) {
+                return false;
+            }
+
+            return commitBookmarkTree(
+                bookmarkTree.map((currentCategoryData, currentIndex) =>
+                    currentIndex === location.categoryIndex
+                        ? {
+                              ...currentCategoryData,
+                              children: nextChildren,
+                          }
+                        : currentCategoryData
+                )
+            );
+        },
+        [bookmarkTree, commitBookmarkTree]
+    );
+
+    const addFolder = useCallback(
+        (location: BookmarkLocationInput, folderInput: BookmarkFolderInput) => {
+            const title = normalizeInputText(folderInput.title);
+            if (title === '') {
+                return false;
+            }
+
+            return updateBookmarkLocation(location, (nodes) => [
+                ...nodes,
+                {
+                    children: [],
+                    id: createFolderId(),
+                    title,
+                    type: 'folder',
+                },
+            ]);
+        },
+        [updateBookmarkLocation]
+    );
+
+    const updateFolder = useCallback(
+        (location: BookmarkLocationInput, folderInput: BookmarkFolderInput) => {
+            const title = normalizeInputText(folderInput.title);
+            const folderPath = normalizeFolderPath(location);
+
+            if (title === '' || folderPath.length === 0) {
+                return false;
+            }
+
+            const categoryData = bookmarkTree.at(location.categoryIndex);
+            if (categoryData === undefined) {
+                return false;
+            }
+
+            const nextChildren = updateFolderAtPath(
+                categoryData.children,
+                folderPath,
+                (folder) => ({
+                    ...folder,
+                    title,
+                })
+            );
+
+            if (nextChildren === undefined) {
+                return false;
+            }
+
+            return commitBookmarkTree(
+                bookmarkTree.map((currentCategoryData, currentIndex) =>
+                    currentIndex === location.categoryIndex
+                        ? {
+                              ...currentCategoryData,
+                              children: nextChildren,
+                          }
+                        : currentCategoryData
+                )
+            );
+        },
+        [bookmarkTree, commitBookmarkTree]
+    );
+
+    const deleteFolder = useCallback(
+        (location: BookmarkLocationInput) => {
+            const folderPath = normalizeFolderPath(location);
+
+            if (folderPath.length === 0) {
+                return false;
+            }
+
+            const categoryData = bookmarkTree.at(location.categoryIndex);
+            if (categoryData === undefined) {
+                return false;
+            }
+
+            const nextChildren = deleteFolderAtPath(
+                categoryData.children,
+                folderPath
+            );
+
+            if (nextChildren === undefined) {
+                return false;
+            }
+
+            return commitBookmarkTree(
+                bookmarkTree.map((currentCategoryData, currentIndex) =>
+                    currentIndex === location.categoryIndex
+                        ? {
+                              ...currentCategoryData,
+                              children: nextChildren,
+                          }
+                        : currentCategoryData
+                )
+            );
+        },
+        [bookmarkTree, commitBookmarkTree]
+    );
+
+    const addBookmarkToLocation = useCallback(
+        (location: BookmarkLocationInput, bookmarkInput: BookmarkInput) => {
             const title = normalizeInputText(bookmarkInput.title);
             const url = bookmarkInput.url.trim();
 
-            if (
-                title === '' ||
-                url === '' ||
-                categoryIndex < 0 ||
-                categoryIndex >= bookmarkTree.length
-            ) {
+            if (title === '' || url === '') {
                 return false;
             }
 
@@ -683,31 +964,36 @@ export const useBookmarks = (
                 url,
             };
 
-            return commitBookmarkTree(
-                bookmarkTree.map((categoryData, currentIndex) =>
-                    currentIndex === categoryIndex
-                        ? {
-                              ...categoryData,
-                              children: [...categoryData.children, bookmark],
-                          }
-                        : categoryData
-                )
-            );
+            return updateBookmarkLocation(location, (nodes) => [
+                ...nodes,
+                bookmark,
+            ]);
         },
-        [bookmarkTree, commitBookmarkTree]
+        [updateBookmarkLocation]
     );
 
-    const updateBookmark = useCallback(
+    const addBookmark = useCallback(
+        (categoryIndex: number, bookmarkInput: BookmarkInput) =>
+            addBookmarkToLocation(
+                {
+                    categoryIndex,
+                },
+                bookmarkInput
+            ),
+        [addBookmarkToLocation]
+    );
+
+    const updateBookmarkInLocation = useCallback(
         (
-            categoryIndex: number,
+            location: BookmarkLocationInput,
             bookmarkId: string,
             bookmarkInput: BookmarkInput,
-            nextCategoryIndex = categoryIndex
+            nextLocation = location
         ) => {
             const title = normalizeInputText(bookmarkInput.title);
             const url = bookmarkInput.url.trim();
-            const sourceCategory = bookmarkTree.at(categoryIndex);
-            const targetCategory = bookmarkTree.at(nextCategoryIndex);
+            const sourceCategory = bookmarkTree.at(location.categoryIndex);
+            const targetCategory = bookmarkTree.at(nextLocation.categoryIndex);
             const bookmark = sourceCategory?.links.find(
                 (linkData) => linkData.id === bookmarkId
             );
@@ -722,53 +1008,106 @@ export const useBookmarks = (
                 return false;
             }
 
+            const sourceFolderPath = normalizeFolderPath(location);
+            const targetFolderPath = normalizeFolderPath(nextLocation);
             const nextBookmark = {
                 ...bookmark,
                 title,
                 url,
             };
 
-            if (categoryIndex === nextCategoryIndex) {
-                return commitBookmarkTree(
-                    bookmarkTree.map((categoryData, currentIndex) =>
-                        currentIndex === categoryIndex
-                            ? {
-                                  ...categoryData,
-                                  children: updateBookmarkNodes(
-                                      categoryData.children,
-                                      bookmarkId,
-                                      nextBookmark
-                                  ),
-                              }
-                            : categoryData
-                    )
+            if (
+                location.categoryIndex === nextLocation.categoryIndex &&
+                sourceFolderPath.join('\n') === targetFolderPath.join('\n')
+            ) {
+                return updateBookmarkLocation(
+                    location,
+                    (nodes): BookmarkNodeData[] =>
+                        updateBookmarkNodes(nodes, bookmarkId, nextBookmark)
                 );
             }
 
-            return commitBookmarkTree(
-                bookmarkTree.map((categoryData, currentIndex) => {
-                    if (currentIndex === categoryIndex) {
+            const nextBookmarkTree = bookmarkTree.map(
+                (categoryData, currentIndex) => {
+                    if (
+                        currentIndex !== location.categoryIndex &&
+                        currentIndex !== nextLocation.categoryIndex
+                    ) {
+                        return categoryData;
+                    }
+
+                    if (location.categoryIndex === nextLocation.categoryIndex) {
+                        const withoutBookmark = updateNodesAtFolderPath(
+                            categoryData.children,
+                            sourceFolderPath,
+                            (nodes) => deleteBookmarkNodes(nodes, bookmarkId)
+                        );
+
+                        if (withoutBookmark === undefined) {
+                            return categoryData;
+                        }
+
+                        const withBookmark = updateNodesAtFolderPath(
+                            withoutBookmark,
+                            targetFolderPath,
+                            (nodes) => [...nodes, nextBookmark]
+                        );
+
                         return {
                             ...categoryData,
-                            children: deleteBookmarkNodes(
-                                categoryData.children,
-                                bookmarkId
-                            ),
+                            children: withBookmark ?? categoryData.children,
                         };
                     }
 
-                    if (currentIndex === nextCategoryIndex) {
+                    if (currentIndex === location.categoryIndex) {
+                        const nextChildren = updateNodesAtFolderPath(
+                            categoryData.children,
+                            sourceFolderPath,
+                            (nodes) => deleteBookmarkNodes(nodes, bookmarkId)
+                        );
+
                         return {
                             ...categoryData,
-                            children: [...categoryData.children, nextBookmark],
+                            children: nextChildren ?? categoryData.children,
                         };
                     }
 
-                    return categoryData;
-                })
+                    const nextChildren = updateNodesAtFolderPath(
+                        categoryData.children,
+                        targetFolderPath,
+                        (nodes) => [...nodes, nextBookmark]
+                    );
+
+                    return {
+                        ...categoryData,
+                        children: nextChildren ?? categoryData.children,
+                    };
+                }
             );
+
+            return commitBookmarkTree(nextBookmarkTree);
         },
-        [bookmarkTree, commitBookmarkTree]
+        [bookmarkTree, commitBookmarkTree, updateBookmarkLocation]
+    );
+
+    const updateBookmark = useCallback(
+        (
+            categoryIndex: number,
+            bookmarkId: string,
+            bookmarkInput: BookmarkInput,
+            nextCategoryIndex = categoryIndex
+        ) =>
+            updateBookmarkInLocation(
+                {
+                    categoryIndex,
+                },
+                bookmarkId,
+                bookmarkInput,
+                {
+                    categoryIndex: nextCategoryIndex,
+                }
+            ),
+        [updateBookmarkInLocation]
     );
 
     const deleteBookmark = useCallback(
@@ -823,17 +1162,22 @@ export const useBookmarks = (
 
     return {
         addBookmark,
+        addBookmarkToLocation,
         addCategory,
+        addFolder,
         bookmarkTree,
         deleteBookmark,
         deleteCategory,
+        deleteFolder,
         exportBookmarks,
         importBookmarks,
         isCustom,
         resetBookmarks,
         status,
         updateBookmark,
+        updateBookmarkInLocation,
         updateCategory,
         updateCategoryIcon,
+        updateFolder,
     };
 };
