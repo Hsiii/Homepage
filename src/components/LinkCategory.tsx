@@ -69,16 +69,16 @@ const BookmarkFolderNode: React.FC<BookmarkFolderNodeProps> = ({
     isMouseNav,
     node,
 }) => {
+    const folderNodeRef = useRef<HTMLDivElement>(null);
     const submenuRef = useRef<HTMLDivElement>(null);
     const isExpanded = highlightedFolderPath?.[depth] === node.id;
     const updateSubmenuPlacement = useCallback(() => {
+        const folderNode = folderNodeRef.current;
         const submenu = submenuRef.current;
 
-        if (submenu === null) {
+        if (folderNode === null || submenu === null) {
             return;
         }
-
-        submenu.style.setProperty('--submenu-offset-y', '0px');
 
         const viewport = globalThis.visualViewport;
         const viewportTop = viewport?.offsetTop ?? 0;
@@ -86,16 +86,12 @@ const BookmarkFolderNode: React.FC<BookmarkFolderNodeProps> = ({
         const topLimit = viewportTop + submenuViewportPadding;
         const bottomLimit =
             viewportTop + viewportHeight - submenuViewportPadding;
-        const rect = submenu.getBoundingClientRect();
-        let offset = 0;
-
-        if (rect.bottom > bottomLimit) {
-            offset = bottomLimit - rect.bottom;
-        }
-
-        if (rect.top + offset < topLimit) {
-            offset = topLimit - rect.top;
-        }
+        const availableHeight = bottomLimit - topLimit;
+        const anchorTop = folderNode.getBoundingClientRect().top;
+        const submenuHeight = Math.min(submenu.scrollHeight, availableHeight);
+        const maxTop = Math.max(topLimit, bottomLimit - submenuHeight);
+        const submenuTop = Math.min(Math.max(anchorTop, topLimit), maxTop);
+        const offset = submenuTop - anchorTop;
 
         submenu.style.setProperty(
             '--submenu-offset-y',
@@ -127,6 +123,7 @@ const BookmarkFolderNode: React.FC<BookmarkFolderNodeProps> = ({
             key={node.id}
             onFocusCapture={updateSubmenuPlacement}
             onPointerEnter={updateSubmenuPlacement}
+            ref={folderNodeRef}
         >
             <button
                 className={[

@@ -578,9 +578,9 @@
         opacity: 0;
         pointer-events: none;
         translate: -0.5rem var(--submenu-offset-y);
-        transition:
-            opacity var(--motion-duration-fast) var(--motion-ease-out),
-            translate var(--motion-duration-fast) var(--motion-ease-out);
+        transition: opacity var(--motion-duration-fast) var(--motion-ease-out);
+        overflow-y: auto;
+        overscroll-behavior: contain;
 
         display: flex;
         flex-direction: column;
