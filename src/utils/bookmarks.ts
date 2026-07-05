@@ -1,18 +1,13 @@
-import type { BookmarkCategoryData, BookmarkLinkData } from '@/types/bookmarks';
+import type {
+    BookmarkCategoryData,
+    BookmarkFolderData,
+    BookmarkLinkData,
+    BookmarkNodeData,
+} from '@/types/bookmarks';
 
 const defaultCategoryName = 'Bookmarks';
-const folderSeparator = ' / ';
-
-const browserRootFolderNames = new Set([
-    'bookmarks',
-    'bookmarks bar',
-    'bookmarks menu',
-    'bookmarks toolbar',
-    'favorites',
-    'favorites bar',
-    'mobile bookmarks',
-    'other bookmarks',
-]);
+const defaultFolderName = 'Folder';
+const rootWrapperFolderNames = new Set(['bookmarks', 'favorites']);
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
     typeof value === 'object' && value !== null;
@@ -20,7 +15,8 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 const normalizeText = (value: string): string =>
     value.replaceAll(/\s+/g, ' ').trim();
 
-const createFallbackId = (index: number): string => `bookmark-${index}`;
+const createFallbackId = (prefix: string, index: number): string =>
+    `${prefix}-${index}`;
 
 const createUniqueIdGetter = (): ((id: string) => string) => {
     const usedIds = new Set<string>();
@@ -43,50 +39,203 @@ const createUniqueIdGetter = (): ((id: string) => string) => {
     };
 };
 
+const createNextIndexGetter = (): (() => number) => {
+    let index = 0;
+
+    return () => {
+        index++;
+        return index;
+    };
+};
+
+export const isBookmarkFolder = (
+    node: BookmarkNodeData
+): node is BookmarkFolderData => node.type === 'folder';
+
+export const isBookmarkLink = (
+    node: BookmarkNodeData
+): node is BookmarkLinkData => node.type === 'link';
+
+export const getBookmarkLinks = (
+    nodes: readonly BookmarkNodeData[]
+): BookmarkLinkData[] =>
+    nodes.flatMap((node) =>
+        isBookmarkLink(node) ? [node] : getBookmarkLinks(node.children)
+    );
+
+const normalizeBookmarkLink = (
+    bookmark: BookmarkLinkData,
+    getUniqueId: (id: string) => string,
+    bookmarkIndex: number
+): BookmarkLinkData | undefined => {
+    const title = normalizeText(bookmark.title);
+    const url = bookmark.url.trim();
+
+    if (title === '' || url === '') {
+        return undefined;
+    }
+
+    const id =
+        normalizeText(bookmark.id) ||
+        createFallbackId('bookmark', bookmarkIndex);
+
+    return {
+        id: getUniqueId(id),
+        title,
+        type: 'link',
+        url,
+    };
+};
+
+const normalizeBookmarkNodes = (
+    nodes: readonly BookmarkNodeData[],
+    getUniqueId: (id: string) => string,
+    getNextIndex: () => number
+): BookmarkNodeData[] =>
+    nodes
+        .map((node): BookmarkNodeData | undefined => {
+            const fallbackIndex = getNextIndex();
+
+            if (isBookmarkLink(node)) {
+                return normalizeBookmarkLink(node, getUniqueId, fallbackIndex);
+            }
+
+            const title = normalizeText(node.title) || defaultFolderName;
+            const id =
+                normalizeText(node.id) ||
+                createFallbackId('folder', fallbackIndex);
+            const children = normalizeBookmarkNodes(
+                node.children,
+                getUniqueId,
+                getNextIndex
+            );
+
+            return {
+                children,
+                id: getUniqueId(id),
+                title,
+                type: 'folder',
+            };
+        })
+        .filter((node): node is BookmarkNodeData => node !== undefined);
+
 const normalizeBookmarkTree = (
     bookmarkTree: readonly BookmarkCategoryData[]
 ): BookmarkCategoryData[] => {
     const getUniqueId = createUniqueIdGetter();
-    let bookmarkIndex = 0;
+    const getNextIndex = createNextIndexGetter();
 
-    return bookmarkTree.map((categoryData) => {
+    return bookmarkTree.map((categoryData, categoryIndex) => {
         const category =
             normalizeText(categoryData.category) || defaultCategoryName;
         const icon =
             categoryData.icon === undefined
                 ? undefined
                 : normalizeText(categoryData.icon);
-        const links = categoryData.links
-            .map((bookmark): BookmarkLinkData | undefined => {
-                const title = normalizeText(bookmark.title);
-                const url = bookmark.url.trim();
-
-                if (title === '' || url === '') {
-                    return undefined;
-                }
-
-                const id =
-                    normalizeText(bookmark.id) ||
-                    createFallbackId(bookmarkIndex);
-                bookmarkIndex++;
-
-                return {
-                    id: getUniqueId(id),
-                    title,
-                    url,
-                };
-            })
-            .filter(
-                (bookmark): bookmark is BookmarkLinkData =>
-                    bookmark !== undefined
-            );
+        const id =
+            normalizeText(categoryData.id) ||
+            createFallbackId('category', categoryIndex + 1);
+        const children = normalizeBookmarkNodes(
+            categoryData.children,
+            getUniqueId,
+            getNextIndex
+        );
 
         return {
             category,
+            children,
+            id: getUniqueId(id),
             ...(icon === undefined || icon === '' ? {} : { icon }),
-            links,
+            links: getBookmarkLinks(children),
         };
     });
+};
+
+const coerceBookmarkLink = (value: unknown): BookmarkLinkData | undefined => {
+    if (!isRecord(value)) {
+        return undefined;
+    }
+
+    const title = typeof value.title === 'string' ? value.title : '';
+    const url = typeof value.url === 'string' ? value.url : '';
+    const id = typeof value.id === 'string' ? value.id : '';
+
+    return {
+        id,
+        title,
+        type: 'link',
+        url,
+    };
+};
+
+const getFolderTitle = (value: Readonly<Record<string, unknown>>): string => {
+    if (typeof value.title === 'string') {
+        return value.title;
+    }
+
+    if (typeof value.category === 'string') {
+        return value.category;
+    }
+
+    return defaultFolderName;
+};
+
+const coerceBookmarkNode = (value: unknown): BookmarkNodeData | undefined => {
+    if (!isRecord(value)) {
+        return undefined;
+    }
+
+    const childrenValue = value.children;
+    if (Array.isArray(childrenValue)) {
+        const title = getFolderTitle(value);
+        const id = typeof value.id === 'string' ? value.id : '';
+        const children = childrenValue
+            .map((nodeValue) => coerceBookmarkNode(nodeValue))
+            .filter((node): node is BookmarkNodeData => node !== undefined);
+
+        return {
+            children,
+            id,
+            title,
+            type: 'folder',
+        };
+    }
+
+    return coerceBookmarkLink(value);
+};
+
+const getCategoryTitle = (value: Readonly<Record<string, unknown>>): string => {
+    if (typeof value.category === 'string') {
+        return value.category;
+    }
+
+    if (typeof value.title === 'string') {
+        return value.title;
+    }
+
+    return defaultCategoryName;
+};
+
+const coerceCategoryChildren = (
+    categoryValue: Readonly<Record<string, unknown>>
+): BookmarkNodeData[] | undefined => {
+    const childrenValue = categoryValue.children;
+    if (Array.isArray(childrenValue)) {
+        return childrenValue
+            .map((nodeValue) => coerceBookmarkNode(nodeValue))
+            .filter((node): node is BookmarkNodeData => node !== undefined);
+    }
+
+    const linksValue = categoryValue.links;
+    if (!Array.isArray(linksValue)) {
+        return undefined;
+    }
+
+    return linksValue
+        .map((bookmarkValue) => coerceBookmarkLink(bookmarkValue))
+        .filter(
+            (bookmark): bookmark is BookmarkLinkData => bookmark !== undefined
+        );
 };
 
 export const coerceBookmarkTree = (
@@ -102,49 +251,25 @@ export const coerceBookmarkTree = (
                 return undefined;
             }
 
-            const category =
-                typeof categoryValue.category === 'string'
-                    ? categoryValue.category
-                    : defaultCategoryName;
-            const linksValue = categoryValue.links;
-            if (!Array.isArray(linksValue)) {
-                return undefined;
-            }
+            const category = getCategoryTitle(categoryValue);
             const icon =
                 typeof categoryValue.icon === 'string'
                     ? categoryValue.icon
                     : undefined;
+            const id =
+                typeof categoryValue.id === 'string' ? categoryValue.id : '';
+            const children = coerceCategoryChildren(categoryValue);
 
-            const links = linksValue
-                .map((bookmarkValue): BookmarkLinkData | undefined => {
-                    if (!isRecord(bookmarkValue)) {
-                        return undefined;
-                    }
-
-                    const title =
-                        typeof bookmarkValue.title === 'string'
-                            ? bookmarkValue.title
-                            : '';
-                    const url =
-                        typeof bookmarkValue.url === 'string'
-                            ? bookmarkValue.url
-                            : '';
-                    const id =
-                        typeof bookmarkValue.id === 'string'
-                            ? bookmarkValue.id
-                            : '';
-
-                    return { id, title, url };
-                })
-                .filter(
-                    (bookmark): bookmark is BookmarkLinkData =>
-                        bookmark !== undefined
-                );
+            if (children === undefined) {
+                return undefined;
+            }
 
             return {
                 category,
+                children,
+                id,
                 ...(icon === undefined ? {} : { icon }),
-                links,
+                links: [],
             };
         })
         .filter(
@@ -157,6 +282,69 @@ export const coerceBookmarkTree = (
     return normalizedBookmarkTree.length > 0
         ? normalizedBookmarkTree
         : undefined;
+};
+
+export interface BookmarkLinkLocation {
+    bookmark: BookmarkLinkData;
+    categoryIndex: number;
+    categoryTitle: string;
+    folderPath: string[];
+    folderTitles: string[];
+}
+
+const collectBookmarkLinkLocations = (
+    nodes: readonly BookmarkNodeData[],
+    categoryIndex: number,
+    categoryTitle: string,
+    folderPath: readonly string[],
+    folderTitles: readonly string[]
+): BookmarkLinkLocation[] => {
+    const locations: BookmarkLinkLocation[] = [];
+
+    for (const node of nodes) {
+        if (isBookmarkLink(node)) {
+            locations.push({
+                bookmark: node,
+                categoryIndex,
+                categoryTitle,
+                folderPath: [...folderPath],
+                folderTitles: [...folderTitles],
+            });
+            continue;
+        }
+
+        locations.push(
+            ...collectBookmarkLinkLocations(
+                node.children,
+                categoryIndex,
+                categoryTitle,
+                [...folderPath, node.id],
+                [...folderTitles, node.title]
+            )
+        );
+    }
+
+    return locations;
+};
+
+export const getBookmarkLinkLocations = (
+    bookmarkTree: readonly BookmarkCategoryData[]
+): BookmarkLinkLocation[] => {
+    const locations: BookmarkLinkLocation[] = [];
+
+    for (const [categoryIndex, categoryData] of bookmarkTree.entries()) {
+        locations.push(
+            ...collectBookmarkLinkLocations(
+                categoryData.children,
+                categoryIndex,
+                categoryData.category,
+                [],
+                []
+            )
+        );
+    }
+
+    return locations;
 };
 
 const isElementTag = <TagName extends keyof HTMLElementTagNameMap>(
@@ -180,32 +368,6 @@ const getDirectChild = <TagName extends keyof HTMLElementTagNameMap>(
 
 const getElementText = (element: Element): string =>
     normalizeText(element.textContent);
-
-const isBrowserRootFolderName = (folderName: string): boolean =>
-    browserRootFolderNames.has(folderName.toLowerCase());
-
-const getImportedBookmarkPlacement = (
-    path: readonly string[],
-    title: string
-): { category: string; title: string } => {
-    const normalizedPath = path
-        .map((folderName) => normalizeText(folderName))
-        .filter((folderName) => folderName !== '');
-    const categoryPath =
-        normalizedPath.length > 1 && isBrowserRootFolderName(normalizedPath[0])
-            ? normalizedPath.slice(1)
-            : normalizedPath;
-    const category = categoryPath[0] ?? defaultCategoryName;
-    const titlePrefix = categoryPath.slice(1).join(folderSeparator);
-
-    return {
-        category,
-        title:
-            titlePrefix === ''
-                ? title
-                : `${titlePrefix}${folderSeparator}${title}`,
-    };
-};
 
 const findFolderList = (heading: Element): HTMLDListElement | undefined => {
     const parent = heading.parentElement;
@@ -239,31 +401,18 @@ const findFolderList = (heading: Element): HTMLDListElement | undefined => {
     return undefined;
 };
 
+const isRootWrapperFolder = (
+    node: BookmarkNodeData
+): node is BookmarkFolderData =>
+    isBookmarkFolder(node) &&
+    rootWrapperFolderNames.has(node.title.toLowerCase());
+
 export const parseBrowserBookmarks = (html: string): BookmarkCategoryData[] => {
     const document = new DOMParser().parseFromString(html, 'text/html');
     const rootList = document.querySelector('dl');
     const visitedLists = new WeakSet<HTMLDListElement>();
-    const categories = new Map<string, BookmarkLinkData[]>();
     let importedBookmarkIndex = 0;
-
-    const addBookmarks = (
-        path: readonly string[],
-        bookmarks: readonly BookmarkLinkData[]
-    ) => {
-        for (const bookmark of bookmarks) {
-            const placement = getImportedBookmarkPlacement(
-                path,
-                bookmark.title
-            );
-            const categoryLinks = categories.get(placement.category) ?? [];
-
-            categoryLinks.push({
-                ...bookmark,
-                title: placement.title,
-            });
-            categories.set(placement.category, categoryLinks);
-        }
-    };
+    let importedFolderIndex = 0;
 
     const createBookmark = (anchor: HTMLAnchorElement): BookmarkLinkData => {
         const url = anchor.getAttribute('href')?.trim() ?? '';
@@ -271,34 +420,40 @@ export const parseBrowserBookmarks = (html: string): BookmarkCategoryData[] => {
         importedBookmarkIndex++;
 
         return {
-            id: `imported-${importedBookmarkIndex}`,
+            id: `imported-link-${importedBookmarkIndex}`,
             title,
+            type: 'link',
             url,
         };
     };
 
-    const parseList = (list: HTMLDListElement, path: readonly string[]) => {
+    const parseList = (list: HTMLDListElement): BookmarkNodeData[] => {
         if (visitedLists.has(list)) {
-            return;
+            return [];
         }
 
         visitedLists.add(list);
 
-        const directLinks: BookmarkLinkData[] = [];
+        const nodes: BookmarkNodeData[] = [];
 
         for (const child of list.children) {
             if (isElementTag(child, 'dt')) {
                 const heading = getDirectChild(child, 'h3');
                 if (heading !== undefined) {
-                    const folderName = getElementText(heading);
+                    const folderName =
+                        getElementText(heading) || defaultFolderName;
                     const folderList = findFolderList(heading);
+                    importedFolderIndex++;
 
-                    if (folderList !== undefined) {
-                        parseList(folderList, [
-                            ...path,
-                            folderName || defaultCategoryName,
-                        ]);
-                    }
+                    nodes.push({
+                        children:
+                            folderList === undefined
+                                ? []
+                                : parseList(folderList),
+                        id: `imported-folder-${importedFolderIndex}`,
+                        title: folderName,
+                        type: 'folder',
+                    });
 
                     continue;
                 }
@@ -307,47 +462,77 @@ export const parseBrowserBookmarks = (html: string): BookmarkCategoryData[] => {
                     getDirectChild(child, 'a') ??
                     child.querySelector('a[href]');
                 if (anchor instanceof HTMLAnchorElement) {
-                    directLinks.push(createBookmark(anchor));
+                    nodes.push(createBookmark(anchor));
                 }
 
                 continue;
             }
 
             if (child instanceof HTMLAnchorElement) {
-                directLinks.push(createBookmark(child));
+                nodes.push(createBookmark(child));
                 continue;
             }
 
             if (isElementTag(child, 'dl')) {
-                parseList(child, path);
+                nodes.push(...parseList(child));
             }
         }
 
-        if (directLinks.length > 0) {
-            addBookmarks(path, directLinks);
-        }
+        return nodes;
     };
 
-    if (rootList !== null) {
-        parseList(rootList, []);
+    const rootNodes =
+        rootList === null
+            ? []
+            : (() => {
+                  const nodes = parseList(rootList);
+                  return nodes.length === 1 && isRootWrapperFolder(nodes[0])
+                      ? nodes[0].children
+                      : nodes;
+              })();
+
+    const directLinks: BookmarkLinkData[] = [];
+    const categories: BookmarkCategoryData[] = [];
+
+    for (const node of rootNodes) {
+        if (isBookmarkFolder(node)) {
+            categories.push({
+                category: node.title,
+                children: node.children,
+                id: node.id,
+                links: [],
+            });
+            continue;
+        }
+
+        directLinks.push(node);
     }
 
-    if (categories.size === 0) {
+    if (directLinks.length > 0) {
+        categories.unshift({
+            category: defaultCategoryName,
+            children: directLinks,
+            id: 'imported-root-category',
+            links: [],
+        });
+    }
+
+    if (categories.length === 0) {
         const links = [
             ...document.querySelectorAll<HTMLAnchorElement>('a[href]'),
         ].map((anchor) => createBookmark(anchor));
 
         if (links.length > 0) {
-            addBookmarks([], links);
+            categories.push({
+                category: defaultCategoryName,
+                children: links,
+                id: 'imported-root-category',
+                links: [],
+            });
         }
     }
 
-    return normalizeBookmarkTree(
-        [...categories].map(([category, links]) => ({
-            category,
-            links,
-        }))
-    );
+    return normalizeBookmarkTree(categories);
 };
 
 const escapeHtml = (value: string): string =>
@@ -357,6 +542,37 @@ const escapeHtml = (value: string): string =>
         .replaceAll('>', '&gt;')
         .replaceAll('"', '&quot;')
         .replaceAll("'", '&#39;');
+
+const serializeBookmarkNodes = (
+    nodes: readonly BookmarkNodeData[],
+    timestamp: string,
+    depth: number
+): string[] => {
+    const indent = '    '.repeat(depth);
+    const lines: string[] = [];
+
+    for (const node of nodes) {
+        if (isBookmarkLink(node)) {
+            lines.push(
+                `${indent}<DT><A HREF="${escapeHtml(
+                    node.url
+                )}" ADD_DATE="${timestamp}">${escapeHtml(node.title)}</A>`
+            );
+            continue;
+        }
+
+        lines.push(
+            `${indent}<DT><H3 ADD_DATE="${timestamp}" LAST_MODIFIED="${timestamp}">${escapeHtml(
+                node.title
+            )}</H3>`,
+            `${indent}<DL><p>`,
+            ...serializeBookmarkNodes(node.children, timestamp, depth + 1),
+            `${indent}</DL><p>`
+        );
+    }
+
+    return lines;
+};
 
 export const serializeBrowserBookmarks = (
     bookmarkTree: readonly BookmarkCategoryData[],
@@ -377,18 +593,10 @@ export const serializeBrowserBookmarks = (
             `    <DT><H3 ADD_DATE="${timestamp}" LAST_MODIFIED="${timestamp}">${escapeHtml(
                 categoryData.category
             )}</H3>`,
-            '    <DL><p>'
+            '    <DL><p>',
+            ...serializeBookmarkNodes(categoryData.children, timestamp, 2),
+            '    </DL><p>'
         );
-
-        for (const bookmark of categoryData.links) {
-            lines.push(
-                `        <DT><A HREF="${escapeHtml(
-                    bookmark.url
-                )}" ADD_DATE="${timestamp}">${escapeHtml(bookmark.title)}</A>`
-            );
-        }
-
-        lines.push('    </DL><p>');
     }
 
     lines.push('</DL><p>');

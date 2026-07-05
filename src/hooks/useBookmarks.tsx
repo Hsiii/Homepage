@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { defaultBookmarkTree } from '@/constants/linkTree';
-import type { BookmarkCategoryData } from '@/types/bookmarks';
+import type {
+    BookmarkCategoryData,
+    BookmarkLinkData,
+    BookmarkNodeData,
+} from '@/types/bookmarks';
 import {
     coerceBookmarkTree,
     parseBrowserBookmarks,
@@ -12,7 +16,7 @@ import { isBrowser } from '@/utils/browserEnv';
 const bookmarkApiPath = '/api/bookmarks';
 const bookmarkStorageKey = 'homepage.bookmarks';
 const bookmarkUserStorageKeyPrefix = 'homepage.bookmarks.user';
-const bookmarkStorageVersion = 1;
+const bookmarkStorageVersion = 2;
 
 type BookmarkStatusMessageKey =
     | 'bookmarksCleared'
@@ -145,19 +149,66 @@ const removeStoredBookmarkTree = (userId?: string): void => {
 const normalizeInputText = (value: string): string =>
     value.replaceAll(/\s+/g, ' ').trim();
 
-const createBookmarkId = (): string => {
+const createEntityId = (prefix: string): string => {
     if (typeof globalThis.crypto.randomUUID === 'function') {
-        return `bookmark-${globalThis.crypto.randomUUID()}`;
+        return `${prefix}-${globalThis.crypto.randomUUID()}`;
     }
 
-    return `bookmark-${Date.now().toString(36)}`;
+    return `${prefix}-${Date.now().toString(36)}`;
 };
+
+const createBookmarkId = (): string => createEntityId('bookmark');
 
 const fallbackCategory: BookmarkCategoryData = {
     category: 'Bookmarks',
+    children: [],
+    id: 'fallback-category-bookmarks',
     links: [],
 };
 const emptyBookmarkTree: BookmarkCategoryData[] = [];
+
+const hasBookmarkNode = (
+    nodes: readonly BookmarkNodeData[],
+    bookmarkId: string
+): boolean =>
+    nodes.some((node) =>
+        node.type === 'link'
+            ? node.id === bookmarkId
+            : hasBookmarkNode(node.children, bookmarkId)
+    );
+
+const updateBookmarkNodes = (
+    nodes: readonly BookmarkNodeData[],
+    bookmarkId: string,
+    bookmark: BookmarkLinkData
+): BookmarkNodeData[] =>
+    nodes.map((node) => {
+        if (node.type === 'link') {
+            return node.id === bookmarkId ? bookmark : node;
+        }
+
+        return {
+            ...node,
+            children: updateBookmarkNodes(node.children, bookmarkId, bookmark),
+        };
+    });
+
+const deleteBookmarkNodes = (
+    nodes: readonly BookmarkNodeData[],
+    bookmarkId: string
+): BookmarkNodeData[] =>
+    nodes.flatMap((node): BookmarkNodeData[] => {
+        if (node.type === 'link') {
+            return node.id === bookmarkId ? [] : [node];
+        }
+
+        return [
+            {
+                ...node,
+                children: deleteBookmarkNodes(node.children, bookmarkId),
+            },
+        ];
+    });
 
 const areBookmarkTreesEqual = (
     firstBookmarkTree: readonly BookmarkCategoryData[],
@@ -350,8 +401,11 @@ export const useBookmarks = (
 
     const commitBookmarkTree = useCallback(
         (nextBookmarkTree: readonly BookmarkCategoryData[]) => {
+            const normalizedBookmarkTree =
+                coerceBookmarkTree(nextBookmarkTree) ?? [];
+
             try {
-                storeBookmarkTree(nextBookmarkTree, remoteUserId);
+                storeBookmarkTree(normalizedBookmarkTree, remoteUserId);
             } catch {
                 setStatus({
                     messageKey: 'bookmarksStorageFailed',
@@ -361,9 +415,11 @@ export const useBookmarks = (
             }
 
             mutationVersionRef.current++;
-            setBookmarkTree([...nextBookmarkTree]);
+            setBookmarkTree([...normalizedBookmarkTree]);
             setIsCustom(true);
-            saveRemoteBookmarkTree(nextBookmarkTree).catch(() => undefined);
+            saveRemoteBookmarkTree(normalizedBookmarkTree).catch(
+                () => undefined
+            );
             return true;
         },
         [remoteUserId, saveRemoteBookmarkTree]
@@ -549,6 +605,8 @@ export const useBookmarks = (
                 ...bookmarkTree,
                 {
                     category,
+                    children: [],
+                    id: createEntityId('category'),
                     ...(icon === '' ? {} : { icon }),
                     links: [],
                 },
@@ -618,19 +676,19 @@ export const useBookmarks = (
                 return false;
             }
 
+            const bookmark: BookmarkLinkData = {
+                id: createBookmarkId(),
+                title,
+                type: 'link',
+                url,
+            };
+
             return commitBookmarkTree(
                 bookmarkTree.map((categoryData, currentIndex) =>
                     currentIndex === categoryIndex
                         ? {
                               ...categoryData,
-                              links: [
-                                  ...categoryData.links,
-                                  {
-                                      id: createBookmarkId(),
-                                      title,
-                                      url,
-                                  },
-                              ],
+                              children: [...categoryData.children, bookmark],
                           }
                         : categoryData
                 )
@@ -676,10 +734,10 @@ export const useBookmarks = (
                         currentIndex === categoryIndex
                             ? {
                                   ...categoryData,
-                                  links: categoryData.links.map((linkData) =>
-                                      linkData.id === bookmarkId
-                                          ? nextBookmark
-                                          : linkData
+                                  children: updateBookmarkNodes(
+                                      categoryData.children,
+                                      bookmarkId,
+                                      nextBookmark
                                   ),
                               }
                             : categoryData
@@ -692,8 +750,9 @@ export const useBookmarks = (
                     if (currentIndex === categoryIndex) {
                         return {
                             ...categoryData,
-                            links: categoryData.links.filter(
-                                (linkData) => linkData.id !== bookmarkId
+                            children: deleteBookmarkNodes(
+                                categoryData.children,
+                                bookmarkId
                             ),
                         };
                     }
@@ -701,7 +760,7 @@ export const useBookmarks = (
                     if (currentIndex === nextCategoryIndex) {
                         return {
                             ...categoryData,
-                            links: [...categoryData.links, nextBookmark],
+                            children: [...categoryData.children, nextBookmark],
                         };
                     }
 
@@ -718,9 +777,7 @@ export const useBookmarks = (
 
             if (
                 categoryData === undefined ||
-                !categoryData.links.some(
-                    (linkData) => linkData.id === bookmarkId
-                )
+                !hasBookmarkNode(categoryData.children, bookmarkId)
             ) {
                 return false;
             }
@@ -730,8 +787,9 @@ export const useBookmarks = (
                     currentIndex === categoryIndex
                         ? {
                               ...currentCategoryData,
-                              links: currentCategoryData.links.filter(
-                                  (linkData) => linkData.id !== bookmarkId
+                              children: deleteBookmarkNodes(
+                                  currentCategoryData.children,
+                                  bookmarkId
                               ),
                           }
                         : currentCategoryData

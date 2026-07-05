@@ -170,14 +170,23 @@ const defaultCategoryData = [
 ] as const satisfies readonly DefaultCategoryData[];
 
 export const defaultBookmarkTree: BookmarkCategoryData[] =
-    defaultCategoryData.map((categoryData) => ({
-        category: categoryData.category,
-        links: categoryData.links.map((link) => ({
-            id: link,
-            title: link,
-            url: links[link],
-        })),
-    }));
+    defaultCategoryData.map((categoryData) => {
+        const bookmarkLinks: BookmarkLinkData[] = categoryData.links.map(
+            (link) => ({
+                id: link,
+                title: link,
+                type: 'link',
+                url: links[link],
+            })
+        );
+
+        return {
+            category: categoryData.category,
+            children: bookmarkLinks,
+            id: `default-category-${categoryData.category.toLowerCase()}`,
+            links: bookmarkLinks,
+        };
+    });
 
 const categoryIconNameByName = new Map<string, string>(
     defaultCategoryData.map((categoryData) => [
