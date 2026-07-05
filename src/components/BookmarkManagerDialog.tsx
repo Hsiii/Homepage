@@ -2,7 +2,6 @@ import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 import {
     Check,
     ChevronLeft,
-    ChevronRight,
     FolderPlus,
     Link as LinkIcon,
     Pencil,
@@ -302,8 +301,6 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
               };
     const currentTitle =
         selectedFolder?.title ?? selectedCategory?.category ?? t.bookmarks;
-    const rootContentLabel =
-        bookmarkTree.length === 0 ? t.bookmarksEmpty : t.categories;
     const selectedFolderPathKey = selectedFolderPath.join('\n');
     const destinationOptions = useMemo(
         () => getBookmarkDestinationOptions(bookmarkTree),
@@ -832,15 +829,16 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                 <div className='bookmark-manager-body'>
                     <aside className='bookmark-manager-sidebar'>
                         <div className='bookmark-manager-browser-header'>
-                            <button
-                                className='bookmark-manager-icon-button'
-                                type='button'
-                                aria-label='Back'
-                                disabled={isRootLocation}
-                                onClick={goUp}
-                            >
-                                <ChevronLeft size={18} aria-hidden />
-                            </button>
+                            {isRootLocation ? undefined : (
+                                <button
+                                    className='bookmark-manager-icon-button'
+                                    type='button'
+                                    aria-label='Back'
+                                    onClick={goUp}
+                                >
+                                    <ChevronLeft size={18} aria-hidden />
+                                </button>
+                            )}
                             <div className='bookmark-manager-location-group'>
                                 <button
                                     className='bookmark-manager-location-button'
@@ -982,10 +980,6 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                                                               .length
                                                       }
                                                   </span>
-                                                  <ChevronRight
-                                                      size={16}
-                                                      aria-hidden
-                                                  />
                                               </button>
                                               <div className='bookmark-manager-row-actions'>
                                                   <button
@@ -1053,10 +1047,6 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                                                       <span className='bookmark-manager-category-count'>
                                                           {node.children.length}
                                                       </span>
-                                                      <ChevronRight
-                                                          size={16}
-                                                          aria-hidden
-                                                      />
                                                   </button>
                                                   <div className='bookmark-manager-row-actions'>
                                                       <button
@@ -1163,11 +1153,6 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                                   })}
                         </div>
                     </aside>
-                    <main className='bookmark-manager-main'>
-                        <div className='bookmark-manager-empty'>
-                            {isRootLocation ? rootContentLabel : currentTitle}
-                        </div>
-                    </main>
                 </div>
                 {itemDialog === undefined ? undefined : (
                     <div
