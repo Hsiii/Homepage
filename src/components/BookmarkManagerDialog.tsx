@@ -1050,22 +1050,6 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                                               </button>
                                               <div className='bookmark-manager-row-actions'>
                                                   <button
-                                                      className='bookmark-manager-icon-button'
-                                                      type='button'
-                                                      aria-label={`${t.editBookmark}: ${node.title}`}
-                                                      title={t.editBookmark}
-                                                      onClick={() => {
-                                                          startEditBookmark(
-                                                              node
-                                                          );
-                                                      }}
-                                                  >
-                                                      <Pencil
-                                                          size={16}
-                                                          aria-hidden
-                                                      />
-                                                  </button>
-                                                  <button
                                                       className='bookmark-manager-icon-button danger'
                                                       type='button'
                                                       aria-label={`${t.deleteBookmark}: ${node.title}`}
