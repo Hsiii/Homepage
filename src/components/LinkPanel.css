@@ -237,9 +237,9 @@
     }
 
     .mobile-bookmark-list {
-        display: flex;
-        flex-direction: column;
-        gap: 1.5rem;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
         padding-bottom: 1rem;
 
         &.empty {
@@ -279,12 +279,16 @@
     }
 
     .mobile-bookmark-link {
+        width: 100%;
         min-height: 3rem;
         padding: 0.75rem 1rem;
+        border: 0;
         border-radius: 0.5rem;
         background-color: var(--clr-text-alpha-2);
         color: var(--clr-text);
+        cursor: pointer;
         font: var(--fontBoldSm);
+        text-align: left;
         text-decoration: none;
         transition:
             background-color var(--motion-duration-fast) var(--motion-ease-out),
@@ -293,6 +297,7 @@
 
         display: flex;
         align-items: center;
+        gap: 0.75rem;
 
         &:active {
             scale: var(--motion-press-scale);
@@ -301,6 +306,29 @@
         &.disabled {
             color: var(--clr-disabled);
         }
+    }
+
+    .mobile-bookmark-folder {
+        justify-content: space-between;
+
+        > .icon {
+            flex: 0 0 auto;
+            width: 1.25rem;
+            height: 1.25rem;
+        }
+    }
+
+    .mobile-bookmark-node-label {
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .mobile-bookmark-chevron {
+        flex: 0 0 auto;
+        color: var(--clr-secondary);
     }
 }
 
@@ -438,7 +466,7 @@
     z-index: 8;
     pointer-events: none;
 
-    .panel {
+    > .panel {
         width: calc(var(--width) * 2);
         height: inherit;
         position: absolute;
@@ -448,6 +476,12 @@
         backdrop-filter: blur(0.75rem);
         z-index: 9;
         border-radius: 0 1rem 1rem 0;
+    }
+
+    .bookmark-node {
+        position: relative;
+        width: var(--width);
+        z-index: 10;
     }
 
     .link {
@@ -473,6 +507,13 @@
         display: flex;
         align-items: center;
 
+        span {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
         &:not(.disabled):active {
             scale: var(--motion-press-scale);
         }
@@ -481,6 +522,73 @@
             color: var(--clr-disabled);
             cursor: not-allowed;
         }
+    }
+
+    button.link {
+        border: 0;
+        text-align: left;
+        cursor: pointer;
+    }
+
+    .folder-link {
+        gap: 0.75rem;
+        padding-left: 1rem;
+        padding-right: 1rem;
+        justify-content: start;
+    }
+
+    .folder-icon-display {
+        flex: 0 0 auto;
+        width: var(--font-size);
+        height: var(--font-size);
+    }
+
+    .folder-link span {
+        flex: 1 1 auto;
+    }
+
+    .folder-chevron {
+        flex: 0 0 auto;
+        width: 1rem;
+        height: 1rem;
+    }
+
+    .bookmark-submenu {
+        position: absolute;
+        top: 0;
+        left: var(--width);
+        width: var(--width);
+        min-height: var(--link-height);
+        padding: 0;
+        opacity: 0;
+        pointer-events: none;
+        translate: -0.5rem 0;
+        transition:
+            opacity var(--motion-duration-fast) var(--motion-ease-out),
+            translate var(--motion-duration-fast) var(--motion-ease-out);
+
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .submenu-panel {
+        position: absolute;
+        inset: 0;
+        min-height: 100%;
+        border-radius: 0 1rem 1rem 0;
+        background-color: var(--clr-panel-bg);
+        box-shadow: var(--shadow-panel);
+        backdrop-filter: blur(0.75rem);
+        z-index: 9;
+    }
+
+    .folder-node:hover > .bookmark-submenu,
+    .folder-node:focus-within > .bookmark-submenu,
+    .folder-node.expanded > .bookmark-submenu {
+        opacity: 1;
+        pointer-events: all;
+        translate: 0;
     }
 
     @media (width < 37.5rem) {
@@ -497,7 +605,8 @@
 }
 
 .hoverEffective .link:hover,
-.link.highlighted {
+.link.highlighted,
+.folder-node.expanded > .folder-link {
     text-decoration: none;
     color: var(--clr-secondary);
     background: linear-gradient(

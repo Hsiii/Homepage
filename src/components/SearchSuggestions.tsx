@@ -122,7 +122,9 @@ export const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
                             <Bookmark className='icon' size={24} />
                         </span>
                         <span className='search-suggestion-text'>
-                            {result.title}
+                            {result.pathLabel === ''
+                                ? result.title
+                                : `${result.title} · ${result.pathLabel}`}
                         </span>
                     </button>
                 );

@@ -4,10 +4,16 @@ import { Folder, icons } from 'lucide-react';
 
 import type { LinkName } from '@/constants/links';
 import { links } from '@/constants/links';
-import type { BookmarkCategoryData, BookmarkLinkData } from '@/types/bookmarks';
+import type {
+    BookmarkCategoryData,
+    BookmarkFolderData,
+    BookmarkLinkData,
+    BookmarkNodeData,
+} from '@/types/bookmarks';
 
 export type CategoryData = {
     category: string;
+    children: BookmarkNodeData[];
     icon: ReactElement;
     iconName: string;
     links: BookmarkLinkData[];
@@ -170,14 +176,23 @@ const defaultCategoryData = [
 ] as const satisfies readonly DefaultCategoryData[];
 
 export const defaultBookmarkTree: BookmarkCategoryData[] =
-    defaultCategoryData.map((categoryData) => ({
-        category: categoryData.category,
-        links: categoryData.links.map((link) => ({
-            id: link,
-            title: link,
-            url: links[link],
-        })),
-    }));
+    defaultCategoryData.map((categoryData) => {
+        const bookmarkLinks: BookmarkLinkData[] = categoryData.links.map(
+            (link) => ({
+                id: link,
+                title: link,
+                type: 'link',
+                url: links[link],
+            })
+        );
+
+        return {
+            category: categoryData.category,
+            children: bookmarkLinks,
+            id: `default-category-${categoryData.category.toLowerCase()}`,
+            links: bookmarkLinks,
+        };
+    });
 
 const categoryIconNameByName = new Map<string, string>(
     defaultCategoryData.map((categoryData) => [
@@ -188,10 +203,22 @@ const categoryIconNameByName = new Map<string, string>(
 
 const fallbackCategoryIconName = 'Folder';
 
-const createCategoryIcon = (iconName: string): ReactElement => {
-    const Icon = categoryIcons[iconName] ?? Folder;
+export const resolveBookmarkIconName = (
+    iconName: string | undefined
+): string =>
+    isCategoryIconName(iconName) ? iconName : fallbackCategoryIconName;
 
-    return <Icon className='icon category-icon-display' />;
+export const resolveFolderIconName = (
+    folderData: BookmarkFolderData | undefined
+): string => resolveBookmarkIconName(folderData?.icon);
+
+export const createBookmarkIcon = (
+    iconName: string | undefined,
+    className = 'icon category-icon-display'
+): ReactElement => {
+    const Icon = categoryIcons[resolveBookmarkIconName(iconName)] ?? Folder;
+
+    return <Icon className={className} />;
 };
 
 const resolveCategoryIconName = (
@@ -215,7 +242,8 @@ export const decorateBookmarkTree = (
 
         return {
             category: categoryData.category,
-            icon: createCategoryIcon(iconName),
+            children: [...categoryData.children],
+            icon: createBookmarkIcon(iconName),
             iconName,
             links: [...categoryData.links],
         };

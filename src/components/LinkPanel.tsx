@@ -22,6 +22,7 @@ interface LinkPanelProps {
     isLockedOpen: boolean;
     isSearchNav: boolean;
     highlightedLink?: string;
+    highlightedFolderPath?: string[];
     highlightedCategory?: number;
     initialPreferences: InitialAppPreferences;
     onClearSearch: () => void;
@@ -37,6 +38,7 @@ export const LinkPanel: React.FC<LinkPanelProps> = ({
     isLockedOpen,
     isSearchNav,
     highlightedLink,
+    highlightedFolderPath,
     highlightedCategory,
     initialPreferences,
     onClearSearch,
@@ -87,7 +89,7 @@ export const LinkPanel: React.FC<LinkPanelProps> = ({
                 windowHeight / 2 +
                 (categoryIndex + 1 - bookmarkTree.length / 2 - 0.5) *
                     linkHeight;
-            const linksHeight = categoryData.links.length * linkHeight;
+            const linksHeight = categoryData.children.length * linkHeight;
             let padding: number;
             padding =
                 headerPosition + linksHeight / 2 <= windowHeight - remToPx
@@ -189,6 +191,7 @@ export const LinkPanel: React.FC<LinkPanelProps> = ({
                             isMouseNav={isMouseNav}
                             padding={panelPaddings[i]}
                             highlightedLinkId={highlightedLink}
+                            highlightedFolderPath={highlightedFolderPath}
                         />
                     ))
                 )}
