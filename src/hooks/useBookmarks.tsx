@@ -15,6 +15,7 @@ const bookmarkUserStorageKeyPrefix = 'homepage.bookmarks.user';
 const bookmarkStorageVersion = 1;
 
 type BookmarkStatusMessageKey =
+    | 'bookmarksCleared'
     | 'bookmarksExported'
     | 'bookmarksImportEmpty'
     | 'bookmarksImportFailed'
@@ -156,6 +157,42 @@ const fallbackCategory: BookmarkCategoryData = {
     category: 'Bookmarks',
     links: [],
 };
+const emptyBookmarkTree: BookmarkCategoryData[] = [];
+
+const areBookmarkTreesEqual = (
+    firstBookmarkTree: readonly BookmarkCategoryData[],
+    secondBookmarkTree: readonly BookmarkCategoryData[]
+): boolean => {
+    if (firstBookmarkTree.length !== secondBookmarkTree.length) {
+        return false;
+    }
+
+    return firstBookmarkTree.every((categoryData, categoryIndex) => {
+        const otherCategoryData = secondBookmarkTree[categoryIndex];
+
+        if (
+            categoryData.category !== otherCategoryData.category ||
+            categoryData.icon !== otherCategoryData.icon ||
+            categoryData.links.length !== otherCategoryData.links.length
+        ) {
+            return false;
+        }
+
+        return categoryData.links.every((bookmark, bookmarkIndex) => {
+            const otherBookmark = otherCategoryData.links[bookmarkIndex];
+
+            return (
+                bookmark.id === otherBookmark.id &&
+                bookmark.title === otherBookmark.title &&
+                bookmark.url === otherBookmark.url
+            );
+        });
+    });
+};
+
+const isDefaultBookmarkTree = (
+    bookmarkTree: readonly BookmarkCategoryData[]
+): boolean => areBookmarkTreesEqual(bookmarkTree, defaultBookmarkTree);
 
 const readBookmarkResponse = async (
     response: Response
@@ -188,6 +225,7 @@ export const useBookmarks = (
     options: UseBookmarksOptions = {}
 ): BookmarkControls => {
     const { initialBookmarkTree } = options;
+    const hasAuth = options.auth !== undefined;
     const getToken = options.auth?.getToken;
     const isAuthLoaded = options.auth?.isLoaded === true;
     const remoteUserId =
@@ -197,14 +235,18 @@ export const useBookmarks = (
             ? options.auth.userId
             : undefined;
     const [bookmarkTree, setBookmarkTree] = useState<BookmarkCategoryData[]>(
-        initialBookmarkTree ?? defaultBookmarkTree
+        initialBookmarkTree ??
+            (hasAuth ? emptyBookmarkTree : defaultBookmarkTree)
     );
-    const [isCustom, setIsCustom] = useState(initialBookmarkTree !== undefined);
+    const [isCustom, setIsCustom] = useState(
+        initialBookmarkTree !== undefined &&
+            !isDefaultBookmarkTree(initialBookmarkTree)
+    );
     const [status, setStatus] = useState<BookmarkStatus>();
     const mutationVersionRef = useRef(0);
 
     useEffect(() => {
-        if (initialBookmarkTree !== undefined) {
+        if (initialBookmarkTree !== undefined || hasAuth) {
             return;
         }
 
@@ -214,8 +256,8 @@ export const useBookmarks = (
         }
 
         setBookmarkTree(storedBookmarkTree);
-        setIsCustom(true);
-    }, [initialBookmarkTree]);
+        setIsCustom(!isDefaultBookmarkTree(storedBookmarkTree));
+    }, [hasAuth, initialBookmarkTree]);
 
     const getAuthHeaders = useCallback(async (): Promise<
         Record<'Authorization', string> | undefined
@@ -335,14 +377,20 @@ export const useBookmarks = (
         if (remoteUserId === undefined) {
             const storedBookmarkTree = getStoredBookmarkTree();
 
-            setBookmarkTree(storedBookmarkTree ?? defaultBookmarkTree);
-            setIsCustom(storedBookmarkTree !== undefined);
+            setBookmarkTree(storedBookmarkTree ?? emptyBookmarkTree);
+            setIsCustom(
+                storedBookmarkTree !== undefined &&
+                    !areBookmarkTreesEqual(
+                        storedBookmarkTree,
+                        emptyBookmarkTree
+                    )
+            );
             return undefined;
         }
 
         if (initialBookmarkTree !== undefined) {
             setBookmarkTree(initialBookmarkTree);
-            setIsCustom(true);
+            setIsCustom(!isDefaultBookmarkTree(initialBookmarkTree));
 
             try {
                 storeBookmarkTree(initialBookmarkTree, remoteUserId);
@@ -353,9 +401,12 @@ export const useBookmarks = (
         }
 
         const cachedBookmarkTree = getStoredBookmarkTree(remoteUserId);
-        if (cachedBookmarkTree !== undefined) {
+        if (cachedBookmarkTree === undefined) {
+            setBookmarkTree(defaultBookmarkTree);
+            setIsCustom(false);
+        } else {
             setBookmarkTree(cachedBookmarkTree);
-            setIsCustom(true);
+            setIsCustom(!isDefaultBookmarkTree(cachedBookmarkTree));
         }
 
         let isCurrent = true;
@@ -380,7 +431,7 @@ export const useBookmarks = (
 
                 if (payload.categories !== undefined) {
                     setBookmarkTree(payload.categories);
-                    setIsCustom(true);
+                    setIsCustom(!isDefaultBookmarkTree(payload.categories));
 
                     try {
                         storeBookmarkTree(payload.categories, remoteUserId);
@@ -472,11 +523,18 @@ export const useBookmarks = (
         }
 
         mutationVersionRef.current++;
-        setBookmarkTree(defaultBookmarkTree);
+        if (remoteUserId !== undefined || !hasAuth) {
+            setBookmarkTree(defaultBookmarkTree);
+            setStatus({ messageKey: 'bookmarksReset', type: 'success' });
+        } else {
+            setBookmarkTree(emptyBookmarkTree);
+            setStatus({ messageKey: 'bookmarksCleared', type: 'success' });
+        }
         setIsCustom(false);
-        setStatus({ messageKey: 'bookmarksReset', type: 'success' });
-        clearRemoteBookmarks().catch(() => undefined);
-    }, [clearRemoteBookmarks, remoteUserId]);
+        if (remoteUserId !== undefined) {
+            clearRemoteBookmarks().catch(() => undefined);
+        }
+    }, [clearRemoteBookmarks, hasAuth, remoteUserId]);
 
     const addCategory = useCallback(
         (categoryInput: BookmarkCategoryInput) => {
