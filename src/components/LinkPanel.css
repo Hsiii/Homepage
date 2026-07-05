@@ -10,6 +10,18 @@
     --bookmark-panel-radius: 1rem;
     --bookmark-row-radius: 0.75rem;
     --bookmark-submenu-viewport-padding: 1rem;
+    --bookmark-category-hover-opacity: 0.32;
+    --bookmark-category-clicked-opacity: 0.44;
+    --bookmark-item-hover-bg: linear-gradient(
+        to right,
+        transparent,
+        var(--clr-primary-alpha-2)
+    );
+    --bookmark-item-clicked-bg: linear-gradient(
+        to right,
+        var(--clr-primary-alpha-2),
+        var(--clr-neutral-light-alpha)
+    );
     --height: 100vh;
     --height: 100svh;
     position: fixed;
@@ -389,6 +401,9 @@
     width: var(--width);
     height: var(--link-height);
     padding: 0 1rem;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
 
     transition: translate var(--motion-duration-slow) var(--motion-ease-out);
     z-index: 10;
@@ -440,16 +455,22 @@
 
 .hoverEffective .category:hover,
 .hoverEffective .category:has(+ .links:hover),
-.category.selected {
+.category.selected,
+.category.clicked {
     translate: 1rem;
 }
 
 .hoverEffective .category:hover::before,
-.hoverEffective .category:has(+ .links:hover)::before,
+.hoverEffective .category:has(+ .links:hover)::before {
+    width: calc(var(--width) + 1rem);
+    translate: -1rem;
+    opacity: var(--bookmark-category-hover-opacity);
+}
+
 .category.selected::before {
     width: calc(var(--width) + 1rem);
     translate: -1rem;
-    opacity: 0.2;
+    opacity: var(--bookmark-category-clicked-opacity);
 }
 
 .links {
@@ -622,22 +643,26 @@
 
 .hoverEffective .category:hover + .links,
 .category.selected + .links,
+.category.clicked + .links,
 .hoverEffective .links:hover,
 .links:has(:focus-visible) {
     translate: var(--width);
     pointer-events: all;
 }
 
-.hoverEffective .link:hover,
 .link.highlighted,
-.folder-node.expanded > .folder-link {
+.link.clicked,
+.folder-node.expanded > .folder-link,
+.folder-node.clicked > .folder-link {
+    text-decoration: none;
+    color: var(--clr-primary);
+    background: var(--bookmark-item-clicked-bg);
+}
+
+.hoverEffective .link:hover {
     text-decoration: none;
     color: var(--clr-secondary);
-    background: linear-gradient(
-        to right,
-        transparent,
-        var(--clr-neutral-light-alpha)
-    );
+    background: var(--bookmark-item-hover-bg);
 }
 
 @media (width < 37.5rem) {

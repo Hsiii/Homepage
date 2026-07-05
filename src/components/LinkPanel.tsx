@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { PanelLeft, PanelLeftClose } from 'lucide-react';
 
 import { mobileViewportQuery } from '@/constants/breakpoints';
@@ -31,6 +31,13 @@ interface LinkPanelProps {
     onWallpaperChange: (wallpaper: WallpaperAsset | undefined) => void;
 }
 
+const areFolderPathsEqual = (
+    firstPath: readonly string[],
+    secondPath: readonly string[]
+): boolean =>
+    firstPath.length === secondPath.length &&
+    firstPath.every((folderId, index) => folderId === secondPath[index]);
+
 export const LinkPanel: React.FC<LinkPanelProps> = ({
     hidden,
     bookmarkControls,
@@ -59,8 +66,11 @@ export const LinkPanel: React.FC<LinkPanelProps> = ({
         isBrowser() ? globalThis.innerHeight : 768
     );
     const [isMobileOpen, setIsMobileOpen] = useState(false);
+    const [clickedCategory, setClickedCategory] = useState<number>();
+    const [clickedFolderPath, setClickedFolderPath] = useState<string[]>([]);
+    const [clickedLinkId, setClickedLinkId] = useState<string>();
     const isMobileViewport = useMediaQuery(mobileViewportQuery);
-    const isExpanded = selectedCategory !== 0;
+    const isExpanded = selectedCategory !== 0 || clickedCategory !== undefined;
     const bookmarkTree = useMemo(
         () => decorateBookmarkTree(bookmarkControls.bookmarkTree),
         [bookmarkControls.bookmarkTree]
@@ -79,6 +89,60 @@ export const LinkPanel: React.FC<LinkPanelProps> = ({
             globalThis.removeEventListener('resize', onResize);
         };
     }, []);
+
+    useEffect(() => {
+        if (!hidden && !isSearchNav) {
+            return;
+        }
+
+        setClickedCategory(undefined);
+        setClickedFolderPath([]);
+        setClickedLinkId(undefined);
+    }, [hidden, isSearchNav]);
+
+    const selectCategory = useCallback(
+        (categoryIndex: number) => {
+            setClickedCategory((currentCategory) =>
+                currentCategory === categoryIndex &&
+                clickedFolderPath.length === 0 &&
+                clickedLinkId === undefined
+                    ? undefined
+                    : categoryIndex
+            );
+            setClickedFolderPath([]);
+            setClickedLinkId(undefined);
+            onClearSearch();
+        },
+        [clickedFolderPath.length, clickedLinkId, onClearSearch]
+    );
+
+    const selectFolder = useCallback(
+        (categoryIndex: number, folderPath: readonly string[]) => {
+            setClickedCategory(categoryIndex);
+            setClickedFolderPath(
+                areFolderPathsEqual(clickedFolderPath, folderPath)
+                    ? folderPath.slice(0, -1)
+                    : [...folderPath]
+            );
+            setClickedLinkId(undefined);
+            onClearSearch();
+        },
+        [clickedFolderPath, onClearSearch]
+    );
+
+    const selectLink = useCallback(
+        (
+            categoryIndex: number,
+            folderPath: readonly string[],
+            linkId: string
+        ) => {
+            setClickedCategory(categoryIndex);
+            setClickedFolderPath([...folderPath]);
+            setClickedLinkId(linkId);
+            onClearSearch();
+        },
+        [onClearSearch]
+    );
 
     const panelPaddings = useMemo(() => {
         const remToPx = 16;
@@ -187,11 +251,25 @@ export const LinkPanel: React.FC<LinkPanelProps> = ({
                             key={`${categoryData.category}-${i}`}
                             categoryData={categoryData}
                             index={i}
+                            clickedCategory={clickedCategory}
+                            clickedFolderPath={
+                                clickedCategory === i + 1
+                                    ? clickedFolderPath
+                                    : []
+                            }
+                            clickedLinkId={
+                                clickedCategory === i + 1
+                                    ? clickedLinkId
+                                    : undefined
+                            }
                             selectedCategory={selectedCategory}
                             isMouseNav={isMouseNav}
                             padding={panelPaddings[i]}
                             highlightedLinkId={highlightedLink}
                             highlightedFolderPath={highlightedFolderPath}
+                            onSelectCategory={selectCategory}
+                            onSelectFolder={selectFolder}
+                            onSelectLink={selectLink}
                         />
                     ))
                 )}
