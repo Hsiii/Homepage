@@ -1,8 +1,13 @@
 import type { BookmarkCategoryData } from '@/types/bookmarks';
+import { getBookmarkLinkLocations } from '@/utils/bookmarks';
 
 export interface LinkItem {
     category: number;
+    categoryTitle: string;
+    folderPath: string[];
+    folderTitles: string[];
     id: string;
+    pathLabel: string;
     title: string;
     url: string;
 }
@@ -60,18 +65,27 @@ const slashCommands = [
     },
 ] as const satisfies readonly SlashCommandItem[];
 
+const pathSeparator = ' / ';
+
 export const getSearchItems = (
     bookmarkTree: readonly BookmarkCategoryData[]
 ): LinkItem[] =>
-    bookmarkTree.flatMap((category, categoryIndex) => {
-        const categoryId = categoryIndex + 1;
+    getBookmarkLinkLocations(bookmarkTree).map((location) => {
+        const pathLabel = [
+            location.categoryTitle,
+            ...location.folderTitles,
+        ].join(pathSeparator);
 
-        return category.links.map((bookmark) => ({
-            category: categoryId,
-            id: bookmark.id,
-            title: bookmark.title,
-            url: bookmark.url,
-        }));
+        return {
+            category: location.categoryIndex + 1,
+            categoryTitle: location.categoryTitle,
+            folderPath: location.folderPath,
+            folderTitles: location.folderTitles,
+            id: location.bookmark.id,
+            pathLabel,
+            title: location.bookmark.title,
+            url: location.bookmark.url,
+        };
     });
 
 export const isSlashCommandSearch = (value: string): boolean =>
@@ -170,19 +184,36 @@ const getBestTextSearchScore = (
 };
 
 const getSearchScore = (
-    title: string,
+    source: string,
     query: string,
     keySequence: string
 ): number | undefined => {
-    const normalizedTitle = title.toLowerCase();
+    const normalizedSource = source.toLowerCase();
     const normalizedQuery = query.toLowerCase();
     const normalizedKeySequence = keySequence.toLowerCase();
 
-    return getBestTextSearchScore(normalizedTitle, [
+    return getBestTextSearchScore(normalizedSource, [
         normalizedQuery,
         getLatinKeySequenceAlias(normalizedQuery) ?? '',
         normalizedKeySequence,
     ]);
+};
+
+const getLinkItemSearchScore = (
+    item: LinkItem,
+    query: string,
+    keySequence: string
+): number | undefined => {
+    const titleScore = getSearchScore(item.title, query, keySequence);
+    const pathScore = getSearchScore(item.pathLabel, query, keySequence);
+
+    if (titleScore === undefined) {
+        return pathScore === undefined ? undefined : pathScore + 2;
+    }
+
+    return pathScore === undefined
+        ? titleScore
+        : Math.min(titleScore, pathScore + 2);
 };
 
 export const getSearchResults = (
@@ -198,7 +229,11 @@ export const getSearchResults = (
     return items
         .map((item) => ({
             item,
-            score: getSearchScore(item.title, trimmedQuery, keySequence.trim()),
+            score: getLinkItemSearchScore(
+                item,
+                trimmedQuery,
+                keySequence.trim()
+            ),
         }))
         .filter(
             (result): result is { item: LinkItem; score: number } =>
