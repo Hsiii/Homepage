@@ -4,6 +4,12 @@
     --indicator-width: 2.5rem;
     --link-height: 3.5rem;
     --font-size: var(--fs-lg);
+    --bookmark-link-inline-start: 2.5rem;
+    --bookmark-link-inline-end: 1rem;
+    --bookmark-folder-inline-padding: 1rem;
+    --bookmark-panel-radius: 1rem;
+    --bookmark-row-radius: 0.75rem;
+    --bookmark-submenu-viewport-padding: 1rem;
     --height: 100vh;
     --height: 100svh;
     position: fixed;
@@ -358,7 +364,8 @@
         box-shadow: var(--shadow-panel);
         backdrop-filter: blur(0.75rem);
         z-index: 9;
-        border-radius: 0 1rem 1rem 0;
+        border-radius: 0 var(--bookmark-panel-radius)
+            var(--bookmark-panel-radius) 0;
     }
 
     @media (width < 37.5rem) {
@@ -491,7 +498,10 @@
         width: calc(var(--width) - var(--link-margin));
         height: var(--link-height);
         margin: 0 var(--link-margin);
-        padding-left: calc(2.5rem - var(--link-margin));
+        padding-inline: calc(
+                var(--bookmark-link-inline-start) - var(--link-margin)
+            )
+            var(--bookmark-link-inline-end);
 
         color: var(--clr-neutral);
         font-size: var(--font-size);
@@ -532,8 +542,7 @@
 
     .folder-link {
         gap: 0.75rem;
-        padding-left: 1rem;
-        padding-right: 1rem;
+        padding-inline: var(--bookmark-folder-inline-padding);
         justify-content: start;
     }
 
@@ -554,15 +563,21 @@
     }
 
     .bookmark-submenu {
+        --submenu-offset-y: 0px;
+
         position: absolute;
         top: 0;
         left: var(--width);
         width: var(--width);
         min-height: var(--link-height);
+        max-height: calc(
+            100svh - var(--bookmark-submenu-viewport-padding) -
+                var(--bookmark-submenu-viewport-padding)
+        );
         padding: 0;
         opacity: 0;
         pointer-events: none;
-        translate: -0.5rem 0;
+        translate: -0.5rem var(--submenu-offset-y);
         transition:
             opacity var(--motion-duration-fast) var(--motion-ease-out),
             translate var(--motion-duration-fast) var(--motion-ease-out);
@@ -576,11 +591,20 @@
         position: absolute;
         inset: 0;
         min-height: 100%;
-        border-radius: 0 1rem 1rem 0;
+        border-radius: 0 var(--bookmark-panel-radius)
+            var(--bookmark-panel-radius) 0;
         background-color: var(--clr-panel-bg);
         box-shadow: var(--shadow-panel);
         backdrop-filter: blur(0.75rem);
         z-index: 9;
+    }
+
+    .bookmark-submenu > .bookmark-node:first-of-type > .link {
+        border-top-right-radius: var(--bookmark-row-radius);
+    }
+
+    .bookmark-submenu > .bookmark-node:last-of-type > .link {
+        border-bottom-right-radius: var(--bookmark-row-radius);
     }
 
     .folder-node:hover > .bookmark-submenu,
@@ -588,7 +612,7 @@
     .folder-node.expanded > .bookmark-submenu {
         opacity: 1;
         pointer-events: all;
-        translate: 0;
+        translate: 0 var(--submenu-offset-y);
     }
 
     @media (width < 37.5rem) {

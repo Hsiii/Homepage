@@ -1,9 +1,13 @@
-import React, { Fragment } from 'react';
+import React, { Fragment, useCallback, useEffect, useRef } from 'react';
 import { ChevronRight } from 'lucide-react';
 
 import { createBookmarkIcon } from '@/constants/linkTree';
 import type { CategoryData } from '@/constants/linkTree';
-import type { BookmarkLinkData, BookmarkNodeData } from '@/types/bookmarks';
+import type {
+    BookmarkFolderData,
+    BookmarkLinkData,
+    BookmarkNodeData,
+} from '@/types/bookmarks';
 import { isBookmarkFolder } from '@/utils/bookmarks';
 
 interface LinkCategoryProps {
@@ -24,8 +28,17 @@ interface BookmarkNodeListProps {
     nodes: readonly BookmarkNodeData[];
 }
 
+interface BookmarkFolderNodeProps {
+    depth: number;
+    highlightedFolderPath?: string[];
+    highlightedLinkId?: string;
+    isMouseNav: boolean;
+    node: BookmarkFolderData;
+}
+
 const maxCascadeDepth = 2;
 const folderTitleSeparator = ' / ';
+const submenuViewportPadding = 16;
 
 const getFlattenedBookmarkLinks = (
     nodes: readonly BookmarkNodeData[],
@@ -49,6 +62,104 @@ const getFlattenedBookmarkLinks = (
         return getFlattenedBookmarkLinks(node.children, [...path, node.title]);
     });
 
+const BookmarkFolderNode: React.FC<BookmarkFolderNodeProps> = ({
+    depth,
+    highlightedFolderPath,
+    highlightedLinkId,
+    isMouseNav,
+    node,
+}) => {
+    const submenuRef = useRef<HTMLDivElement>(null);
+    const isExpanded = highlightedFolderPath?.[depth] === node.id;
+    const updateSubmenuPlacement = useCallback(() => {
+        const submenu = submenuRef.current;
+
+        if (submenu === null) {
+            return;
+        }
+
+        submenu.style.setProperty('--submenu-offset-y', '0px');
+
+        const viewport = globalThis.visualViewport;
+        const viewportTop = viewport?.offsetTop ?? 0;
+        const viewportHeight = viewport?.height ?? globalThis.innerHeight;
+        const topLimit = viewportTop + submenuViewportPadding;
+        const bottomLimit =
+            viewportTop + viewportHeight - submenuViewportPadding;
+        const rect = submenu.getBoundingClientRect();
+        let offset = 0;
+
+        if (rect.bottom > bottomLimit) {
+            offset = bottomLimit - rect.bottom;
+        }
+
+        if (rect.top + offset < topLimit) {
+            offset = topLimit - rect.top;
+        }
+
+        submenu.style.setProperty(
+            '--submenu-offset-y',
+            `${Math.round(offset)}px`
+        );
+    }, []);
+
+    useEffect(() => {
+        if (!isExpanded) {
+            return undefined;
+        }
+
+        const frame = globalThis.requestAnimationFrame(updateSubmenuPlacement);
+
+        return () => {
+            globalThis.cancelAnimationFrame(frame);
+        };
+    }, [isExpanded, updateSubmenuPlacement]);
+
+    return (
+        <div
+            className={[
+                'bookmark-node',
+                'folder-node',
+                isExpanded && 'expanded',
+            ]
+                .filter(Boolean)
+                .join(' ')}
+            key={node.id}
+            onFocusCapture={updateSubmenuPlacement}
+            onPointerEnter={updateSubmenuPlacement}
+        >
+            <button
+                className={[
+                    'link',
+                    'folder-link',
+                    isMouseNav && 'hoverEffective',
+                ]
+                    .filter(Boolean)
+                    .join(' ')}
+                type='button'
+            >
+                {createBookmarkIcon(node.icon, 'icon folder-icon-display')}
+                <span>{node.title}</span>
+                <ChevronRight
+                    className='icon folder-chevron'
+                    size={16}
+                    aria-hidden
+                />
+            </button>
+            <div className='bookmark-submenu' ref={submenuRef}>
+                <div className='submenu-panel' />
+                <BookmarkNodeList
+                    depth={depth + 1}
+                    highlightedFolderPath={highlightedFolderPath}
+                    highlightedLinkId={highlightedLinkId}
+                    isMouseNav={isMouseNav}
+                    nodes={node.children}
+                />
+            </div>
+        </div>
+    );
+};
+
 const BookmarkNodeList: React.FC<BookmarkNodeListProps> = ({
     depth,
     highlightedFolderPath,
@@ -63,54 +174,15 @@ const BookmarkNodeList: React.FC<BookmarkNodeListProps> = ({
         <>
             {visibleNodes.map((node) => {
                 if (isBookmarkFolder(node)) {
-                    const isExpanded =
-                        highlightedFolderPath?.[depth] === node.id;
-
                     return (
-                        <div
-                            className={[
-                                'bookmark-node',
-                                'folder-node',
-                                isExpanded && 'expanded',
-                            ]
-                                .filter(Boolean)
-                                .join(' ')}
+                        <BookmarkFolderNode
+                            depth={depth}
+                            highlightedFolderPath={highlightedFolderPath}
+                            highlightedLinkId={highlightedLinkId}
+                            isMouseNav={isMouseNav}
                             key={node.id}
-                        >
-                            <button
-                                className={[
-                                    'link',
-                                    'folder-link',
-                                    isMouseNav && 'hoverEffective',
-                                ]
-                                    .filter(Boolean)
-                                    .join(' ')}
-                                type='button'
-                            >
-                                {createBookmarkIcon(
-                                    node.icon,
-                                    'icon folder-icon-display'
-                                )}
-                                <span>{node.title}</span>
-                                <ChevronRight
-                                    className='icon folder-chevron'
-                                    size={16}
-                                    aria-hidden
-                                />
-                            </button>
-                            <div className='bookmark-submenu'>
-                                <div className='submenu-panel' />
-                                <BookmarkNodeList
-                                    depth={depth + 1}
-                                    highlightedFolderPath={
-                                        highlightedFolderPath
-                                    }
-                                    highlightedLinkId={highlightedLinkId}
-                                    isMouseNav={isMouseNav}
-                                    nodes={node.children}
-                                />
-                            </div>
-                        </div>
+                            node={node}
+                        />
                     );
                 }
 
