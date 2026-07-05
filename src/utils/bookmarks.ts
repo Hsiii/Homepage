@@ -101,6 +101,8 @@ const normalizeBookmarkNodes = (
             }
 
             const title = normalizeText(node.title) || defaultFolderName;
+            const icon =
+                node.icon === undefined ? undefined : normalizeText(node.icon);
             const id =
                 normalizeText(node.id) ||
                 createFallbackId('folder', fallbackIndex);
@@ -113,6 +115,7 @@ const normalizeBookmarkNodes = (
             return {
                 children,
                 id: getUniqueId(id),
+                ...(icon === undefined || icon === '' ? {} : { icon }),
                 title,
                 type: 'folder',
             };
@@ -188,6 +191,7 @@ const coerceBookmarkNode = (value: unknown): BookmarkNodeData | undefined => {
     const childrenValue = value.children;
     if (Array.isArray(childrenValue)) {
         const title = getFolderTitle(value);
+        const icon = typeof value.icon === 'string' ? value.icon : undefined;
         const id = typeof value.id === 'string' ? value.id : '';
         const children = childrenValue
             .map((nodeValue) => coerceBookmarkNode(nodeValue))
@@ -196,6 +200,7 @@ const coerceBookmarkNode = (value: unknown): BookmarkNodeData | undefined => {
         return {
             children,
             id,
+            ...(icon === undefined ? {} : { icon }),
             title,
             type: 'folder',
         };

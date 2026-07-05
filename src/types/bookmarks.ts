@@ -8,6 +8,7 @@ export interface BookmarkLinkData {
 export interface BookmarkFolderData {
     children: BookmarkNodeData[];
     id: string;
+    icon?: string;
     title: string;
     type: 'folder';
 }

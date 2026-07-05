@@ -3,7 +3,6 @@ import {
     Check,
     ChevronLeft,
     ChevronRight,
-    Folder,
     FolderPlus,
     Link as LinkIcon,
     Plus,
@@ -15,8 +14,10 @@ import { createPortal } from 'react-dom';
 
 import {
     categoryIconOptions,
+    createBookmarkIcon,
     decorateBookmarkTree,
     normalizeCategoryIconSearch,
+    resolveFolderIconName,
 } from '@/constants/linkTree';
 import type { BookmarkControls } from '@/hooks/useBookmarks';
 import { useLocale } from '@/hooks/useLocale';
@@ -230,6 +231,7 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
     const [categoryName, setCategoryName] = useState('');
     const [categoryIconName, setCategoryIconName] = useState(defaultIconName);
     const [folderName, setFolderName] = useState('');
+    const [folderIconName, setFolderIconName] = useState(defaultIconName);
     const [iconSearch, setIconSearch] = useState('');
     const [isIconPickerOpen, setIsIconPickerOpen] = useState(false);
     const [bookmarkDraft, setBookmarkDraft] = useState<BookmarkDraft>();
@@ -275,11 +277,17 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
         () => getBookmarkDestinationOptions(bookmarkTree),
         [bookmarkTree]
     );
-    const selectedIconOption =
+    const selectedCategoryIconOption =
         categoryIconOptions.find(
             (iconOption) => iconOption.iconName === categoryIconName
         ) ?? categoryIconOptions[0];
-    const SelectedIcon = selectedIconOption.Icon;
+    const SelectedCategoryIcon = selectedCategoryIconOption.Icon;
+    const selectedFolderIconOption =
+        categoryIconOptions.find(
+            (iconOption) => iconOption.iconName === folderIconName
+        ) ?? categoryIconOptions[0];
+    const SelectedFolderIcon = selectedFolderIconOption.Icon;
+    const selectedFolderIconName = resolveFolderIconName(selectedFolder);
     const confirmDeleteCategoryData =
         confirmDeleteCategoryIndex === undefined
             ? undefined
@@ -301,7 +309,8 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
             categoryIconName !== selectedDecoratedCategory?.iconName);
     const isFolderDirty =
         selectedFolder !== undefined &&
-        folderName.trim() !== selectedFolder.title;
+        (folderName.trim() !== selectedFolder.title ||
+            folderIconName !== selectedFolderIconName);
 
     useEffect(() => {
         dialogRef.current?.focus();
@@ -351,7 +360,10 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
 
     useEffect(() => {
         setFolderName(selectedFolder?.title ?? '');
-    }, [selectedFolder?.title, selectedFolderPathKey]);
+        setFolderIconName(resolveFolderIconName(selectedFolder));
+        setIconSearch('');
+        setIsIconPickerOpen(false);
+    }, [selectedFolder, selectedFolder?.title, selectedFolderPathKey]);
 
     useEffect(() => {
         if (
@@ -440,6 +452,7 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
         }
 
         bookmarkControls.addFolder(selectedLocation, {
+            icon: defaultIconName,
             title: getUniqueFolderName(selectedNodes),
         });
         setSelectedBookmarkId(undefined);
@@ -452,6 +465,7 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
         }
 
         bookmarkControls.updateFolder(selectedLocation, {
+            icon: folderIconName,
             title: folderName,
         });
     };
@@ -598,6 +612,71 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
             closeDraft();
         }
     };
+
+    const renderIconField = (
+        iconName: string,
+        selectedOption: (typeof categoryIconOptions)[number],
+        SelectedIcon: (typeof categoryIconOptions)[number]['Icon'],
+        setIconName: React.Dispatch<React.SetStateAction<string>>
+    ) => (
+        <div className='bookmark-manager-icon-field'>
+            <span className='bookmark-manager-field-label'>
+                {t.categoryIcon}
+            </span>
+            <button
+                className='bookmark-manager-icon-picker-trigger'
+                type='button'
+                aria-label={`${t.categoryIcon}: ${selectedOption.label}`}
+                title={selectedOption.label}
+                aria-expanded={isIconPickerOpen}
+                onClick={() => {
+                    setIsIconPickerOpen((current) => !current);
+                }}
+            >
+                <SelectedIcon size={18} aria-hidden />
+            </button>
+            {isIconPickerOpen ? (
+                <div className='bookmark-manager-icon-picker'>
+                    <label className='bookmark-manager-search'>
+                        <Search size={16} aria-hidden />
+                        <input
+                            type='search'
+                            value={iconSearch}
+                            placeholder='Search icons'
+                            onChange={(event) => {
+                                setIconSearch(event.target.value);
+                            }}
+                        />
+                    </label>
+                    <div className='bookmark-manager-icon-grid'>
+                        {visibleIconOptions.map((iconOption) => {
+                            const OptionIcon = iconOption.Icon;
+                            const isSelected = iconOption.iconName === iconName;
+
+                            return (
+                                <button
+                                    className='bookmark-manager-icon-option'
+                                    type='button'
+                                    aria-pressed={isSelected}
+                                    title={iconOption.label}
+                                    key={iconOption.iconName}
+                                    onClick={() => {
+                                        setIconName(iconOption.iconName);
+                                        setIsIconPickerOpen(false);
+                                    }}
+                                >
+                                    <OptionIcon size={18} aria-hidden />
+                                    {isSelected ? (
+                                        <Check size={12} aria-hidden />
+                                    ) : undefined}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+            ) : undefined}
+        </div>
+    );
 
     if (typeof document === 'undefined') {
         return undefined;
@@ -771,10 +850,10 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                                                           openFolder(node.id);
                                                       }}
                                                   >
-                                                      <Folder
-                                                          size={16}
-                                                          aria-hidden
-                                                      />
+                                                      {createBookmarkIcon(
+                                                          node.icon,
+                                                          'icon bookmark-manager-folder-icon'
+                                                      )}
                                                       <span>{node.title}</span>
                                                       <span className='bookmark-manager-category-count'>
                                                           {node.children.length}
@@ -860,101 +939,12 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                                 {bookmarkDraft === undefined &&
                                 selectedFolder === undefined ? (
                                     <section className='bookmark-manager-category-editor'>
-                                        <div className='bookmark-manager-icon-field'>
-                                            <span className='bookmark-manager-field-label'>
-                                                {t.categoryIcon}
-                                            </span>
-                                            <button
-                                                className='bookmark-manager-icon-picker-trigger'
-                                                type='button'
-                                                aria-label={`${t.categoryIcon}: ${selectedIconOption.label}`}
-                                                title={selectedIconOption.label}
-                                                aria-expanded={isIconPickerOpen}
-                                                onClick={() => {
-                                                    setIsIconPickerOpen(
-                                                        (current) => !current
-                                                    );
-                                                }}
-                                            >
-                                                <SelectedIcon
-                                                    size={18}
-                                                    aria-hidden
-                                                />
-                                            </button>
-                                            {isIconPickerOpen ? (
-                                                <div className='bookmark-manager-icon-picker'>
-                                                    <label className='bookmark-manager-search'>
-                                                        <Search
-                                                            size={16}
-                                                            aria-hidden
-                                                        />
-                                                        <input
-                                                            type='search'
-                                                            value={iconSearch}
-                                                            placeholder='Search icons'
-                                                            onChange={(
-                                                                event
-                                                            ) => {
-                                                                setIconSearch(
-                                                                    event.target
-                                                                        .value
-                                                                );
-                                                            }}
-                                                        />
-                                                    </label>
-                                                    <div className='bookmark-manager-icon-grid'>
-                                                        {visibleIconOptions.map(
-                                                            (iconOption) => {
-                                                                const OptionIcon =
-                                                                    iconOption.Icon;
-                                                                const isSelected =
-                                                                    iconOption.iconName ===
-                                                                    categoryIconName;
-
-                                                                return (
-                                                                    <button
-                                                                        className='bookmark-manager-icon-option'
-                                                                        type='button'
-                                                                        aria-pressed={
-                                                                            isSelected
-                                                                        }
-                                                                        title={
-                                                                            iconOption.label
-                                                                        }
-                                                                        key={
-                                                                            iconOption.iconName
-                                                                        }
-                                                                        onClick={() => {
-                                                                            setCategoryIconName(
-                                                                                iconOption.iconName
-                                                                            );
-                                                                            setIsIconPickerOpen(
-                                                                                false
-                                                                            );
-                                                                        }}
-                                                                    >
-                                                                        <OptionIcon
-                                                                            size={
-                                                                                18
-                                                                            }
-                                                                            aria-hidden
-                                                                        />
-                                                                        {isSelected ? (
-                                                                            <Check
-                                                                                size={
-                                                                                    12
-                                                                                }
-                                                                                aria-hidden
-                                                                            />
-                                                                        ) : undefined}
-                                                                    </button>
-                                                                );
-                                                            }
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            ) : undefined}
-                                        </div>
+                                        {renderIconField(
+                                            categoryIconName,
+                                            selectedCategoryIconOption,
+                                            SelectedCategoryIcon,
+                                            setCategoryIconName
+                                        )}
                                         <label className='bookmark-manager-field bookmark-manager-category-name'>
                                             <span>{t.categoryName}</span>
                                             <input
@@ -997,6 +987,12 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                                 {bookmarkDraft === undefined &&
                                 selectedFolder !== undefined ? (
                                     <section className='bookmark-manager-folder-editor'>
+                                        {renderIconField(
+                                            folderIconName,
+                                            selectedFolderIconOption,
+                                            SelectedFolderIcon,
+                                            setFolderIconName
+                                        )}
                                         <label className='bookmark-manager-field'>
                                             <span>{t.folderName}</span>
                                             <input

@@ -800,7 +800,8 @@
     outline: none;
 }
 
-.bookmark-manager-category-option .icon {
+.bookmark-manager-category-option .icon,
+.bookmark-manager-browser-option .icon {
     width: 1.25rem;
     height: 1.25rem;
 }
@@ -981,24 +982,14 @@
     scale: 1;
 }
 
-.bookmark-manager-category-editor {
+.bookmark-manager-category-editor,
+.bookmark-manager-folder-editor {
     min-width: 0;
     padding-bottom: 0.75rem;
     border-bottom: 1px solid var(--clr-text-alpha-2);
 
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
-    gap: 0.5rem;
-    align-items: end;
-}
-
-.bookmark-manager-folder-editor {
-    padding: 0.75rem;
-    border-radius: 1rem;
-    background-color: var(--clr-text-alpha-2);
-
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
     gap: 0.5rem;
     align-items: end;
 }

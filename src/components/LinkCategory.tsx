@@ -1,6 +1,7 @@
 import React, { Fragment } from 'react';
 import { ChevronRight } from 'lucide-react';
 
+import { createBookmarkIcon } from '@/constants/linkTree';
 import type { CategoryData } from '@/constants/linkTree';
 import type { BookmarkLinkData, BookmarkNodeData } from '@/types/bookmarks';
 import { isBookmarkFolder } from '@/utils/bookmarks';
@@ -86,6 +87,10 @@ const BookmarkNodeList: React.FC<BookmarkNodeListProps> = ({
                                     .join(' ')}
                                 type='button'
                             >
+                                {createBookmarkIcon(
+                                    node.icon,
+                                    'icon folder-icon-display'
+                                )}
                                 <span>{node.title}</span>
                                 <ChevronRight
                                     className='icon folder-chevron'

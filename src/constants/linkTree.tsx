@@ -6,6 +6,7 @@ import type { LinkName } from '@/constants/links';
 import { links } from '@/constants/links';
 import type {
     BookmarkCategoryData,
+    BookmarkFolderData,
     BookmarkLinkData,
     BookmarkNodeData,
 } from '@/types/bookmarks';
@@ -202,10 +203,22 @@ const categoryIconNameByName = new Map<string, string>(
 
 const fallbackCategoryIconName = 'Folder';
 
-const createCategoryIcon = (iconName: string): ReactElement => {
-    const Icon = categoryIcons[iconName] ?? Folder;
+export const resolveBookmarkIconName = (
+    iconName: string | undefined
+): string =>
+    isCategoryIconName(iconName) ? iconName : fallbackCategoryIconName;
 
-    return <Icon className='icon category-icon-display' />;
+export const resolveFolderIconName = (
+    folderData: BookmarkFolderData | undefined
+): string => resolveBookmarkIconName(folderData?.icon);
+
+export const createBookmarkIcon = (
+    iconName: string | undefined,
+    className = 'icon category-icon-display'
+): ReactElement => {
+    const Icon = categoryIcons[resolveBookmarkIconName(iconName)] ?? Folder;
+
+    return <Icon className={className} />;
 };
 
 const resolveCategoryIconName = (
@@ -230,7 +243,7 @@ export const decorateBookmarkTree = (
         return {
             category: categoryData.category,
             children: [...categoryData.children],
-            icon: createCategoryIcon(iconName),
+            icon: createBookmarkIcon(iconName),
             iconName,
             links: [...categoryData.links],
         };

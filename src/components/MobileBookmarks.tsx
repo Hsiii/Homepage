@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Bookmark, ChevronLeft, ChevronRight, Folder } from 'lucide-react';
+import { Bookmark, ChevronLeft, ChevronRight } from 'lucide-react';
 
+import { createBookmarkIcon } from '@/constants/linkTree';
 import type { CategoryData } from '@/constants/linkTree';
 import type { BookmarkNodeData } from '@/types/bookmarks';
 import { isBookmarkFolder } from '@/utils/bookmarks';
@@ -169,11 +170,10 @@ export const MobileBookmarks: React.FC<MobileBookmarksProps> = ({
                                               ]);
                                           }}
                                       >
-                                          <Folder
-                                              className='icon'
-                                              size={18}
-                                              aria-hidden
-                                          />
+                                          {createBookmarkIcon(
+                                              node.icon,
+                                              'icon mobile-bookmark-folder-icon'
+                                          )}
                                           <span className='mobile-bookmark-node-label'>
                                               {node.title}
                                           </span>

@@ -40,6 +40,7 @@ export interface BookmarkCategoryInput {
 }
 
 export interface BookmarkFolderInput {
+    icon?: string;
     title: string;
 }
 
@@ -853,6 +854,7 @@ export const useBookmarks = (
 
     const addFolder = useCallback(
         (location: BookmarkLocationInput, folderInput: BookmarkFolderInput) => {
+            const icon = normalizeInputText(folderInput.icon ?? '');
             const title = normalizeInputText(folderInput.title);
             if (title === '') {
                 return false;
@@ -863,6 +865,7 @@ export const useBookmarks = (
                 {
                     children: [],
                     id: createFolderId(),
+                    ...(icon === '' ? {} : { icon }),
                     title,
                     type: 'folder',
                 },
@@ -873,6 +876,7 @@ export const useBookmarks = (
 
     const updateFolder = useCallback(
         (location: BookmarkLocationInput, folderInput: BookmarkFolderInput) => {
+            const icon = normalizeInputText(folderInput.icon ?? '');
             const title = normalizeInputText(folderInput.title);
             const folderPath = normalizeFolderPath(location);
 
@@ -890,6 +894,7 @@ export const useBookmarks = (
                 folderPath,
                 (folder) => ({
                     ...folder,
+                    ...(icon === '' ? {} : { icon }),
                     title,
                 })
             );
