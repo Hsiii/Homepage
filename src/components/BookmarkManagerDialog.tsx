@@ -5,6 +5,7 @@ import {
     ChevronRight,
     FolderPlus,
     Link as LinkIcon,
+    Pencil,
     Plus,
     Search,
     Trash2,
@@ -53,6 +54,17 @@ interface BookmarkDestinationOption {
         folderPath: string[];
     };
 }
+
+type BookmarkItemDialog =
+    | {
+          categoryIndex: number;
+          mode: 'category';
+      }
+    | {
+          categoryIndex: number;
+          folderPath: string[];
+          mode: 'folder';
+      };
 
 const defaultIconName = 'Folder';
 const maxVisibleIconOptions = 40;
@@ -234,6 +246,7 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
     const [folderIconName, setFolderIconName] = useState(defaultIconName);
     const [iconSearch, setIconSearch] = useState('');
     const [isIconPickerOpen, setIsIconPickerOpen] = useState(false);
+    const [itemDialog, setItemDialog] = useState<BookmarkItemDialog>();
     const [bookmarkDraft, setBookmarkDraft] = useState<BookmarkDraft>();
     const [bookmarkError, setBookmarkError] = useState<string>();
     const [confirmDeleteCategoryIndex, setConfirmDeleteCategoryIndex] =
@@ -256,6 +269,25 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
         selectedCategory?.children ?? [],
         selectedFolderPath
     );
+    const dialogCategory =
+        itemDialog?.mode === 'category'
+            ? bookmarkTree.at(itemDialog.categoryIndex)
+            : undefined;
+    const dialogDecoratedCategory =
+        itemDialog?.mode === 'category'
+            ? decoratedBookmarkTree.at(itemDialog.categoryIndex)
+            : undefined;
+    const dialogFolderCategory =
+        itemDialog?.mode === 'folder'
+            ? bookmarkTree.at(itemDialog.categoryIndex)
+            : undefined;
+    const dialogFolder =
+        itemDialog?.mode === 'folder'
+            ? getFolderAtPath(
+                  dialogFolderCategory?.children ?? [],
+                  itemDialog.folderPath
+              )
+            : undefined;
     const selectedNodes = getNodesAtPath(selectedCategory, selectedFolderPath);
     const selectedBookmarks = selectedNodes.filter(isBookmarkLink);
     const selectedBookmark = selectedBookmarks.find(
@@ -287,7 +319,6 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
             (iconOption) => iconOption.iconName === folderIconName
         ) ?? categoryIconOptions[0];
     const SelectedFolderIcon = selectedFolderIconOption.Icon;
-    const selectedFolderIconName = resolveFolderIconName(selectedFolder);
     const confirmDeleteCategoryData =
         confirmDeleteCategoryIndex === undefined
             ? undefined
@@ -304,13 +335,15 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
         return filteredIconOptions.slice(0, maxVisibleIconOptions);
     }, [iconSearch]);
     const isCategoryDirty =
-        selectedCategory !== undefined &&
-        (categoryName.trim() !== selectedCategory.category ||
-            categoryIconName !== selectedDecoratedCategory?.iconName);
+        itemDialog?.mode === 'category' &&
+        dialogCategory !== undefined &&
+        (categoryName.trim() !== dialogCategory.category ||
+            categoryIconName !== dialogDecoratedCategory?.iconName);
     const isFolderDirty =
-        selectedFolder !== undefined &&
-        (folderName.trim() !== selectedFolder.title ||
-            folderIconName !== selectedFolderIconName);
+        itemDialog?.mode === 'folder' &&
+        dialogFolder !== undefined &&
+        (folderName.trim() !== dialogFolder.title ||
+            folderIconName !== resolveFolderIconName(dialogFolder));
 
     useEffect(() => {
         dialogRef.current?.focus();
@@ -375,6 +408,17 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
     }, [selectedBookmark, selectedBookmarkId]);
 
     useEffect(() => {
+        if (
+            (itemDialog?.mode === 'category' && dialogCategory === undefined) ||
+            (itemDialog?.mode === 'folder' && dialogFolder === undefined)
+        ) {
+            setItemDialog(undefined);
+            setIconSearch('');
+            setIsIconPickerOpen(false);
+        }
+    }, [dialogCategory, dialogFolder, itemDialog]);
+
+    useEffect(() => {
         if (bookmarkDraft === undefined) {
             return;
         }
@@ -389,11 +433,18 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
         setBookmarkError(undefined);
     };
 
+    const closeItemDialog = () => {
+        setItemDialog(undefined);
+        setIconSearch('');
+        setIsIconPickerOpen(false);
+    };
+
     const openRoot = () => {
         setSelectedCategoryIndex(undefined);
         setSelectedFolderPath([]);
         setSelectedBookmarkId(undefined);
         closeDraft();
+        closeItemDialog();
     };
 
     const openCategory = (categoryIndex: number) => {
@@ -401,12 +452,14 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
         setSelectedFolderPath([]);
         setSelectedBookmarkId(undefined);
         closeDraft();
+        closeItemDialog();
     };
 
     const openFolder = (folderId: string) => {
         setSelectedFolderPath([...selectedFolderPath, folderId]);
         setSelectedBookmarkId(undefined);
         closeDraft();
+        closeItemDialog();
     };
 
     const goUp = () => {
@@ -414,6 +467,7 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
             setSelectedFolderPath(selectedFolderPath.slice(0, -1));
             setSelectedBookmarkId(undefined);
             closeDraft();
+            closeItemDialog();
             return;
         }
 
@@ -435,15 +489,34 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
         }
     };
 
-    const saveCategory = () => {
-        if (selectedCategoryIndex === undefined) {
+    const openEditCategory = (categoryIndex: number) => {
+        const categoryData = bookmarkTree.at(categoryIndex);
+        const decoratedCategoryData = decoratedBookmarkTree.at(categoryIndex);
+        if (categoryData === undefined) {
             return;
         }
 
-        bookmarkControls.updateCategory(selectedCategoryIndex, {
-            category: categoryName,
-            icon: categoryIconName,
-        });
+        setCategoryName(categoryData.category);
+        setCategoryIconName(decoratedCategoryData?.iconName ?? defaultIconName);
+        setItemDialog({ categoryIndex, mode: 'category' });
+        closeDraft();
+        setIconSearch('');
+        setIsIconPickerOpen(false);
+    };
+
+    const saveCategory = () => {
+        if (itemDialog?.mode !== 'category') {
+            return;
+        }
+
+        if (
+            bookmarkControls.updateCategory(itemDialog.categoryIndex, {
+                category: categoryName,
+                icon: categoryIconName,
+            })
+        ) {
+            closeItemDialog();
+        }
     };
 
     const createFolder = () => {
@@ -459,15 +532,42 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
         closeDraft();
     };
 
+    const openEditFolder = (
+        categoryIndex: number,
+        folderPath: readonly string[],
+        folder: BookmarkFolderData
+    ) => {
+        setFolderName(folder.title);
+        setFolderIconName(resolveFolderIconName(folder));
+        setItemDialog({
+            categoryIndex,
+            folderPath: [...folderPath],
+            mode: 'folder',
+        });
+        closeDraft();
+        setIconSearch('');
+        setIsIconPickerOpen(false);
+    };
+
     const saveFolder = () => {
-        if (selectedFolder === undefined || selectedLocation === undefined) {
+        if (itemDialog?.mode !== 'folder') {
             return;
         }
 
-        bookmarkControls.updateFolder(selectedLocation, {
-            icon: folderIconName,
-            title: folderName,
-        });
+        if (
+            bookmarkControls.updateFolder(
+                {
+                    categoryIndex: itemDialog.categoryIndex,
+                    folderPath: itemDialog.folderPath,
+                },
+                {
+                    icon: folderIconName,
+                    title: folderName,
+                }
+            )
+        ) {
+            closeItemDialog();
+        }
     };
 
     const deleteFolder = (folderPath: readonly string[]) => {
@@ -491,6 +591,7 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
             }
             setSelectedBookmarkId(undefined);
             closeDraft();
+            closeItemDialog();
         }
     };
 
@@ -515,6 +616,12 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
             ) {
                 setSelectedCategoryIndex(selectedCategoryIndex - 1);
             }
+            if (
+                itemDialog?.mode === 'category' &&
+                itemDialog.categoryIndex === categoryIndex
+            ) {
+                closeItemDialog();
+            }
             setConfirmDeleteCategoryIndex(undefined);
         }
     };
@@ -525,6 +632,7 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
         }
 
         setSelectedBookmarkId(undefined);
+        closeItemDialog();
         setBookmarkDraft({
             categoryIndex: selectedCategoryIndex,
             folderPath: [...selectedFolderPath],
@@ -543,6 +651,7 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
         }
 
         setSelectedBookmarkId(bookmark.id);
+        closeItemDialog();
         setBookmarkDraft({
             bookmarkId: bookmark.id,
             categoryIndex: selectedCategoryIndex,
@@ -732,13 +841,81 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                             >
                                 <ChevronLeft size={18} aria-hidden />
                             </button>
-                            <button
-                                className='bookmark-manager-location-button'
-                                type='button'
-                                onClick={openRoot}
-                            >
-                                {currentTitle}
-                            </button>
+                            <div className='bookmark-manager-location-group'>
+                                <button
+                                    className='bookmark-manager-location-button'
+                                    type='button'
+                                    onClick={openRoot}
+                                >
+                                    {currentTitle}
+                                </button>
+                                {isRootLocation ? undefined : (
+                                    <div className='bookmark-manager-row-actions'>
+                                        <button
+                                            className='bookmark-manager-icon-button'
+                                            type='button'
+                                            aria-label={
+                                                selectedFolder === undefined
+                                                    ? `${t.editCategory}: ${selectedCategory?.category}`
+                                                    : `${t.editFolder}: ${selectedFolder.title}`
+                                            }
+                                            title={
+                                                selectedFolder === undefined
+                                                    ? t.editCategory
+                                                    : t.editFolder
+                                            }
+                                            onClick={() => {
+                                                if (
+                                                    selectedFolder === undefined
+                                                ) {
+                                                    openEditCategory(
+                                                        selectedCategoryIndex
+                                                    );
+                                                    return;
+                                                }
+
+                                                openEditFolder(
+                                                    selectedCategoryIndex,
+                                                    selectedFolderPath,
+                                                    selectedFolder
+                                                );
+                                            }}
+                                        >
+                                            <Pencil size={16} aria-hidden />
+                                        </button>
+                                        <button
+                                            className='bookmark-manager-icon-button danger'
+                                            type='button'
+                                            aria-label={
+                                                selectedFolder === undefined
+                                                    ? `${t.deleteCategory}: ${selectedCategory?.category}`
+                                                    : `${t.deleteFolder}: ${selectedFolder.title}`
+                                            }
+                                            title={
+                                                selectedFolder === undefined
+                                                    ? t.deleteCategory
+                                                    : t.deleteFolder
+                                            }
+                                            onClick={() => {
+                                                if (
+                                                    selectedFolder === undefined
+                                                ) {
+                                                    openDeleteCategoryConfirm(
+                                                        selectedCategoryIndex
+                                                    );
+                                                    return;
+                                                }
+
+                                                deleteFolder(
+                                                    selectedFolderPath
+                                                );
+                                            }}
+                                        >
+                                            <Trash2 size={16} aria-hidden />
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                             {isRootLocation ? (
                                 <button
                                     className='bookmark-manager-icon-button'
@@ -810,22 +987,40 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                                                       aria-hidden
                                                   />
                                               </button>
-                                              <button
-                                                  className='bookmark-manager-icon-button danger'
-                                                  type='button'
-                                                  aria-label={`${t.deleteCategory}: ${categoryData.category}`}
-                                                  title={t.deleteCategory}
-                                                  onClick={() => {
-                                                      openDeleteCategoryConfirm(
-                                                          categoryIndex
-                                                      );
-                                                  }}
-                                              >
-                                                  <Trash2
-                                                      size={16}
-                                                      aria-hidden
-                                                  />
-                                              </button>
+                                              <div className='bookmark-manager-row-actions'>
+                                                  <button
+                                                      className='bookmark-manager-icon-button'
+                                                      type='button'
+                                                      aria-label={`${t.editCategory}: ${categoryData.category}`}
+                                                      title={t.editCategory}
+                                                      onClick={() => {
+                                                          openEditCategory(
+                                                              categoryIndex
+                                                          );
+                                                      }}
+                                                  >
+                                                      <Pencil
+                                                          size={16}
+                                                          aria-hidden
+                                                      />
+                                                  </button>
+                                                  <button
+                                                      className='bookmark-manager-icon-button danger'
+                                                      type='button'
+                                                      aria-label={`${t.deleteCategory}: ${categoryData.category}`}
+                                                      title={t.deleteCategory}
+                                                      onClick={() => {
+                                                          openDeleteCategoryConfirm(
+                                                              categoryIndex
+                                                          );
+                                                      }}
+                                                  >
+                                                      <Trash2
+                                                          size={16}
+                                                          aria-hidden
+                                                      />
+                                                  </button>
+                                              </div>
                                           </div>
                                       )
                                   )
@@ -863,22 +1058,42 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                                                           aria-hidden
                                                       />
                                                   </button>
-                                                  <button
-                                                      className='bookmark-manager-icon-button danger'
-                                                      type='button'
-                                                      aria-label={`${t.deleteFolder}: ${node.title}`}
-                                                      title={t.deleteFolder}
-                                                      onClick={() => {
-                                                          deleteFolder(
-                                                              folderPath
-                                                          );
-                                                      }}
-                                                  >
-                                                      <Trash2
-                                                          size={16}
-                                                          aria-hidden
-                                                      />
-                                                  </button>
+                                                  <div className='bookmark-manager-row-actions'>
+                                                      <button
+                                                          className='bookmark-manager-icon-button'
+                                                          type='button'
+                                                          aria-label={`${t.editFolder}: ${node.title}`}
+                                                          title={t.editFolder}
+                                                          onClick={() => {
+                                                              openEditFolder(
+                                                                  selectedCategoryIndex,
+                                                                  folderPath,
+                                                                  node
+                                                              );
+                                                          }}
+                                                      >
+                                                          <Pencil
+                                                              size={16}
+                                                              aria-hidden
+                                                          />
+                                                      </button>
+                                                      <button
+                                                          className='bookmark-manager-icon-button danger'
+                                                          type='button'
+                                                          aria-label={`${t.deleteFolder}: ${node.title}`}
+                                                          title={t.deleteFolder}
+                                                          onClick={() => {
+                                                              deleteFolder(
+                                                                  folderPath
+                                                              );
+                                                          }}
+                                                      >
+                                                          <Trash2
+                                                              size={16}
+                                                              aria-hidden
+                                                          />
+                                                      </button>
+                                                  </div>
                                               </div>
                                           );
                                       }
@@ -909,237 +1124,287 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                                                       {node.url}
                                                   </span>
                                               </button>
-                                              <button
-                                                  className='bookmark-manager-icon-button danger'
-                                                  type='button'
-                                                  aria-label={t.deleteBookmark}
-                                                  title={t.deleteBookmark}
-                                                  onClick={() => {
-                                                      deleteBookmark(node.id);
-                                                  }}
-                                              >
-                                                  <Trash2
-                                                      size={16}
-                                                      aria-hidden
-                                                  />
-                                              </button>
+                                              <div className='bookmark-manager-row-actions'>
+                                                  <button
+                                                      className='bookmark-manager-icon-button'
+                                                      type='button'
+                                                      aria-label={`${t.editBookmark}: ${node.title}`}
+                                                      title={t.editBookmark}
+                                                      onClick={() => {
+                                                          startEditBookmark(
+                                                              node
+                                                          );
+                                                      }}
+                                                  >
+                                                      <Pencil
+                                                          size={16}
+                                                          aria-hidden
+                                                      />
+                                                  </button>
+                                                  <button
+                                                      className='bookmark-manager-icon-button danger'
+                                                      type='button'
+                                                      aria-label={`${t.deleteBookmark}: ${node.title}`}
+                                                      title={t.deleteBookmark}
+                                                      onClick={() => {
+                                                          deleteBookmark(
+                                                              node.id
+                                                          );
+                                                      }}
+                                                  >
+                                                      <Trash2
+                                                          size={16}
+                                                          aria-hidden
+                                                      />
+                                                  </button>
+                                              </div>
                                           </div>
                                       );
                                   })}
                         </div>
                     </aside>
                     <main className='bookmark-manager-main'>
-                        {isRootLocation ? (
-                            <div className='bookmark-manager-empty'>
-                                {rootContentLabel}
-                            </div>
-                        ) : undefined}
-                        {!isRootLocation && selectedCategory !== undefined ? (
-                            <>
-                                {bookmarkDraft === undefined &&
-                                selectedFolder === undefined ? (
-                                    <section className='bookmark-manager-category-editor'>
-                                        {renderIconField(
-                                            categoryIconName,
-                                            selectedCategoryIconOption,
-                                            SelectedCategoryIcon,
-                                            setCategoryIconName
-                                        )}
-                                        <label className='bookmark-manager-field bookmark-manager-category-name'>
-                                            <span>{t.categoryName}</span>
-                                            <input
-                                                value={categoryName}
-                                                onChange={(event) => {
-                                                    setCategoryName(
-                                                        event.target.value
-                                                    );
-                                                }}
-                                            />
-                                        </label>
-                                        <div className='bookmark-manager-category-actions'>
-                                            <button
-                                                className='bookmark-manager-action-button'
-                                                type='button'
-                                                disabled={
-                                                    !isCategoryDirty ||
-                                                    categoryName.trim() === ''
-                                                }
-                                                onClick={saveCategory}
-                                            >
-                                                <Check size={16} aria-hidden />
-                                                <span>{t.save}</span>
-                                            </button>
-                                            <button
-                                                className='bookmark-manager-secondary-button danger'
-                                                type='button'
-                                                onClick={() => {
-                                                    openDeleteCategoryConfirm(
-                                                        selectedCategoryIndex
-                                                    );
-                                                }}
-                                            >
-                                                <Trash2 size={16} aria-hidden />
-                                                <span>{t.deleteCategory}</span>
-                                            </button>
-                                        </div>
-                                    </section>
-                                ) : undefined}
-                                {bookmarkDraft === undefined &&
-                                selectedFolder !== undefined ? (
-                                    <section className='bookmark-manager-folder-editor'>
-                                        {renderIconField(
-                                            folderIconName,
-                                            selectedFolderIconOption,
-                                            SelectedFolderIcon,
-                                            setFolderIconName
-                                        )}
-                                        <label className='bookmark-manager-field'>
-                                            <span>{t.folderName}</span>
-                                            <input
-                                                value={folderName}
-                                                onChange={(event) => {
-                                                    setFolderName(
-                                                        event.target.value
-                                                    );
-                                                }}
-                                            />
-                                        </label>
-                                        <div className='bookmark-manager-folder-actions'>
-                                            <button
-                                                className='bookmark-manager-action-button'
-                                                type='button'
-                                                disabled={
-                                                    !isFolderDirty ||
-                                                    folderName.trim() === ''
-                                                }
-                                                onClick={saveFolder}
-                                            >
-                                                <Check size={16} aria-hidden />
-                                                <span>{t.save}</span>
-                                            </button>
-                                            <button
-                                                className='bookmark-manager-secondary-button danger'
-                                                type='button'
-                                                onClick={() => {
-                                                    deleteFolder(
-                                                        selectedFolderPath
-                                                    );
-                                                }}
-                                            >
-                                                <Trash2 size={16} aria-hidden />
-                                                <span>{t.deleteFolder}</span>
-                                            </button>
-                                        </div>
-                                    </section>
-                                ) : undefined}
-                                {bookmarkDraft === undefined ? undefined : (
-                                    <form
-                                        className='bookmark-manager-bookmark-form'
-                                        onSubmit={(event) => {
-                                            event.preventDefault();
-                                            saveBookmark();
-                                        }}
-                                    >
-                                        <label className='bookmark-manager-field'>
-                                            <span>{t.bookmarkTitle}</span>
-                                            <input
-                                                ref={bookmarkTitleInputRef}
-                                                value={bookmarkDraft.title}
-                                                onChange={(event) => {
-                                                    setBookmarkDraft({
-                                                        ...bookmarkDraft,
-                                                        title: event.target
-                                                            .value,
-                                                    });
-                                                }}
-                                            />
-                                        </label>
-                                        <label className='bookmark-manager-field'>
-                                            <span>{t.bookmarkUrl}</span>
-                                            <input
-                                                value={bookmarkDraft.url}
-                                                onChange={(event) => {
-                                                    setBookmarkDraft({
-                                                        ...bookmarkDraft,
-                                                        url: event.target.value,
-                                                    });
-                                                    setBookmarkError(undefined);
-                                                }}
-                                            />
-                                        </label>
-                                        <select
-                                            className='bookmark-manager-category-select'
-                                            aria-label={t.categories}
-                                            value={getBookmarkLocationKey(
-                                                bookmarkDraft.categoryIndex,
-                                                bookmarkDraft.folderPath
-                                            )}
-                                            onChange={(event) => {
-                                                const nextDestination =
-                                                    destinationOptions.find(
-                                                        (option) =>
-                                                            option.key ===
-                                                            event.target.value
-                                                    );
-                                                if (
-                                                    nextDestination ===
-                                                    undefined
-                                                ) {
-                                                    return;
-                                                }
-
-                                                setBookmarkDraft({
-                                                    ...bookmarkDraft,
-                                                    categoryIndex:
-                                                        nextDestination.location
-                                                            .categoryIndex,
-                                                    folderPath: [
-                                                        ...nextDestination
-                                                            .location
-                                                            .folderPath,
-                                                    ],
-                                                });
-                                            }}
-                                        >
-                                            {destinationOptions.map(
-                                                (option) => (
-                                                    <option
-                                                        key={option.key}
-                                                        value={option.key}
-                                                    >
-                                                        {option.label}
-                                                    </option>
-                                                )
-                                            )}
-                                        </select>
-                                        <div className='bookmark-manager-form-actions'>
-                                            <button
-                                                className='bookmark-manager-action-button'
-                                                type='submit'
-                                            >
-                                                <Check size={16} aria-hidden />
-                                                <span>{t.save}</span>
-                                            </button>
-                                            <button
-                                                className='bookmark-manager-secondary-button'
-                                                type='button'
-                                                onClick={closeDraft}
-                                            >
-                                                {t.cancel}
-                                            </button>
-                                        </div>
-                                        {bookmarkError ===
-                                        undefined ? undefined : (
-                                            <div className='bookmark-manager-error'>
-                                                {bookmarkError}
-                                            </div>
-                                        )}
-                                    </form>
-                                )}
-                            </>
-                        ) : undefined}
+                        <div className='bookmark-manager-empty'>
+                            {isRootLocation ? rootContentLabel : currentTitle}
+                        </div>
                     </main>
                 </div>
+                {itemDialog === undefined ? undefined : (
+                    <div
+                        className='bookmark-manager-editor-backdrop'
+                        onClick={closeItemDialog}
+                        onKeyDown={(event) => {
+                            if (event.key === 'Escape') {
+                                event.stopPropagation();
+                                closeItemDialog();
+                            }
+                        }}
+                    >
+                        <form
+                            className='bookmark-manager-editor-dialog'
+                            role='dialog'
+                            aria-modal='true'
+                            aria-labelledby={`${dialogId}-item-title`}
+                            onSubmit={(event) => {
+                                event.preventDefault();
+                                if (itemDialog.mode === 'category') {
+                                    saveCategory();
+                                    return;
+                                }
+
+                                saveFolder();
+                            }}
+                            onClick={(event) => {
+                                event.stopPropagation();
+                            }}
+                        >
+                            <header className='bookmark-manager-editor-header'>
+                                <span id={`${dialogId}-item-title`}>
+                                    {itemDialog.mode === 'category'
+                                        ? t.editCategory
+                                        : t.editFolder}
+                                </span>
+                                <button
+                                    className='bookmark-manager-icon-button'
+                                    type='button'
+                                    aria-label='Close'
+                                    onClick={closeItemDialog}
+                                >
+                                    <X size={18} aria-hidden />
+                                </button>
+                            </header>
+                            <div className='bookmark-manager-editor-grid'>
+                                {itemDialog.mode === 'category'
+                                    ? renderIconField(
+                                          categoryIconName,
+                                          selectedCategoryIconOption,
+                                          SelectedCategoryIcon,
+                                          setCategoryIconName
+                                      )
+                                    : renderIconField(
+                                          folderIconName,
+                                          selectedFolderIconOption,
+                                          SelectedFolderIcon,
+                                          setFolderIconName
+                                      )}
+                                <label className='bookmark-manager-field'>
+                                    <span>
+                                        {itemDialog.mode === 'category'
+                                            ? t.categoryName
+                                            : t.folderName}
+                                    </span>
+                                    <input
+                                        value={
+                                            itemDialog.mode === 'category'
+                                                ? categoryName
+                                                : folderName
+                                        }
+                                        onChange={(event) => {
+                                            if (
+                                                itemDialog.mode === 'category'
+                                            ) {
+                                                setCategoryName(
+                                                    event.target.value
+                                                );
+                                                return;
+                                            }
+
+                                            setFolderName(event.target.value);
+                                        }}
+                                    />
+                                </label>
+                            </div>
+                            <div className='bookmark-manager-form-actions'>
+                                <button
+                                    className='bookmark-manager-action-button'
+                                    type='submit'
+                                    disabled={
+                                        itemDialog.mode === 'category'
+                                            ? !isCategoryDirty ||
+                                              categoryName.trim() === ''
+                                            : !isFolderDirty ||
+                                              folderName.trim() === ''
+                                    }
+                                >
+                                    <Check size={16} aria-hidden />
+                                    <span>{t.save}</span>
+                                </button>
+                                <button
+                                    className='bookmark-manager-secondary-button'
+                                    type='button'
+                                    onClick={closeItemDialog}
+                                >
+                                    {t.cancel}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                )}
+                {bookmarkDraft === undefined ? undefined : (
+                    <div
+                        className='bookmark-manager-editor-backdrop'
+                        onClick={closeDraft}
+                        onKeyDown={(event) => {
+                            if (event.key === 'Escape') {
+                                event.stopPropagation();
+                                closeDraft();
+                            }
+                        }}
+                    >
+                        <form
+                            className='bookmark-manager-editor-dialog'
+                            role='dialog'
+                            aria-modal='true'
+                            aria-labelledby={`${dialogId}-bookmark-title`}
+                            onSubmit={(event) => {
+                                event.preventDefault();
+                                saveBookmark();
+                            }}
+                            onClick={(event) => {
+                                event.stopPropagation();
+                            }}
+                        >
+                            <header className='bookmark-manager-editor-header'>
+                                <span id={`${dialogId}-bookmark-title`}>
+                                    {bookmarkDraft.mode === 'add'
+                                        ? t.addBookmark
+                                        : t.editBookmark}
+                                </span>
+                                <button
+                                    className='bookmark-manager-icon-button'
+                                    type='button'
+                                    aria-label='Close'
+                                    onClick={closeDraft}
+                                >
+                                    <X size={18} aria-hidden />
+                                </button>
+                            </header>
+                            <label className='bookmark-manager-field'>
+                                <span>{t.bookmarkTitle}</span>
+                                <input
+                                    ref={bookmarkTitleInputRef}
+                                    value={bookmarkDraft.title}
+                                    onChange={(event) => {
+                                        setBookmarkDraft({
+                                            ...bookmarkDraft,
+                                            title: event.target.value,
+                                        });
+                                    }}
+                                />
+                            </label>
+                            <label className='bookmark-manager-field'>
+                                <span>{t.bookmarkUrl}</span>
+                                <input
+                                    value={bookmarkDraft.url}
+                                    onChange={(event) => {
+                                        setBookmarkDraft({
+                                            ...bookmarkDraft,
+                                            url: event.target.value,
+                                        });
+                                        setBookmarkError(undefined);
+                                    }}
+                                />
+                            </label>
+                            <select
+                                className='bookmark-manager-category-select'
+                                aria-label={t.categories}
+                                value={getBookmarkLocationKey(
+                                    bookmarkDraft.categoryIndex,
+                                    bookmarkDraft.folderPath
+                                )}
+                                onChange={(event) => {
+                                    const nextDestination =
+                                        destinationOptions.find(
+                                            (option) =>
+                                                option.key ===
+                                                event.target.value
+                                        );
+                                    if (nextDestination === undefined) {
+                                        return;
+                                    }
+
+                                    setBookmarkDraft({
+                                        ...bookmarkDraft,
+                                        categoryIndex:
+                                            nextDestination.location
+                                                .categoryIndex,
+                                        folderPath: [
+                                            ...nextDestination.location
+                                                .folderPath,
+                                        ],
+                                    });
+                                }}
+                            >
+                                {destinationOptions.map((option) => (
+                                    <option key={option.key} value={option.key}>
+                                        {option.label}
+                                    </option>
+                                ))}
+                            </select>
+                            <div className='bookmark-manager-form-actions'>
+                                <button
+                                    className='bookmark-manager-action-button'
+                                    type='submit'
+                                >
+                                    <Check size={16} aria-hidden />
+                                    <span>{t.save}</span>
+                                </button>
+                                <button
+                                    className='bookmark-manager-secondary-button'
+                                    type='button'
+                                    onClick={closeDraft}
+                                >
+                                    {t.cancel}
+                                </button>
+                            </div>
+                            {bookmarkError === undefined ? undefined : (
+                                <div className='bookmark-manager-error'>
+                                    {bookmarkError}
+                                </div>
+                            )}
+                        </form>
+                    </div>
+                )}
                 {confirmDeleteCategoryIndex === undefined ||
                 confirmDeleteCategoryData === undefined ? undefined : (
                     <div

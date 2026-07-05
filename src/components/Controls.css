@@ -713,6 +713,15 @@
     justify-content: space-between;
 }
 
+.bookmark-manager-location-group {
+    min-width: 0;
+    flex: 1 1 auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.25rem;
+}
+
 .bookmark-manager-category-list,
 .bookmark-manager-browser-list,
 .bookmark-manager-link-list {
@@ -859,6 +868,27 @@
     color: var(--clr-text-alpha);
     font: var(--fontBaseSm);
     justify-self: end;
+}
+
+.bookmark-manager-row-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    opacity: 0;
+    pointer-events: none;
+    translate: 0.25rem 0;
+    transition:
+        opacity var(--motion-duration-fast) var(--motion-ease-out),
+        translate var(--motion-duration-fast) var(--motion-ease-out);
+}
+
+.bookmark-manager-browser-row:hover .bookmark-manager-row-actions,
+.bookmark-manager-browser-row:focus-within .bookmark-manager-row-actions,
+.bookmark-manager-location-group:hover .bookmark-manager-row-actions,
+.bookmark-manager-location-group:focus-within .bookmark-manager-row-actions {
+    opacity: 1;
+    pointer-events: auto;
+    translate: 0;
 }
 
 .bookmark-manager-category-card:hover .bookmark-manager-category-count,
@@ -1153,6 +1183,47 @@
 
     display: grid;
     place-items: center;
+}
+
+.bookmark-manager-editor-backdrop {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    padding: 1rem;
+    background-color: var(--clr-overlay);
+
+    display: grid;
+    place-items: center;
+}
+
+.bookmark-manager-editor-dialog {
+    width: min(32rem, 100%);
+    padding: 1rem;
+    border-radius: 1rem;
+    background-color: var(--clr-panel-bg);
+    color: var(--clr-text);
+    box-shadow: var(--shadow-panel-hover);
+    backdrop-filter: blur(0.75rem);
+
+    display: grid;
+    gap: 0.75rem;
+}
+
+.bookmark-manager-editor-header {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    font: var(--fontBoldMd);
+}
+
+.bookmark-manager-editor-grid {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.5rem;
+    align-items: end;
 }
 
 .bookmark-manager-category-confirm-dialog {
