@@ -201,6 +201,7 @@ const CoverContent: React.FC<CoverContentProps> = ({
                     isLockedOpen={isLinkPanelLocked}
                     isSearchNav={inputFocused}
                     highlightedLink={selectedSearchResult?.id}
+                    highlightedFolderPath={selectedSearchResult?.folderPath}
                     highlightedCategory={selectedSearchResult?.category}
                     onClearSearch={clearSearch}
                     onToggleLockedOpen={() => {

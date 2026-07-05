@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Bookmark, ChevronLeft } from 'lucide-react';
+import { Bookmark, ChevronLeft, ChevronRight, Folder } from 'lucide-react';
 
 import type { CategoryData } from '@/constants/linkTree';
+import type { BookmarkNodeData } from '@/types/bookmarks';
+import { isBookmarkFolder } from '@/utils/bookmarks';
 
 interface MobileBookmarksProps {
     disabled: boolean;
@@ -13,6 +15,11 @@ interface MobileBookmarksProps {
 
 const closeSwipeThreshold = 72;
 
+interface MobileBookmarkFrame {
+    nodes: readonly BookmarkNodeData[];
+    title: string;
+}
+
 export const MobileBookmarks: React.FC<MobileBookmarksProps> = ({
     disabled,
     hidden,
@@ -22,7 +29,13 @@ export const MobileBookmarks: React.FC<MobileBookmarksProps> = ({
 }) => {
     const swipeStartXRef = useRef<number | undefined>(undefined);
     const [isOpen, setIsOpen] = useState(false);
+    const [navigationStack, setNavigationStack] = useState<
+        MobileBookmarkFrame[]
+    >([]);
     const [swipeOffset, setSwipeOffset] = useState(0);
+    const currentFrame = navigationStack.at(-1);
+    const isRootFrame = currentFrame === undefined;
+    const headerTitle = currentFrame?.title ?? 'Bookmarks';
 
     const setPanelOpen = useCallback(
         (nextIsOpen: boolean) => {
@@ -30,6 +43,7 @@ export const MobileBookmarks: React.FC<MobileBookmarksProps> = ({
             onOpenChange(nextIsOpen);
 
             if (!nextIsOpen) {
+                setNavigationStack([]);
                 setSwipeOffset(0);
                 swipeStartXRef.current = undefined;
             }
@@ -42,6 +56,19 @@ export const MobileBookmarks: React.FC<MobileBookmarksProps> = ({
             setPanelOpen(false);
         }
     }, [disabled, setPanelOpen]);
+
+    useEffect(() => {
+        setNavigationStack([]);
+    }, [bookmarkTree]);
+
+    const goBack = () => {
+        if (!isRootFrame) {
+            setNavigationStack(navigationStack.slice(0, -1));
+            return;
+        }
+
+        setPanelOpen(false);
+    };
 
     return (
         <>
@@ -91,38 +118,86 @@ export const MobileBookmarks: React.FC<MobileBookmarksProps> = ({
                     <button
                         className='mobile-bookmark-back'
                         type='button'
-                        aria-label='Close bookmarks'
-                        onClick={() => {
-                            setPanelOpen(false);
-                        }}
+                        aria-label={isRootFrame ? 'Close bookmarks' : 'Back'}
+                        onClick={goBack}
                     >
                         <ChevronLeft className='icon' size={24} />
                     </button>
-                    <span>Bookmarks</span>
+                    <span>{headerTitle}</span>
                 </div>
                 <div className='mobile-bookmark-list'>
-                    {bookmarkTree.map((categoryData, categoryIndex) => (
-                        <section
-                            className='mobile-bookmark-category'
-                            key={`${categoryData.category}-${categoryIndex}`}
-                        >
-                            <div className='mobile-bookmark-category-title'>
-                                {categoryData.icon}
-                                <span>{categoryData.category}</span>
-                            </div>
-                            <div className='mobile-bookmark-links'>
-                                {categoryData.links.map((bookmark) => (
-                                    <a
-                                        className='mobile-bookmark-link'
-                                        href={bookmark.url}
-                                        key={bookmark.id}
-                                    >
-                                        {bookmark.title}
-                                    </a>
-                                ))}
-                            </div>
-                        </section>
-                    ))}
+                    {isRootFrame
+                        ? bookmarkTree.map((categoryData, categoryIndex) => (
+                              <button
+                                  className='mobile-bookmark-link mobile-bookmark-folder'
+                                  type='button'
+                                  key={`${categoryData.category}-${categoryIndex}`}
+                                  onClick={() => {
+                                      setNavigationStack([
+                                          {
+                                              nodes: categoryData.children,
+                                              title: categoryData.category,
+                                          },
+                                      ]);
+                                  }}
+                              >
+                                  {categoryData.icon}
+                                  <span className='mobile-bookmark-node-label'>
+                                      {categoryData.category}
+                                  </span>
+                                  <ChevronRight
+                                      className='icon mobile-bookmark-chevron'
+                                      size={18}
+                                      aria-hidden
+                                  />
+                              </button>
+                          ))
+                        : currentFrame.nodes.map((node) => {
+                              if (isBookmarkFolder(node)) {
+                                  return (
+                                      <button
+                                          className='mobile-bookmark-link mobile-bookmark-folder'
+                                          type='button'
+                                          key={node.id}
+                                          onClick={() => {
+                                              setNavigationStack([
+                                                  ...navigationStack,
+                                                  {
+                                                      nodes: node.children,
+                                                      title: node.title,
+                                                  },
+                                              ]);
+                                          }}
+                                      >
+                                          <Folder
+                                              className='icon'
+                                              size={18}
+                                              aria-hidden
+                                          />
+                                          <span className='mobile-bookmark-node-label'>
+                                              {node.title}
+                                          </span>
+                                          <ChevronRight
+                                              className='icon mobile-bookmark-chevron'
+                                              size={18}
+                                              aria-hidden
+                                          />
+                                      </button>
+                                  );
+                              }
+
+                              return (
+                                  <a
+                                      className='mobile-bookmark-link'
+                                      href={node.url}
+                                      key={node.id}
+                                  >
+                                      <span className='mobile-bookmark-node-label'>
+                                          {node.title}
+                                      </span>
+                                  </a>
+                              );
+                          })}
                 </div>
             </div>
         </>

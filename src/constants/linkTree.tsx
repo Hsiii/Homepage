@@ -4,10 +4,15 @@ import { Folder, icons } from 'lucide-react';
 
 import type { LinkName } from '@/constants/links';
 import { links } from '@/constants/links';
-import type { BookmarkCategoryData, BookmarkLinkData } from '@/types/bookmarks';
+import type {
+    BookmarkCategoryData,
+    BookmarkLinkData,
+    BookmarkNodeData,
+} from '@/types/bookmarks';
 
 export type CategoryData = {
     category: string;
+    children: BookmarkNodeData[];
     icon: ReactElement;
     iconName: string;
     links: BookmarkLinkData[];
@@ -224,6 +229,7 @@ export const decorateBookmarkTree = (
 
         return {
             category: categoryData.category,
+            children: [...categoryData.children],
             icon: createCategoryIcon(iconName),
             iconName,
             links: [...categoryData.links],
