@@ -20,6 +20,7 @@ const securityHeaders = [
 ] as const;
 
 const nextConfig: NextConfig = {
+    allowedDevOrigins: ['*.lhr.life'],
     async headers() {
         return [
             {

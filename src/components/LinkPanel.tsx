@@ -1,12 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { PanelLeft, PanelLeftClose } from 'lucide-react';
 
-import { mobileViewportQuery } from '@/constants/breakpoints';
 import { decorateBookmarkTree } from '@/constants/linkTree';
 import type { BookmarkControls } from '@/hooks/useBookmarks';
 import { useLinkNavigation } from '@/hooks/useLinkNavigation';
 import { useLocale } from '@/hooks/useLocale';
-import { useMediaQuery } from '@/hooks/useMediaQuery';
 import type { InitialAppPreferences } from '@/types/preferences';
 import { isBrowser } from '@/utils/browserEnv';
 import type { WallpaperAsset } from '../../shared/wallpaper';
@@ -69,7 +67,6 @@ export const LinkPanel: React.FC<LinkPanelProps> = ({
     const [clickedCategory, setClickedCategory] = useState<number>();
     const [clickedFolderPath, setClickedFolderPath] = useState<string[]>([]);
     const [clickedLinkId, setClickedLinkId] = useState<string>();
-    const isMobileViewport = useMediaQuery(mobileViewportQuery);
     const isExpanded = selectedCategory !== 0 || clickedCategory !== undefined;
     const bookmarkTree = useMemo(
         () => decorateBookmarkTree(bookmarkControls.bookmarkTree),
@@ -186,31 +183,38 @@ export const LinkPanel: React.FC<LinkPanelProps> = ({
             onMouseMove={startMouseNav}
             onMouseLeave={endMouseNav}
             aria-hidden={hidden}
-            aria-expanded={
-                isLockedOpen || isExpanded || (isMobileViewport && isMobileOpen)
-            }
+            aria-expanded={isLockedOpen || isExpanded || isMobileOpen}
         >
-            {isMobileViewport && (
-                <MobileBookmarks
-                    bookmarkTree={bookmarkTree}
-                    bookmarksLabel={t.bookmarks}
-                    disabled={isSearchNav}
-                    emptyState={
-                        <BookmarkEmptyState
-                            bookmarkControls={bookmarkControls}
-                            className='mobile-bookmark-empty-state'
-                            ctaLabel={t.importBookmarksFromBrowser}
-                            description={t.bookmarksEmptyDescription}
-                            statusMessage={bookmarkStatusMessage}
-                            statusType={bookmarkControls.status?.type}
-                            title={t.bookmarksEmpty}
-                        />
-                    }
-                    hidden={hidden}
-                    onClearSearch={onClearSearch}
-                    onOpenChange={setIsMobileOpen}
-                />
-            )}
+            <MobileBookmarks
+                bookmarkTree={bookmarkTree}
+                bookmarksLabel={t.bookmarks}
+                disabled={isSearchNav}
+                emptyState={
+                    <BookmarkEmptyState
+                        bookmarkControls={bookmarkControls}
+                        className='mobile-bookmark-empty-state'
+                        ctaLabel={t.importBookmarksFromBrowser}
+                        description={t.bookmarksEmptyDescription}
+                        statusMessage={bookmarkStatusMessage}
+                        statusType={bookmarkControls.status?.type}
+                        title={t.bookmarksEmpty}
+                    />
+                }
+                hidden={hidden}
+                onClearSearch={onClearSearch}
+                onOpenChange={setIsMobileOpen}
+            />
+            <UserFloatingBar
+                bookmarkControls={bookmarkControls}
+                className='mobile-user-floating-bar'
+                closeMenusSignal={mouseLeaveCloseSignal}
+                initialPreferences={initialPreferences}
+                initialWallpaper={initialWallpaper}
+                isClerkEnabled={isClerkEnabled}
+                onWallpaperChange={onWallpaperChange}
+                settingsPlacement='mobile'
+                showSettingsInMenu
+            />
             <div className={`trigger ${hidden && 'hidden'}`} />
             <div className='panel-lock-control'>
                 <button
@@ -280,6 +284,7 @@ export const LinkPanel: React.FC<LinkPanelProps> = ({
                 )}
                 <UserFloatingBar
                     bookmarkControls={bookmarkControls}
+                    className='desktop-user-floating-bar'
                     closeMenusSignal={mouseLeaveCloseSignal}
                     initialPreferences={initialPreferences}
                     initialWallpaper={initialWallpaper}

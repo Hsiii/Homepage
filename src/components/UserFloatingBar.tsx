@@ -1,8 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useClerk, useUser } from '@clerk/nextjs';
-import { LogIn, LogOut, Mail, UserRound, UserRoundPlus } from 'lucide-react';
+import {
+    LogIn,
+    LogOut,
+    Mail,
+    Settings as SettingsIcon,
+    UserRound,
+    UserRoundPlus,
+} from 'lucide-react';
 
 import type { BookmarkControls } from '@/hooks/useBookmarks';
+import { useLocale } from '@/hooks/useLocale';
 import type { InitialAppPreferences } from '@/types/preferences';
 import type { WallpaperAsset } from '../../shared/wallpaper';
 import { SettingsMenu } from './SettingsMenu';
@@ -10,19 +18,25 @@ import { WallpaperSettingsMenu } from './WallpaperSettingsMenu';
 
 interface UserFloatingBarProps {
     bookmarkControls: BookmarkControls;
+    className?: string;
     closeMenusSignal?: number;
     initialPreferences: InitialAppPreferences;
     initialWallpaper: WallpaperAsset | undefined;
     isClerkEnabled: boolean;
     onWallpaperChange: (wallpaper: WallpaperAsset | undefined) => void;
+    settingsPlacement?: 'above' | 'mobile';
+    showSettingsInMenu?: boolean;
 }
 
 interface CloseableMenuProps {
     bookmarkControls: BookmarkControls;
+    className?: string;
     closeMenusSignal?: number;
     initialPreferences: InitialAppPreferences;
     initialWallpaper?: WallpaperAsset | undefined;
     onWallpaperChange?: (wallpaper: WallpaperAsset | undefined) => void;
+    settingsPlacement?: 'above' | 'mobile';
+    showSettingsInMenu?: boolean;
 }
 
 const getDisplayName = (emailAddress?: string, name?: string | null) => {
@@ -39,14 +53,19 @@ const getDisplayName = (emailAddress?: string, name?: string | null) => {
 
 const UserFloatingBarContent: React.FC<CloseableMenuProps> = ({
     bookmarkControls,
+    className,
     closeMenusSignal,
     initialPreferences,
     initialWallpaper,
     onWallpaperChange,
+    settingsPlacement = 'above',
+    showSettingsInMenu = false,
 }) => {
     const { isSignedIn, user } = useUser();
     const { openSignIn, openSignUp, signOut } = useClerk();
+    const { t } = useLocale(initialPreferences.locale);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
     const emailAddress = user?.primaryEmailAddress?.emailAddress;
     const displayName = getDisplayName(
@@ -78,10 +97,15 @@ const UserFloatingBarContent: React.FC<CloseableMenuProps> = ({
         }
 
         setIsMenuOpen(false);
+        setIsSettingsOpen(false);
     }, [closeMenusSignal]);
 
     return (
-        <div className='user-floating-bar'>
+        <div
+            className={['user-floating-bar', className]
+                .filter(Boolean)
+                .join(' ')}
+        >
             <div className='user-menu-control' ref={menuRef}>
                 <button
                     className='user-menu-trigger'
@@ -114,6 +138,23 @@ const UserFloatingBarContent: React.FC<CloseableMenuProps> = ({
                                         {emailAddress ?? 'No email address'}
                                     </span>
                                 </div>
+                                {showSettingsInMenu ? (
+                                    <button
+                                        className='user-menu-action'
+                                        type='button'
+                                        role='menuitem'
+                                        onClick={() => {
+                                            setIsMenuOpen(false);
+                                            setIsSettingsOpen(true);
+                                        }}
+                                    >
+                                        <SettingsIcon
+                                            className='icon'
+                                            size={16}
+                                        />
+                                        <span>{t.settings}</span>
+                                    </button>
+                                ) : undefined}
                                 <button
                                     className='user-menu-action'
                                     type='button'
@@ -129,6 +170,23 @@ const UserFloatingBarContent: React.FC<CloseableMenuProps> = ({
                             </>
                         ) : (
                             <>
+                                {showSettingsInMenu ? (
+                                    <button
+                                        className='user-menu-action'
+                                        type='button'
+                                        role='menuitem'
+                                        onClick={() => {
+                                            setIsMenuOpen(false);
+                                            setIsSettingsOpen(true);
+                                        }}
+                                    >
+                                        <SettingsIcon
+                                            className='icon'
+                                            size={16}
+                                        />
+                                        <span>{t.settings}</span>
+                                    </button>
+                                ) : undefined}
                                 <button
                                     className='user-menu-action'
                                     type='button'
@@ -161,10 +219,15 @@ const UserFloatingBarContent: React.FC<CloseableMenuProps> = ({
             <WallpaperSettingsMenu
                 bookmarkControls={bookmarkControls}
                 closeSignal={closeMenusSignal}
+                isOpen={showSettingsInMenu ? isSettingsOpen : undefined}
+                isTriggerHidden={showSettingsInMenu}
                 initialPreferences={initialPreferences}
                 initialWallpaper={initialWallpaper}
+                onOpenChange={
+                    showSettingsInMenu ? setIsSettingsOpen : undefined
+                }
                 onWallpaperChange={onWallpaperChange}
-                placement='above'
+                placement={settingsPlacement}
             />
         </div>
     );
@@ -172,10 +235,15 @@ const UserFloatingBarContent: React.FC<CloseableMenuProps> = ({
 
 const UserFloatingBarFallback: React.FC<CloseableMenuProps> = ({
     bookmarkControls,
+    className,
     closeMenusSignal,
     initialPreferences,
+    settingsPlacement = 'above',
+    showSettingsInMenu = false,
 }) => {
+    const { t } = useLocale(initialPreferences.locale);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -201,10 +269,15 @@ const UserFloatingBarFallback: React.FC<CloseableMenuProps> = ({
         }
 
         setIsMenuOpen(false);
+        setIsSettingsOpen(false);
     }, [closeMenusSignal]);
 
     return (
-        <div className='user-floating-bar'>
+        <div
+            className={['user-floating-bar', className]
+                .filter(Boolean)
+                .join(' ')}
+        >
             <div className='user-menu-control' ref={menuRef}>
                 <button
                     className='user-menu-trigger'
@@ -228,14 +301,33 @@ const UserFloatingBarFallback: React.FC<CloseableMenuProps> = ({
                             <Mail className='icon' size={16} />
                             <span>Missing Clerk publishable key</span>
                         </div>
+                        {showSettingsInMenu ? (
+                            <button
+                                className='user-menu-action'
+                                type='button'
+                                role='menuitem'
+                                onClick={() => {
+                                    setIsMenuOpen(false);
+                                    setIsSettingsOpen(true);
+                                }}
+                            >
+                                <SettingsIcon className='icon' size={16} />
+                                <span>{t.settings}</span>
+                            </button>
+                        ) : undefined}
                     </div>
                 ) : undefined}
             </div>
             <SettingsMenu
                 bookmarkControls={bookmarkControls}
                 closeSignal={closeMenusSignal}
+                isOpen={showSettingsInMenu ? isSettingsOpen : undefined}
+                isTriggerHidden={showSettingsInMenu}
                 initialPreferences={initialPreferences}
-                placement='above'
+                onOpenChange={
+                    showSettingsInMenu ? setIsSettingsOpen : undefined
+                }
+                placement={settingsPlacement}
             />
         </div>
     );
@@ -243,20 +335,26 @@ const UserFloatingBarFallback: React.FC<CloseableMenuProps> = ({
 
 export const UserFloatingBar: React.FC<UserFloatingBarProps> = ({
     bookmarkControls,
+    className,
     closeMenusSignal,
     initialPreferences,
     initialWallpaper,
     isClerkEnabled,
     onWallpaperChange,
+    settingsPlacement,
+    showSettingsInMenu,
 }) => {
     if (isClerkEnabled) {
         return (
             <UserFloatingBarContent
                 bookmarkControls={bookmarkControls}
+                className={className}
                 closeMenusSignal={closeMenusSignal}
                 initialPreferences={initialPreferences}
                 initialWallpaper={initialWallpaper}
                 onWallpaperChange={onWallpaperChange}
+                settingsPlacement={settingsPlacement}
+                showSettingsInMenu={showSettingsInMenu}
             />
         );
     }
@@ -264,8 +362,11 @@ export const UserFloatingBar: React.FC<UserFloatingBarProps> = ({
     return (
         <UserFloatingBarFallback
             bookmarkControls={bookmarkControls}
+            className={className}
             closeMenusSignal={closeMenusSignal}
             initialPreferences={initialPreferences}
+            settingsPlacement={settingsPlacement}
+            showSettingsInMenu={showSettingsInMenu}
         />
     );
 };

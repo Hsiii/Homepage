@@ -299,15 +299,21 @@ const SettingsDropdown: React.FC<SettingsDropdownProps> = ({
 interface SettingsMenuProps {
     bookmarkControls: BookmarkControls;
     closeSignal?: number;
+    isOpen?: boolean;
+    isTriggerHidden?: boolean;
     initialPreferences: InitialAppPreferences;
-    placement?: 'above' | 'below';
+    onOpenChange?: (isOpen: boolean) => void;
+    placement?: 'above' | 'below' | 'mobile';
     wallpaperControls?: WallpaperControls;
 }
 
 export const SettingsMenu: React.FC<SettingsMenuProps> = ({
     bookmarkControls,
     closeSignal,
+    isOpen: controlledIsOpen,
+    isTriggerHidden = false,
     initialPreferences,
+    onOpenChange,
     placement = 'below',
     wallpaperControls,
 }) => {
@@ -321,7 +327,9 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({
         initialLocationId: initialPreferences.locationId,
     });
     const { locale, setLocale, t } = useLocale(initialPreferences.locale);
-    const [isOpen, setIsOpen] = useState(false);
+    const [internalIsOpen, setInternalIsOpen] = useState(false);
+    const isControlled = controlledIsOpen !== undefined;
+    const isOpen = controlledIsOpen ?? internalIsOpen;
     const [themeMode, setThemeMode] = useState<ThemeMode>(() =>
         getInitialThemeMode(initialPreferences.themeMode)
     );
@@ -349,6 +357,17 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({
     const menuRef = useRef<HTMLDivElement>(null);
     const wallpaperInputRef = useRef<HTMLInputElement>(null);
 
+    const setMenuOpen = useCallback(
+        (nextIsOpen: boolean) => {
+            if (!isControlled) {
+                setInternalIsOpen(nextIsOpen);
+            }
+
+            onOpenChange?.(nextIsOpen);
+        },
+        [isControlled, onOpenChange]
+    );
+
     useEffect(() => {
         if (!isOpen) {
             return undefined;
@@ -356,7 +375,7 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({
 
         const onClickOutside = (e: MouseEvent) => {
             if (menuRef.current?.contains(e.target as Node) === false) {
-                setIsOpen(false);
+                setMenuOpen(false);
             }
         };
 
@@ -364,7 +383,7 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({
         return () => {
             globalThis.document.removeEventListener('click', onClickOutside);
         };
-    }, [isOpen]);
+    }, [isOpen, setMenuOpen]);
 
     useEffect(() => {
         if (!isOpen) {
@@ -377,9 +396,9 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({
             return;
         }
 
-        setIsOpen(false);
+        setMenuOpen(false);
         setOpenDropdownId(undefined);
-    }, [closeSignal]);
+    }, [closeSignal, setMenuOpen]);
 
     useEffect(() => {
         if (themeMode !== 'system') {
@@ -499,29 +518,33 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({
             ? undefined
             : Math.round(wallpaperControls.progress);
 
+    const isMobilePanel = placement === 'mobile';
+
     return (
         <div className={`settings-control ${placement}`} ref={menuRef}>
-            <button
-                className='settings-trigger'
-                type='button'
-                aria-label={t.settings}
-                aria-expanded={isOpen}
-                onClick={(event) => {
-                    event.stopPropagation();
-                    setIsOpen(!isOpen);
-                }}
-            >
-                <span className='settings-trigger-icons' aria-hidden>
-                    <Settings
-                        className='settings-trigger-icon settings-trigger-icon-settings'
-                        size={20}
-                    />
-                    <X
-                        className='settings-trigger-icon settings-trigger-icon-close'
-                        size={20}
-                    />
-                </span>
-            </button>
+            {isTriggerHidden ? undefined : (
+                <button
+                    className='settings-trigger'
+                    type='button'
+                    aria-label={t.settings}
+                    aria-expanded={isOpen}
+                    onClick={(event) => {
+                        event.stopPropagation();
+                        setMenuOpen(!isOpen);
+                    }}
+                >
+                    <span className='settings-trigger-icons' aria-hidden>
+                        <Settings
+                            className='settings-trigger-icon settings-trigger-icon-settings'
+                            size={20}
+                        />
+                        <X
+                            className='settings-trigger-icon settings-trigger-icon-close'
+                            size={20}
+                        />
+                    </span>
+                </button>
+            )}
             {isOpen ? (
                 <div
                     className='settings-menu'
@@ -539,6 +562,22 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({
                         }
                     }}
                 >
+                    {isMobilePanel ? (
+                        <header className='settings-mobile-header'>
+                            <span>{t.settings}</span>
+                            <button
+                                className='settings-mobile-close'
+                                type='button'
+                                aria-label={t.cancel}
+                                onClick={() => {
+                                    setMenuOpen(false);
+                                }}
+                            >
+                                <X className='icon' size={20} />
+                            </button>
+                        </header>
+                    ) : undefined}
+
                     <div className='settings-section'>
                         <div className='settings-row settings-choice-row'>
                             <span className='settings-row-label'>
@@ -846,7 +885,7 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({
                                     title={t.manageBookmarks}
                                     onClick={() => {
                                         setIsBookmarkManagerOpen(true);
-                                        setIsOpen(false);
+                                        setMenuOpen(false);
                                     }}
                                 >
                                     <Pencil className='icon' size={18} />
