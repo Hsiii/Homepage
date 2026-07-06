@@ -19,9 +19,12 @@
 }
 
 .title-container {
+    --weather-title-gap: 0rem;
+
     display: flex;
     flex-direction: column;
     align-items: center;
+    gap: var(--weather-title-gap);
 }
 
 .weather-slot {
@@ -346,6 +349,14 @@
         height: 58svh;
         gap: 1.5rem;
         padding-inline: 1rem;
+    }
+
+    .title-container {
+        --weather-title-gap: 1rem;
+    }
+
+    .weather-slot {
+        margin-bottom: 0;
     }
 
     .title {
