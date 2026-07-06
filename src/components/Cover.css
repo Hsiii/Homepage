@@ -352,7 +352,7 @@
     }
 
     .title-container {
-        --weather-title-gap: 1rem;
+        --weather-title-gap: 0.25rem;
     }
 
     .weather-slot {
