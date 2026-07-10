@@ -26,9 +26,6 @@ import {
 } from '@/utils/search';
 
 const defaultMotionTrackingMs = 2000;
-const feedWindowOffsetHours = 8;
-const feedWindowStartHour = 16;
-const supercellStoreOpenedWindowKey = 'homepage.supercellStoreOpenedWindow';
 
 const getSearchKeySequenceInput = (
     e: React.KeyboardEvent<HTMLInputElement>
@@ -58,47 +55,7 @@ const feedLinks = [
     'Crx',
     'YouTube',
     'Anigamer',
-    'Supercell Store',
 ] as const;
-
-const getFeedsWindowKey = (date = new Date()): string => {
-    const shiftedTimestamp =
-        date.getTime() +
-        (feedWindowOffsetHours - feedWindowStartHour) * 60 * 60 * 1000;
-    const shiftedDate = new Date(shiftedTimestamp);
-
-    return shiftedDate.toISOString().slice(0, 10);
-};
-
-const shouldOpenFeedLink = (link: string, windowKey: string): boolean => {
-    if (link !== 'Supercell Store') {
-        return true;
-    }
-
-    try {
-        return (
-            globalThis.localStorage.getItem(supercellStoreOpenedWindowKey) !==
-            windowKey
-        );
-    } catch {
-        return true;
-    }
-};
-
-const recordOpenedFeedLink = (link: string, windowKey: string): void => {
-    if (link !== 'Supercell Store') {
-        return;
-    }
-
-    try {
-        globalThis.localStorage.setItem(
-            supercellStoreOpenedWindowKey,
-            windowKey
-        );
-    } catch {
-        // Ignore private-mode or storage permission failures.
-    }
-};
 
 const getMaxCssTime = (value: string): number =>
     Math.max(
@@ -227,13 +184,8 @@ export const useBookmarkSearch = (
 
     const executeFeedsCommand = useCallback(() => {
         const nextBlockedLinks: FeedsLink[] = [];
-        const windowKey = getFeedsWindowKey();
 
         for (const link of feedLinks) {
-            if (!shouldOpenFeedLink(link, windowKey)) {
-                continue;
-            }
-
             const bookmark = findBookmarkByTitle(bookmarkTree, link);
             if (bookmark === undefined) {
                 continue;
@@ -242,7 +194,6 @@ export const useBookmarkSearch = (
             const openedTab = globalThis.open(bookmark.url, '_blank');
             if (openedTab) {
                 openedTab.opener = undefined;
-                recordOpenedFeedLink(link, windowKey);
                 continue;
             }
 
