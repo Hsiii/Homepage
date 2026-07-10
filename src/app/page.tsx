@@ -15,6 +15,8 @@ import { HomePageClient } from './HomePageClient';
 const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 const isClerkEnabled =
     clerkPublishableKey !== undefined && clerkPublishableKey.trim() !== '';
+const skipInitialServerData =
+    process.env.BENCHMARK_SKIP_INITIAL_SERVER_DATA === 'true';
 const initialEnvironmentTimeoutMs = 1200;
 const initialUserDataTimeoutMs = 1400;
 
@@ -76,19 +78,21 @@ export const dynamic = 'force-dynamic';
 export default async function Page(): Promise<ReactNode> {
     const initialPreferences = await readInitialAppPreferences();
     const initialLocation = findTaiwanLocation(initialPreferences.locationId);
-    const [initialWeather, initialAqi, initialUserData] = await Promise.all([
-        readOptionalInitialData(
-            'weather',
-            fetchWeatherData(initialLocation),
-            initialEnvironmentTimeoutMs
-        ),
-        readOptionalInitialData(
-            'AQI',
-            fetchAqiData(initialLocation.aqiSiteName),
-            initialEnvironmentTimeoutMs
-        ),
-        readInitialUserData(),
-    ]);
+    const [initialWeather, initialAqi, initialUserData] = skipInitialServerData
+        ? [undefined, undefined, {}]
+        : await Promise.all([
+              readOptionalInitialData(
+                  'weather',
+                  fetchWeatherData(initialLocation),
+                  initialEnvironmentTimeoutMs
+              ),
+              readOptionalInitialData(
+                  'AQI',
+                  fetchAqiData(initialLocation.aqiSiteName),
+                  initialEnvironmentTimeoutMs
+              ),
+              readInitialUserData(),
+          ]);
 
     if (initialUserData.wallpaper !== undefined) {
         preload(initialUserData.wallpaper.url, {
