@@ -7,7 +7,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile
 
-FROM oven/bun:1.3.9-alpine AS builder
+FROM node:24-alpine AS builder
 
 WORKDIR /app
 
