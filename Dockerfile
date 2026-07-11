@@ -15,7 +15,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN bunx next build --webpack
+RUN node node_modules/next/dist/bin/next build --webpack
 
 FROM node:24-alpine AS runner
 
