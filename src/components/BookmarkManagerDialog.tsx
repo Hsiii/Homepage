@@ -12,7 +12,6 @@ import {
     FolderPlus,
     Link as LinkIcon,
     LoaderCircle,
-    Pencil,
     Plus,
     Search,
     Trash2,
@@ -254,6 +253,7 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
     const [formErrors, setFormErrors] = useState<FormErrors>({});
     const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
     const [isIconPickerOpen, setIsIconPickerOpen] = useState(false);
+    const [isLocationPickerOpen, setIsLocationPickerOpen] = useState(false);
     const [iconQuery, setIconQuery] = useState('');
     const [deleteRequest, setDeleteRequest] = useState<DeleteRequest>();
     const [discardTarget, setDiscardTarget] = useState<'dialog' | 'editor'>();
@@ -313,6 +313,7 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
         setDraftBaseline(serializeDraft(draft));
         setFormErrors({});
         setIsIconPickerOpen(false);
+        setIsLocationPickerOpen(false);
         setIsAddMenuOpen(false);
     };
 
@@ -769,6 +770,9 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
             option.searchText.includes(normalizeCategoryIconSearch(iconQuery))
         )
         .slice(0, maxVisibleIconOptions);
+    const selectedDestination = destinationOptions.find(
+        (option) => option.key === editorDraft?.destinationKey
+    );
 
     const saveStatus = bookmarkControls.isLoading
         ? {
@@ -811,7 +815,6 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                 role='dialog'
                 aria-labelledby={titleId}
                 aria-modal='true'
-                data-inspector-open={editorDraft !== undefined}
                 tabIndex={-1}
                 onKeyDown={(event) => {
                     if (event.key !== 'Escape') {
@@ -823,6 +826,12 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                         setDeleteRequest(undefined);
                     } else if (discardTarget !== undefined) {
                         setDiscardTarget(undefined);
+                    } else if (isLocationPickerOpen) {
+                        setIsLocationPickerOpen(false);
+                    } else if (isIconPickerOpen) {
+                        setIsIconPickerOpen(false);
+                    } else if (editorDraft !== undefined) {
+                        cancelEditor();
                     } else if (isAddMenuOpen) {
                         setIsAddMenuOpen(false);
                     } else {
@@ -834,6 +843,23 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                     <div className='bookmark-workspace-title-group'>
                         <Bookmark aria-hidden='true' />
                         <h2 id={titleId}>{t.manageBookmarks}</h2>
+                        {bookmarkControls.status === undefined ? undefined : (
+                            <span
+                                className={`bookmark-workspace-operation-status ${bookmarkControls.status.type}`}
+                                role={
+                                    bookmarkControls.status.type === 'error'
+                                        ? 'alert'
+                                        : 'status'
+                                }
+                            >
+                                {bookmarkControls.status.type === 'error' ? (
+                                    <CircleAlert aria-hidden='true' />
+                                ) : (
+                                    <Check aria-hidden='true' />
+                                )}
+                                {t[bookmarkControls.status.messageKey]}
+                            </span>
+                        )}
                     </div>
                     <div className='bookmark-workspace-header-actions'>
                         <input
@@ -880,24 +906,6 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                         </button>
                     </div>
                 </header>
-
-                {bookmarkControls.status === undefined ? undefined : (
-                    <div
-                        className={`bookmark-workspace-banner ${bookmarkControls.status.type}`}
-                        role={
-                            bookmarkControls.status.type === 'error'
-                                ? 'alert'
-                                : 'status'
-                        }
-                    >
-                        {bookmarkControls.status.type === 'error' ? (
-                            <CircleAlert aria-hidden='true' />
-                        ) : (
-                            <Check aria-hidden='true' />
-                        )}
-                        {t[bookmarkControls.status.messageKey]}
-                    </div>
-                )}
 
                 <div className='bookmark-manager-body bookmark-workspace-grid'>
                     <aside className='bookmark-workspace-tree-pane'>
@@ -1249,27 +1257,23 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                             )}
                         </div>
                     </main>
+                </div>
 
-                    <aside
-                        className={`bookmark-workspace-inspector ${
-                            editorDraft === undefined ? '' : 'is-open'
-                        }`}
+                {editorDraft === undefined ? undefined : (
+                    <div
+                        className='bookmark-workspace-editor-backdrop'
+                        onMouseDown={(event) => {
+                            if (event.target === event.currentTarget) {
+                                cancelEditor();
+                            }
+                        }}
                     >
-                        {bookmarkControls.isLoading ? (
-                            <div className='bookmark-workspace-inspector-loading'>
-                                <LoaderCircle
-                                    aria-hidden='true'
-                                    className='is-spinning'
-                                />
-                                <span>{t.bookmarksLoading}</span>
-                            </div>
-                        ) : editorDraft === undefined ? (
-                            <div className='bookmark-workspace-empty inspector'>
-                                <Pencil aria-hidden='true' />
-                                <strong>{t.selectBookmarkItem}</strong>
-                                <span>{t.selectBookmarkItemDescription}</span>
-                            </div>
-                        ) : (
+                        <div
+                            className='bookmark-workspace-editor-dialog'
+                            role='dialog'
+                            aria-label={formTitle}
+                            aria-modal='true'
+                        >
                             <form
                                 className='bookmark-workspace-form'
                                 onSubmit={(event) => {
@@ -1281,10 +1285,10 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                                     <div>
                                         <span className='bookmark-workspace-kind-chip'>
                                             {editorDraft.kind === 'bookmark'
-                                                ? t.bookmarks
+                                                ? t.bookmark
                                                 : editorDraft.kind === 'folder'
-                                                  ? t.folders
-                                                  : t.categories}
+                                                  ? t.folder
+                                                  : t.category}
                                         </span>
                                         <h3>{formTitle}</h3>
                                     </div>
@@ -1364,32 +1368,72 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                                                 </small>
                                             )}
                                         </label>
-                                        <label className='bookmark-workspace-field'>
+                                        <div className='bookmark-workspace-field'>
                                             <span>{t.location}</span>
-                                            <select
-                                                value={
-                                                    editorDraft.destinationKey
+                                            <button
+                                                className='bookmark-workspace-location-trigger'
+                                                type='button'
+                                                aria-haspopup='listbox'
+                                                aria-expanded={
+                                                    isLocationPickerOpen
                                                 }
-                                                onChange={(event) => {
-                                                    setEditorDraft({
-                                                        ...editorDraft,
-                                                        destinationKey:
-                                                            event.target.value,
-                                                    });
+                                                onClick={() => {
+                                                    setIsLocationPickerOpen(
+                                                        (isOpen) => !isOpen
+                                                    );
                                                 }}
                                             >
-                                                {destinationOptions.map(
-                                                    (option) => (
-                                                        <option
-                                                            key={option.key}
-                                                            value={option.key}
-                                                        >
-                                                            {option.label}
-                                                        </option>
-                                                    )
-                                                )}
-                                            </select>
-                                        </label>
+                                                <span>
+                                                    {selectedDestination?.label ??
+                                                        t.bookmarks}
+                                                </span>
+                                                <ChevronDown aria-hidden='true' />
+                                            </button>
+                                            {isLocationPickerOpen ? (
+                                                <div
+                                                    className='bookmark-workspace-location-options'
+                                                    role='listbox'
+                                                    aria-label={t.location}
+                                                >
+                                                    {destinationOptions.map(
+                                                        (option) => (
+                                                            <button
+                                                                key={option.key}
+                                                                type='button'
+                                                                role='option'
+                                                                aria-selected={
+                                                                    editorDraft.destinationKey ===
+                                                                    option.key
+                                                                }
+                                                                onClick={() => {
+                                                                    setEditorDraft(
+                                                                        {
+                                                                            ...editorDraft,
+                                                                            destinationKey:
+                                                                                option.key,
+                                                                        }
+                                                                    );
+                                                                    setIsLocationPickerOpen(
+                                                                        false
+                                                                    );
+                                                                }}
+                                                            >
+                                                                <FolderOpen aria-hidden='true' />
+                                                                <span>
+                                                                    {
+                                                                        option.label
+                                                                    }
+                                                                </span>
+                                                                {editorDraft.destinationKey ===
+                                                                option.key ? (
+                                                                    <Check aria-hidden='true' />
+                                                                ) : undefined}
+                                                            </button>
+                                                        )
+                                                    )}
+                                                </div>
+                                            ) : undefined}
+                                        </div>
                                     </>
                                 ) : (
                                     <div className='bookmark-workspace-field'>
@@ -1467,15 +1511,16 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                                 )}
 
                                 <div className='bookmark-workspace-form-spacer' />
-                                <div
-                                    className={`bookmark-workspace-form-save-state ${saveStatus.tone}`}
-                                    role='status'
-                                >
-                                    {saveStatus.icon}
-                                    {bookmarkControls.saveState === 'saved'
-                                        ? t.allChangesSaved
-                                        : saveStatus.label}
-                                </div>
+                                {bookmarkControls.saveState ===
+                                'saved' ? undefined : (
+                                    <div
+                                        className={`bookmark-workspace-form-save-state ${saveStatus.tone}`}
+                                        role='status'
+                                    >
+                                        {saveStatus.icon}
+                                        {saveStatus.label}
+                                    </div>
+                                )}
                                 <div className='bookmark-workspace-form-actions'>
                                     {editorDraft.mode === 'edit' ? (
                                         <button
@@ -1522,9 +1567,9 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                                     </button>
                                 </div>
                             </form>
-                        )}
-                    </aside>
-                </div>
+                        </div>
+                    </div>
+                )}
 
                 {deleteRequest === undefined ? undefined : (
                     <div className='bookmark-workspace-confirm-backdrop'>
