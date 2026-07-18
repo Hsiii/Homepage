@@ -745,23 +745,18 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({
                                     <button
                                         className={[
                                             'settings-wallpaper-preview',
+                                            'settings-icon-choice',
                                             wallpaperControls.wallpaper !==
                                                 undefined && 'has-wallpaper',
                                         ]
                                             .filter(Boolean)
                                             .join(' ')}
                                         type='button'
-                                        aria-label={
-                                            wallpaperControls.wallpaper ===
-                                            undefined
-                                                ? t.wallpaper
-                                                : `${t.wallpaper}: ${wallpaperControls.wallpaper.width}x${wallpaperControls.wallpaper.height}`
-                                        }
+                                        aria-label={t.uploadWallpaper}
                                         title={
-                                            wallpaperControls.wallpaper ===
-                                            undefined
-                                                ? t.wallpaper
-                                                : `${wallpaperControls.wallpaper.width}x${wallpaperControls.wallpaper.height}`
+                                            wallpaperControls.isAvailable
+                                                ? t.uploadWallpaper
+                                                : t.wallpaperUnavailable
                                         }
                                         style={
                                             wallpaperControls.wallpaper ===
@@ -779,7 +774,13 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({
                                                           string
                                                       >)
                                         }
-                                        disabled
+                                        disabled={
+                                            !wallpaperControls.isAvailable ||
+                                            wallpaperControls.isBusy
+                                        }
+                                        onClick={() => {
+                                            wallpaperInputRef.current?.click();
+                                        }}
                                     >
                                         <Image className='icon' size={18} />
                                     </button>

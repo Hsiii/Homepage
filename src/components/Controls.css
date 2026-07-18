@@ -522,7 +522,11 @@
     display: grid;
     place-items: center;
 
-    &:hover,
+    &:hover {
+        color: var(--clr-text);
+        outline-color: var(--clr-text-alpha-2);
+    }
+
     &:focus-visible {
         color: var(--clr-text);
         outline-color: var(--clr-text-alpha);
@@ -624,7 +628,10 @@
     color: var(--clr-text);
 }
 
-.settings-animation-switch:hover .settings-switch-track,
+.settings-animation-switch:hover .settings-switch-track {
+    outline-color: var(--clr-text-alpha-2);
+}
+
 .settings-animation-switch:focus-visible .settings-switch-track {
     outline-color: var(--clr-text-alpha);
 }
@@ -671,9 +678,6 @@
 }
 
 .settings-wallpaper-preview {
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 0.75rem;
     background-color: var(--clr-text-alpha-2);
     color: var(--clr-text-alpha);
     overflow: hidden;
