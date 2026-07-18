@@ -34,6 +34,8 @@ export interface BookmarkStatus {
     type: 'error' | 'success';
 }
 
+export type BookmarkSaveState = 'error' | 'idle' | 'saved' | 'saving';
+
 export interface BookmarkCategoryInput {
     category: string;
     icon?: string;
@@ -72,7 +74,12 @@ export interface BookmarkControls {
     exportBookmarks: () => void;
     importBookmarks: (file: File) => Promise<void>;
     isCustom: boolean;
+    isLoading: boolean;
+    replaceBookmarkTree: (
+        bookmarkTree: readonly BookmarkCategoryData[]
+    ) => boolean;
     resetBookmarks: () => void;
+    saveState: BookmarkSaveState;
     status?: BookmarkStatus;
     updateBookmark: (
         categoryIndex: number,
@@ -448,7 +455,14 @@ export const useBookmarks = (
             !isDefaultBookmarkTree(initialBookmarkTree)
     );
     const [status, setStatus] = useState<BookmarkStatus>();
+    const [isLoading, setIsLoading] = useState(
+        hasAuth && initialBookmarkTree === undefined
+    );
+    const [saveState, setSaveState] = useState<BookmarkSaveState>(
+        hasAuth ? 'idle' : 'saved'
+    );
     const mutationVersionRef = useRef(0);
+    const saveOperationRef = useRef(0);
 
     useEffect(() => {
         if (initialBookmarkTree !== undefined || hasAuth) {
@@ -485,7 +499,8 @@ export const useBookmarks = (
     const saveRemoteBookmarkTree = useCallback(
         async (
             nextBookmarkTree: readonly BookmarkCategoryData[],
-            shouldReportError = true
+            shouldReportError = true,
+            saveOperation?: number
         ): Promise<boolean> => {
             try {
                 const headers = await getAuthHeaders();
@@ -512,8 +527,15 @@ export const useBookmarks = (
                     // Local cache failures should not invalidate a remote save.
                 }
 
+                if (saveOperation === saveOperationRef.current) {
+                    setSaveState('saved');
+                }
+
                 return true;
             } catch {
+                if (saveOperation === saveOperationRef.current) {
+                    setSaveState('error');
+                }
                 if (shouldReportError) {
                     setStatus({
                         messageKey: 'bookmarksSyncFailed',
@@ -561,6 +583,7 @@ export const useBookmarks = (
             try {
                 storeBookmarkTree(normalizedBookmarkTree, remoteUserId);
             } catch {
+                setSaveState('error');
                 setStatus({
                     messageKey: 'bookmarksStorageFailed',
                     type: 'error',
@@ -571,9 +594,18 @@ export const useBookmarks = (
             mutationVersionRef.current++;
             setBookmarkTree([...normalizedBookmarkTree]);
             setIsCustom(true);
-            saveRemoteBookmarkTree(normalizedBookmarkTree).catch(
-                () => undefined
-            );
+            if (remoteUserId === undefined) {
+                setSaveState('saved');
+            } else {
+                saveOperationRef.current++;
+                const saveOperation = saveOperationRef.current;
+                setSaveState('saving');
+                saveRemoteBookmarkTree(
+                    normalizedBookmarkTree,
+                    true,
+                    saveOperation
+                ).catch(() => undefined);
+            }
             return true;
         },
         [remoteUserId, saveRemoteBookmarkTree]
@@ -581,6 +613,7 @@ export const useBookmarks = (
 
     useEffect(() => {
         if (getToken === undefined || !isAuthLoaded) {
+            setIsLoading(hasAuth && !isAuthLoaded);
             return undefined;
         }
 
@@ -595,6 +628,8 @@ export const useBookmarks = (
                         emptyBookmarkTree
                     )
             );
+            setIsLoading(false);
+            setSaveState('saved');
             return undefined;
         }
 
@@ -607,6 +642,8 @@ export const useBookmarks = (
             } catch {
                 // Keep the server copy as the source of truth.
             }
+            setIsLoading(false);
+            setSaveState('saved');
             return undefined;
         }
 
@@ -621,6 +658,7 @@ export const useBookmarks = (
 
         let isCurrent = true;
         const loadMutationVersion = mutationVersionRef.current;
+        setIsLoading(true);
 
         const loadRemoteBookmarkTree = async () => {
             try {
@@ -656,6 +694,17 @@ export const useBookmarks = (
                 }
             } catch {
                 // Keep the cached or anonymous localStorage bookmarks as fallback.
+                if (isCurrent) {
+                    setSaveState('error');
+                    setStatus({
+                        messageKey: 'bookmarksSyncFailed',
+                        type: 'error',
+                    });
+                }
+            } finally {
+                if (isCurrent) {
+                    setIsLoading(false);
+                }
             }
         };
 
@@ -667,6 +716,7 @@ export const useBookmarks = (
     }, [
         getAuthHeaders,
         getToken,
+        hasAuth,
         initialBookmarkTree,
         isAuthLoaded,
         remoteUserId,
@@ -693,6 +743,7 @@ export const useBookmarks = (
 
     const importBookmarks = useCallback(
         async (file: File) => {
+            setIsLoading(true);
             try {
                 const nextBookmarkTree = parseBrowserBookmarks(
                     await file.text()
@@ -716,6 +767,8 @@ export const useBookmarks = (
                     messageKey: 'bookmarksImportFailed',
                     type: 'error',
                 });
+            } finally {
+                setIsLoading(false);
             }
         },
         [commitBookmarkTree]
@@ -741,8 +794,23 @@ export const useBookmarks = (
             setStatus({ messageKey: 'bookmarksCleared', type: 'success' });
         }
         setIsCustom(false);
-        if (remoteUserId !== undefined) {
-            clearRemoteBookmarks().catch(() => undefined);
+        if (remoteUserId === undefined) {
+            setSaveState('saved');
+        } else {
+            saveOperationRef.current++;
+            const saveOperation = saveOperationRef.current;
+            setSaveState('saving');
+            clearRemoteBookmarks()
+                .then((didClear) => {
+                    if (saveOperation === saveOperationRef.current) {
+                        setSaveState(didClear ? 'saved' : 'error');
+                    }
+                })
+                .catch(() => {
+                    if (saveOperation === saveOperationRef.current) {
+                        setSaveState('error');
+                    }
+                });
         }
     }, [clearRemoteBookmarks, hasAuth, remoteUserId]);
 
@@ -1165,6 +1233,12 @@ export const useBookmarks = (
         [bookmarkTree, commitBookmarkTree]
     );
 
+    const replaceBookmarkTree = useCallback(
+        (nextBookmarkTree: readonly BookmarkCategoryData[]) =>
+            commitBookmarkTree(nextBookmarkTree),
+        [commitBookmarkTree]
+    );
+
     return {
         addBookmark,
         addBookmarkToLocation,
@@ -1177,7 +1251,10 @@ export const useBookmarks = (
         exportBookmarks,
         importBookmarks,
         isCustom,
+        isLoading,
+        replaceBookmarkTree,
         resetBookmarks,
+        saveState,
         status,
         updateBookmark,
         updateBookmarkInLocation,
