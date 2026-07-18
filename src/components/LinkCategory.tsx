@@ -14,7 +14,6 @@ interface LinkCategoryProps {
     categoryData: CategoryData;
     clickedCategory?: number;
     clickedFolderPath: readonly string[];
-    clickedLinkId?: string;
     index: number;
     isMouseNav: boolean;
     highlightedLinkId?: string;
@@ -26,8 +25,7 @@ interface LinkCategoryProps {
     ) => void;
     onSelectLink: (
         categoryIndex: number,
-        folderPath: readonly string[],
-        linkId: string
+        folderPath: readonly string[]
     ) => void;
     padding: string;
     selectedCategory?: number;
@@ -36,7 +34,6 @@ interface LinkCategoryProps {
 interface BookmarkNodeListProps {
     categoryIndex: number;
     clickedFolderPath: readonly string[];
-    clickedLinkId?: string;
     currentFolderPath: readonly string[];
     depth: number;
     highlightedFolderPath?: string[];
@@ -49,15 +46,13 @@ interface BookmarkNodeListProps {
     ) => void;
     onSelectLink: (
         categoryIndex: number,
-        folderPath: readonly string[],
-        linkId: string
+        folderPath: readonly string[]
     ) => void;
 }
 
 interface BookmarkFolderNodeProps {
     categoryIndex: number;
     clickedFolderPath: readonly string[];
-    clickedLinkId?: string;
     currentFolderPath: readonly string[];
     depth: number;
     highlightedFolderPath?: string[];
@@ -70,8 +65,7 @@ interface BookmarkFolderNodeProps {
     ) => void;
     onSelectLink: (
         categoryIndex: number,
-        folderPath: readonly string[],
-        linkId: string
+        folderPath: readonly string[]
     ) => void;
 }
 
@@ -85,13 +79,6 @@ const isFolderPathPrefix = (
 ): boolean =>
     candidatePath.length >= folderPath.length &&
     folderPath.every((folderId, index) => folderId === candidatePath[index]);
-
-const areFolderPathsEqual = (
-    firstPath: readonly string[],
-    secondPath: readonly string[]
-): boolean =>
-    firstPath.length === secondPath.length &&
-    firstPath.every((folderId, index) => folderId === secondPath[index]);
 
 const getFlattenedBookmarkLinks = (
     nodes: readonly BookmarkNodeData[],
@@ -118,7 +105,6 @@ const getFlattenedBookmarkLinks = (
 const BookmarkFolderNode: React.FC<BookmarkFolderNodeProps> = ({
     categoryIndex,
     clickedFolderPath,
-    clickedLinkId,
     currentFolderPath,
     depth,
     highlightedFolderPath,
@@ -135,10 +121,6 @@ const BookmarkFolderNode: React.FC<BookmarkFolderNodeProps> = ({
     const isFolderLayerLocked =
         isFolderPathPrefix(currentFolderPath, clickedFolderPath) &&
         clickedFolderPath.length > currentFolderPath.length;
-    const isLinkLayerLocked =
-        clickedLinkId !== undefined &&
-        areFolderPathsEqual(currentFolderPath, clickedFolderPath);
-    const isLayerLocked = isFolderLayerLocked || isLinkLayerLocked;
     const isHighlighted = highlightedFolderPath?.[depth] === node.id;
     const isExpanded = isHighlighted || isClicked;
     const updateSubmenuPlacement = useCallback(() => {
@@ -187,7 +169,7 @@ const BookmarkFolderNode: React.FC<BookmarkFolderNodeProps> = ({
                 'folder-node',
                 isExpanded && 'expanded',
                 isClicked && 'clicked',
-                isLayerLocked && 'layer-locked',
+                isFolderLayerLocked && 'layer-locked',
             ]
                 .filter(Boolean)
                 .join(' ')}
@@ -224,7 +206,6 @@ const BookmarkFolderNode: React.FC<BookmarkFolderNodeProps> = ({
                 <BookmarkNodeList
                     categoryIndex={categoryIndex}
                     clickedFolderPath={clickedFolderPath}
-                    clickedLinkId={clickedLinkId}
                     currentFolderPath={folderPath}
                     depth={depth + 1}
                     highlightedFolderPath={highlightedFolderPath}
@@ -242,7 +223,6 @@ const BookmarkFolderNode: React.FC<BookmarkFolderNodeProps> = ({
 const BookmarkNodeList: React.FC<BookmarkNodeListProps> = ({
     categoryIndex,
     clickedFolderPath,
-    clickedLinkId,
     currentFolderPath,
     depth,
     highlightedFolderPath,
@@ -254,13 +234,6 @@ const BookmarkNodeList: React.FC<BookmarkNodeListProps> = ({
 }) => {
     const visibleNodes =
         depth >= maxCascadeDepth ? getFlattenedBookmarkLinks(nodes) : nodes;
-    const isFolderLayerLocked =
-        isFolderPathPrefix(currentFolderPath, clickedFolderPath) &&
-        clickedFolderPath.length > currentFolderPath.length;
-    const isLinkLayerLocked =
-        clickedLinkId !== undefined &&
-        areFolderPathsEqual(currentFolderPath, clickedFolderPath);
-    const isLayerLocked = isFolderLayerLocked || isLinkLayerLocked;
 
     return (
         <>
@@ -270,7 +243,6 @@ const BookmarkNodeList: React.FC<BookmarkNodeListProps> = ({
                         <BookmarkFolderNode
                             categoryIndex={categoryIndex}
                             clickedFolderPath={clickedFolderPath}
-                            clickedLinkId={clickedLinkId}
                             currentFolderPath={currentFolderPath}
                             depth={depth}
                             highlightedFolderPath={highlightedFolderPath}
@@ -286,46 +258,32 @@ const BookmarkNodeList: React.FC<BookmarkNodeListProps> = ({
 
                 const isDisabled = node.url.trim() === '';
                 const isHighlighted = highlightedLinkId === node.id;
-                const isClicked = clickedLinkId === node.id;
 
                 const linkClassName = [
                     'link',
                     isDisabled && 'disabled',
                     isMouseNav && 'hoverEffective',
                     isHighlighted && 'highlighted',
-                    isClicked && 'clicked',
                 ]
                     .filter(Boolean)
                     .join(' ');
 
                 return (
                     <div
-                        className={[
-                            'bookmark-node',
-                            'link-node',
-                            isClicked && 'clicked',
-                            isLayerLocked && 'layer-locked',
-                        ]
-                            .filter(Boolean)
-                            .join(' ')}
+                        className='bookmark-node link-node'
                         key={`${node.id}-${node.title}`}
                     >
                         <a
                             data-bookmark-id={node.id}
                             href={isDisabled ? undefined : node.url}
                             className={linkClassName}
-                            aria-current={isClicked ? 'true' : undefined}
                             onClick={(event) => {
                                 if (isDisabled) {
                                     event.preventDefault();
                                     return;
                                 }
 
-                                onSelectLink(
-                                    categoryIndex,
-                                    currentFolderPath,
-                                    node.id
-                                );
+                                onSelectLink(categoryIndex, currentFolderPath);
                             }}
                         >
                             <span>{node.title}</span>
@@ -341,7 +299,6 @@ export const LinkCategory: React.FC<LinkCategoryProps> = ({
     categoryData,
     clickedCategory,
     clickedFolderPath,
-    clickedLinkId,
     index,
     isMouseNav,
     highlightedLinkId,
@@ -388,7 +345,6 @@ export const LinkCategory: React.FC<LinkCategoryProps> = ({
                 <BookmarkNodeList
                     categoryIndex={categoryIndex}
                     clickedFolderPath={clickedFolderPath}
-                    clickedLinkId={clickedLinkId}
                     currentFolderPath={[]}
                     depth={0}
                     highlightedFolderPath={highlightedFolderPath}

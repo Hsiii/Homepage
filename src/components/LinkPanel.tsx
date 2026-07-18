@@ -66,7 +66,6 @@ export const LinkPanel: React.FC<LinkPanelProps> = ({
     const [isMobileOpen, setIsMobileOpen] = useState(false);
     const [clickedCategory, setClickedCategory] = useState<number>();
     const [clickedFolderPath, setClickedFolderPath] = useState<string[]>([]);
-    const [clickedLinkId, setClickedLinkId] = useState<string>();
     const isExpanded = selectedCategory !== 0 || clickedCategory !== undefined;
     const bookmarkTree = useMemo(
         () => decorateBookmarkTree(bookmarkControls.bookmarkTree),
@@ -94,23 +93,20 @@ export const LinkPanel: React.FC<LinkPanelProps> = ({
 
         setClickedCategory(undefined);
         setClickedFolderPath([]);
-        setClickedLinkId(undefined);
     }, [hidden, isSearchNav]);
 
     const selectCategory = useCallback(
         (categoryIndex: number) => {
             setClickedCategory((currentCategory) =>
                 currentCategory === categoryIndex &&
-                clickedFolderPath.length === 0 &&
-                clickedLinkId === undefined
+                clickedFolderPath.length === 0
                     ? undefined
                     : categoryIndex
             );
             setClickedFolderPath([]);
-            setClickedLinkId(undefined);
             onClearSearch();
         },
-        [clickedFolderPath.length, clickedLinkId, onClearSearch]
+        [clickedFolderPath.length, onClearSearch]
     );
 
     const selectFolder = useCallback(
@@ -121,28 +117,18 @@ export const LinkPanel: React.FC<LinkPanelProps> = ({
                     ? folderPath.slice(0, -1)
                     : [...folderPath]
             );
-            setClickedLinkId(undefined);
             onClearSearch();
         },
         [clickedFolderPath, onClearSearch]
     );
 
     const selectLink = useCallback(
-        (
-            categoryIndex: number,
-            folderPath: readonly string[],
-            linkId: string
-        ) => {
-            const isSameLockedLink =
-                clickedLinkId === linkId &&
-                areFolderPathsEqual(clickedFolderPath, folderPath);
-
+        (categoryIndex: number, folderPath: readonly string[]) => {
             setClickedCategory(categoryIndex);
             setClickedFolderPath([...folderPath]);
-            setClickedLinkId(isSameLockedLink ? undefined : linkId);
             onClearSearch();
         },
-        [clickedFolderPath, clickedLinkId, onClearSearch]
+        [onClearSearch]
     );
 
     const panelPaddings = useMemo(() => {
@@ -265,11 +251,6 @@ export const LinkPanel: React.FC<LinkPanelProps> = ({
                                 clickedCategory === i + 1
                                     ? clickedFolderPath
                                     : []
-                            }
-                            clickedLinkId={
-                                clickedCategory === i + 1
-                                    ? clickedLinkId
-                                    : undefined
                             }
                             selectedCategory={selectedCategory}
                             isMouseNav={isMouseNav}
