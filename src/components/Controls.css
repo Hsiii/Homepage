@@ -809,7 +809,7 @@
     border: 1px solid var(--bookmark-workspace-column-border);
     border-radius: var(--bookmark-workspace-control-radius);
     background-color: var(--clr-search-field-bg-active);
-    color: var(--clr-text);
+    color: var(--clr-search-field-text);
     cursor: pointer;
     text-align: left;
     display: grid;
@@ -892,7 +892,7 @@
     border: 1px solid var(--bookmark-workspace-column-border);
     border-radius: var(--bookmark-workspace-control-radius);
     background-color: var(--clr-search-field-bg-active);
-    color: var(--clr-text);
+    color: var(--clr-search-field-text);
     cursor: pointer;
     display: grid;
     grid-template-columns: 1.25rem minmax(0, 1fr) 1rem;
