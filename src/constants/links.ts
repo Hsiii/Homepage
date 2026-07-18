@@ -14,6 +14,7 @@ export const links = {
     'Cloudflare': 'https://dash.cloudflare.com/',
     'Coliss': 'https://coliss.com/articles/freebies/japanese-free-fonts.html',
     'Coolor': 'https://coolors.co/',
+    'Crunchyroll': 'https://www.crunchyroll.com/',
     'Crx': 'https://chrome.google.com/webstore/devconsole/',
     'Dam': 'https://www.clubdam.com/',
     'DeepSWE': 'https://deepswe.datacurve.ai/',

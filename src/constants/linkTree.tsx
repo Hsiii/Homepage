@@ -94,7 +94,14 @@ const defaultCategoryData = [
     {
         category: 'Media',
         iconName: 'MonitorPlay',
-        links: ['YouTube', 'Anigamer', 'Spotify', 'Utaten', 'Dam'],
+        links: [
+            'YouTube',
+            'Anigamer',
+            'Crunchyroll',
+            'Spotify',
+            'Utaten',
+            'Dam',
+        ],
     },
     {
         category: 'Game',
