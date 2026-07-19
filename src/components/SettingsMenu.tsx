@@ -2,12 +2,10 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Check,
     ChevronDown,
-    Download,
     Image,
     Monitor,
     Moon,
     Pencil,
-    RotateCcw,
     Settings,
     Sun,
     Trash2,
@@ -353,7 +351,6 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({
         }
     );
     const [openDropdownId, setOpenDropdownId] = useState<string>();
-    const bookmarkInputRef = useRef<HTMLInputElement>(null);
     const menuRef = useRef<HTMLDivElement>(null);
     const wallpaperInputRef = useRef<HTMLInputElement>(null);
 
@@ -860,25 +857,6 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({
                                 {t.bookmarks}
                             </span>
                             <div className='settings-bookmark-actions'>
-                                <input
-                                    className='settings-bookmark-input'
-                                    type='file'
-                                    accept='.html,.htm,text/html'
-                                    ref={bookmarkInputRef}
-                                    onChange={(event) => {
-                                        const file =
-                                            event.currentTarget.files?.[0];
-                                        if (bookmarkInputRef.current !== null) {
-                                            bookmarkInputRef.current.value = '';
-                                        }
-
-                                        if (file !== undefined) {
-                                            bookmarkControls
-                                                .importBookmarks(file)
-                                                .catch(() => undefined);
-                                        }
-                                    }}
-                                />
                                 <button
                                     className='settings-icon-choice'
                                     type='button'
@@ -891,51 +869,8 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({
                                 >
                                     <Pencil className='icon' size={18} />
                                 </button>
-                                <button
-                                    className='settings-icon-choice'
-                                    type='button'
-                                    aria-label={t.importBookmarks}
-                                    title={t.importBookmarks}
-                                    onClick={() => {
-                                        bookmarkInputRef.current?.click();
-                                    }}
-                                >
-                                    <Upload className='icon' size={18} />
-                                </button>
-                                <button
-                                    className='settings-icon-choice'
-                                    type='button'
-                                    aria-label={t.exportBookmarks}
-                                    title={t.exportBookmarks}
-                                    onClick={bookmarkControls.exportBookmarks}
-                                >
-                                    <Download className='icon' size={18} />
-                                </button>
-                                <button
-                                    className='settings-icon-choice'
-                                    type='button'
-                                    aria-label={t.resetBookmarks}
-                                    title={t.resetBookmarks}
-                                    disabled={!bookmarkControls.isCustom}
-                                    onClick={bookmarkControls.resetBookmarks}
-                                >
-                                    <RotateCcw className='icon' size={18} />
-                                </button>
                             </div>
                         </div>
-                        {bookmarkControls.status === undefined ? undefined : (
-                            <div
-                                className={[
-                                    'settings-bookmark-status',
-                                    bookmarkControls.status.type,
-                                ]
-                                    .filter(Boolean)
-                                    .join(' ')}
-                                role='status'
-                            >
-                                {t[bookmarkControls.status.messageKey]}
-                            </div>
-                        )}
                     </div>
 
                     <div className='settings-section'>

@@ -24,7 +24,6 @@ type BookmarkStatusMessageKey =
     | 'bookmarksExported'
     | 'bookmarksImportEmpty'
     | 'bookmarksImportFailed'
-    | 'bookmarksImported'
     | 'bookmarksReset'
     | 'bookmarksStorageFailed'
     | 'bookmarksSyncFailed';
@@ -779,12 +778,7 @@ export const useBookmarks = (
                     return;
                 }
 
-                if (commitBookmarkTree(nextBookmarkTree)) {
-                    setStatus({
-                        messageKey: 'bookmarksImported',
-                        type: 'success',
-                    });
-                }
+                commitBookmarkTree(nextBookmarkTree);
             } catch {
                 setStatus({
                     messageKey: 'bookmarksImportFailed',

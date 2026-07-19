@@ -1974,8 +1974,7 @@
     justify-self: end;
 }
 
-.settings-wallpaper-input,
-.settings-bookmark-input {
+.settings-wallpaper-input {
     display: none;
 }
 
@@ -2019,16 +2018,11 @@
     display: block;
 }
 
-.settings-wallpaper-status,
-.settings-bookmark-status {
+.settings-wallpaper-status {
     min-height: 2rem;
     padding: 0 0.5rem;
     color: var(--clr-text-alpha);
     font: var(--fontBaseSm);
-}
-
-.settings-bookmark-status.error {
-    color: var(--clr-aqi-unhealthy);
 }
 
 .bookmark-manager-backdrop {
