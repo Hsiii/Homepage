@@ -322,6 +322,7 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
         setDraftBaseline(serializeDraft(draft));
         setFormErrors({});
         setIsIconPickerOpen(false);
+        setIconQuery('');
         setIsLocationPickerOpen(false);
         setIsAddMenuOpen(false);
     };
@@ -1489,13 +1490,6 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                             >
                                 <div className='bookmark-workspace-form-heading'>
                                     <div>
-                                        <span className='bookmark-workspace-kind-chip'>
-                                            {editorDraft.kind === 'bookmark'
-                                                ? t.bookmark
-                                                : editorDraft.kind === 'folder'
-                                                  ? t.folder
-                                                  : t.category}
-                                        </span>
                                         <h3>{formTitle}</h3>
                                     </div>
                                     <button
@@ -1663,13 +1657,19 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                                         </button>
                                         {isIconPickerOpen ? (
                                             <div className='bookmark-workspace-icon-picker'>
-                                                <label className='bookmark-workspace-search'>
+                                                <div
+                                                    className='bookmark-workspace-search quiet'
+                                                    role='search'
+                                                >
                                                     <Search aria-hidden='true' />
-                                                    <span className='sr-only'>
-                                                        {t.categoryIcon}
-                                                    </span>
                                                     <input
                                                         type='search'
+                                                        aria-label={
+                                                            t.categoryIconSearch
+                                                        }
+                                                        placeholder={
+                                                            t.categoryIconSearch
+                                                        }
                                                         value={iconQuery}
                                                         onChange={(event) => {
                                                             setIconQuery(
@@ -1678,39 +1678,62 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                                                             );
                                                         }}
                                                     />
-                                                </label>
-                                                <div className='bookmark-workspace-icon-grid'>
-                                                    {filteredIconOptions.map(
-                                                        (option) => (
-                                                            <button
-                                                                key={
-                                                                    option.iconName
-                                                                }
-                                                                type='button'
-                                                                aria-label={
-                                                                    option.label
-                                                                }
-                                                                aria-pressed={
-                                                                    editorDraft.icon ===
-                                                                    option.iconName
-                                                                }
-                                                                onClick={() => {
-                                                                    setEditorDraft(
-                                                                        {
-                                                                            ...editorDraft,
-                                                                            icon: option.iconName,
-                                                                        }
-                                                                    );
-                                                                    setIsIconPickerOpen(
-                                                                        false
-                                                                    );
-                                                                }}
-                                                            >
-                                                                <option.Icon aria-hidden='true' />
-                                                            </button>
-                                                        )
+                                                    {iconQuery ===
+                                                    '' ? undefined : (
+                                                        <button
+                                                            type='button'
+                                                            aria-label={t.clear}
+                                                            onClick={() => {
+                                                                setIconQuery(
+                                                                    ''
+                                                                );
+                                                            }}
+                                                        >
+                                                            <X aria-hidden='true' />
+                                                        </button>
                                                     )}
                                                 </div>
+                                                {filteredIconOptions.length ===
+                                                0 ? (
+                                                    <p className='bookmark-workspace-icon-empty'>
+                                                        {
+                                                            t.categoryIconSearchEmpty
+                                                        }
+                                                    </p>
+                                                ) : (
+                                                    <div className='bookmark-workspace-icon-grid'>
+                                                        {filteredIconOptions.map(
+                                                            (option) => (
+                                                                <button
+                                                                    key={
+                                                                        option.iconName
+                                                                    }
+                                                                    type='button'
+                                                                    aria-label={
+                                                                        option.label
+                                                                    }
+                                                                    aria-pressed={
+                                                                        editorDraft.icon ===
+                                                                        option.iconName
+                                                                    }
+                                                                    onClick={() => {
+                                                                        setEditorDraft(
+                                                                            {
+                                                                                ...editorDraft,
+                                                                                icon: option.iconName,
+                                                                            }
+                                                                        );
+                                                                        setIsIconPickerOpen(
+                                                                            false
+                                                                        );
+                                                                    }}
+                                                                >
+                                                                    <option.Icon aria-hidden='true' />
+                                                                </button>
+                                                            )
+                                                        )}
+                                                    </div>
+                                                )}
                                             </div>
                                         ) : undefined}
                                     </div>

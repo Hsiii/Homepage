@@ -838,23 +838,11 @@
 
 .bookmark-workspace-form-heading > div {
     min-width: 0;
-    display: grid;
-    gap: 0.5rem;
 }
 
 .bookmark-workspace-form-heading h3 {
     overflow-wrap: anywhere;
     font: var(--fontBoldMd);
-}
-
-.bookmark-workspace-kind-chip {
-    width: fit-content;
-    min-height: 1.5rem;
-    padding: 0.25rem 0.5rem;
-    border-radius: 999px;
-    background-color: var(--clr-primary-alpha);
-    color: var(--clr-primary);
-    font: var(--fontBoldSm);
 }
 
 .bookmark-workspace-inspector-close {
@@ -988,11 +976,6 @@
 }
 
 .bookmark-workspace-icon-picker {
-    position: absolute;
-    top: calc(100% + 0.5rem);
-    left: 0;
-    right: 0;
-    z-index: 5;
     padding: 0.5rem;
     border: 1px solid var(--bookmark-workspace-column-border);
     border-radius: var(--bookmark-workspace-control-radius);
@@ -1000,6 +983,16 @@
     box-shadow: var(--shadow-panel-hover);
     display: grid;
     gap: 0.5rem;
+}
+
+.bookmark-workspace-icon-empty {
+    min-height: 5rem;
+    padding: 1rem;
+    color: var(--clr-text-alpha);
+    text-align: center;
+    font: var(--fontSm);
+    display: grid;
+    place-items: center;
 }
 
 .bookmark-workspace-icon-grid {
