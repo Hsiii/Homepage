@@ -517,7 +517,20 @@
     gap: 1rem;
 }
 
+.bookmark-workspace-list-title {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.bookmark-workspace-list-title .bookmark-workspace-icon-button {
+    flex: 0 0 auto;
+    color: var(--clr-text-alpha);
+}
+
 .bookmark-workspace-list-header h3 {
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

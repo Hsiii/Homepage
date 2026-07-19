@@ -12,6 +12,7 @@ import {
     FolderPlus,
     Link as LinkIcon,
     LoaderCircle,
+    Pencil,
     Plus,
     Search,
     Trash2,
@@ -325,6 +326,29 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
         setIsAddMenuOpen(false);
     };
 
+    const navigateToLocation = (nextLocation: BookmarkLocation) => {
+        const category = bookmarkTree.at(nextLocation.categoryIndex);
+        setLocation(nextLocation);
+        setExpandedKeys((current: ReadonlySet<string>) => {
+            const next = new Set(current);
+            if (category !== undefined) {
+                next.add(category.id);
+            }
+            for (const folderId of nextLocation.folderPath) {
+                next.add(folderId);
+            }
+            return next;
+        });
+    };
+
+    const navigateToCategory = (categoryIndex: number) => {
+        navigateToLocation({ categoryIndex, folderPath: [] });
+    };
+
+    const navigateToFolder = (nextLocation: BookmarkLocation) => {
+        navigateToLocation(nextLocation);
+    };
+
     const editCategory = (categoryIndex: number) => {
         const category = bookmarkTree.at(categoryIndex);
         const decoratedCategory = decoratedTree.at(categoryIndex);
@@ -332,10 +356,7 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
             return;
         }
 
-        setLocation({ categoryIndex, folderPath: [] });
-        setExpandedKeys((current: ReadonlySet<string>) =>
-            new Set(current).add(category.id)
-        );
+        navigateToCategory(categoryIndex);
         openDraft({
             categoryIndex,
             destinationKey: '',
@@ -358,16 +379,9 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
             return;
         }
 
-        setLocation(nextLocation);
-        setExpandedKeys((current: ReadonlySet<string>) => {
-            const next = new Set(current);
-            if (category !== undefined) {
-                next.add(category.id);
-            }
-            for (const folderId of nextLocation.folderPath) {
-                next.add(folderId);
-            }
-            return next;
+        navigateToFolder({
+            categoryIndex: nextLocation.categoryIndex,
+            folderPath: [...nextLocation.folderPath],
         });
         openDraft({
             ...nextLocation,
@@ -796,7 +810,7 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                             type='button'
                             aria-current={isSelected ? 'page' : undefined}
                             onClick={() => {
-                                editFolder(folderLocation);
+                                navigateToFolder(folderLocation);
                             }}
                         >
                             {createBookmarkIcon(node.icon, 'icon')}
@@ -1038,7 +1052,7 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                                             : undefined
                                     }
                                     onClick={() => {
-                                        editCategory(rootCategoryIndex);
+                                        navigateToCategory(rootCategoryIndex);
                                     }}
                                     onDragOver={(event) => {
                                         dragOverLocation(event, {
@@ -1178,7 +1192,7 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                                                                 : undefined
                                                         }
                                                         onClick={() => {
-                                                            editCategory(
+                                                            navigateToCategory(
                                                                 categoryIndex
                                                             );
                                                         }}
@@ -1216,11 +1230,35 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                         }`}
                     >
                         <div className='bookmark-workspace-list-header'>
-                            <h3>
-                                {currentFolder?.title ??
-                                    currentCategory?.category ??
-                                    t.bookmarks}
-                            </h3>
+                            <div className='bookmark-workspace-list-title'>
+                                <h3>
+                                    {currentFolder?.title ??
+                                        currentCategory?.category ??
+                                        t.bookmarks}
+                                </h3>
+                                {currentCategory === undefined ? undefined : (
+                                    <button
+                                        className='bookmark-workspace-icon-button'
+                                        type='button'
+                                        aria-label={
+                                            currentFolder === undefined
+                                                ? t.editCategory
+                                                : t.editFolder
+                                        }
+                                        onClick={() => {
+                                            if (currentFolder === undefined) {
+                                                editCategory(
+                                                    location.categoryIndex
+                                                );
+                                            } else {
+                                                editFolder(location);
+                                            }
+                                        }}
+                                    >
+                                        <Pencil aria-hidden='true' />
+                                    </button>
+                                )}
+                            </div>
                             <div className='bookmark-workspace-list-actions'>
                                 <button
                                     className='bookmark-workspace-primary-button'
@@ -1363,7 +1401,7 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                                                 type='button'
                                                 onClick={() => {
                                                     if (isFolder) {
-                                                        editFolder(
+                                                        navigateToFolder(
                                                             folderLocation
                                                         );
                                                     } else {
