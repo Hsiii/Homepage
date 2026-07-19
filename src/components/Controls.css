@@ -455,12 +455,12 @@
 .bookmark-workspace-list-pane {
     padding: var(--bookmark-workspace-pane-padding);
     display: grid;
-    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr);
     gap: 0.75rem;
 }
 
 .bookmark-workspace-list-pane.has-breadcrumb {
-    grid-template-rows: auto auto minmax(0, 1fr);
+    grid-template-rows: auto auto auto minmax(0, 1fr);
 }
 
 .bookmark-workspace-list-header {
@@ -494,6 +494,62 @@
 .bookmark-workspace-list-header span,
 .bookmark-workspace-breadcrumb {
     color: var(--clr-text-alpha);
+}
+
+.bookmark-workspace-quick-add {
+    min-width: 0;
+    min-height: 2.5rem;
+    border: 1px solid var(--bookmark-workspace-column-border);
+    border-radius: var(--bookmark-workspace-control-radius);
+    background-color: var(--clr-search-field-bg-active);
+    color: var(--clr-search-icon-active);
+    display: grid;
+    grid-template-columns: 1rem minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.5rem;
+    transition:
+        border-color var(--motion-duration-fast) var(--motion-ease-out),
+        box-shadow var(--motion-duration-fast) var(--motion-ease-out);
+}
+
+.bookmark-workspace-quick-add:focus-within {
+    border-color: var(--clr-primary-alpha);
+    box-shadow: var(--shadow-panel);
+}
+
+.bookmark-workspace-quick-add > svg {
+    width: 1rem;
+    height: 1rem;
+    margin-left: 0.75rem;
+}
+
+.bookmark-workspace-quick-add input {
+    min-width: 0;
+    min-height: 2.5rem;
+    padding: 0.5rem;
+    border: 0;
+    background-color: transparent;
+    color: var(--clr-search-field-text);
+    outline: none;
+}
+
+.bookmark-workspace-quick-add input::placeholder {
+    color: var(--clr-search-field-placeholder);
+}
+
+.bookmark-workspace-quick-add input:disabled {
+    color: var(--clr-disabled);
+    cursor: not-allowed;
+}
+
+.bookmark-workspace-quick-add > span {
+    max-width: 14rem;
+    padding-right: 0.75rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--clr-search-field-text);
+    font: var(--fontBoldSm);
 }
 
 .bookmark-workspace-list-actions {
@@ -667,6 +723,10 @@
     gap: 0.75rem;
 }
 
+.bookmark-workspace-list-item:not(button) {
+    cursor: default;
+}
+
 .bookmark-workspace-list-item:focus-visible {
     outline: 2px solid var(--clr-primary-alpha);
     outline-offset: -2px;
@@ -703,6 +763,37 @@
 
 .bookmark-workspace-item-copy strong {
     font: var(--fontBoldSm);
+}
+
+.bookmark-workspace-inline-title {
+    width: 100%;
+    min-width: 0;
+    height: 1.5rem;
+    margin-left: -0.25rem;
+    padding: 0 0.25rem;
+    border: 0;
+    border-radius: 0.25rem;
+    background-color: transparent;
+    color: var(--clr-text);
+    outline: none;
+    font: var(--fontBoldSm);
+    transition:
+        background-color var(--motion-duration-fast) var(--motion-ease-out),
+        box-shadow var(--motion-duration-fast) var(--motion-ease-out);
+}
+
+.bookmark-workspace-inline-title:hover {
+    background-color: var(--clr-text-alpha-2);
+}
+
+.bookmark-workspace-inline-title:focus {
+    background-color: var(--clr-search-field-bg-active);
+    box-shadow: 0 0 0 2px var(--clr-primary-alpha);
+}
+
+.bookmark-workspace-row-actions {
+    display: flex;
+    align-items: center;
 }
 
 .bookmark-workspace-item-copy small {
@@ -1270,7 +1361,11 @@
         grid-template-columns: minmax(0, 1fr) auto;
     }
 
-    .bookmark-workspace-row-link {
+    .bookmark-workspace-row-actions .bookmark-workspace-row-link:last-child {
+        display: none;
+    }
+
+    .bookmark-workspace-quick-add > span {
         display: none;
     }
 

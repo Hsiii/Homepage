@@ -6,6 +6,7 @@ import {
     ChevronDown,
     ChevronRight,
     CircleAlert,
+    ClipboardPaste,
     Download,
     ExternalLink,
     FolderOpen,
@@ -80,6 +81,11 @@ interface DestinationOption {
 interface FormErrors {
     title?: string;
     url?: string;
+}
+
+interface PastedBookmark {
+    title: string;
+    url: string;
 }
 
 const defaultIconName = 'Folder';
@@ -235,6 +241,151 @@ const getBookmarkHost = (url: string): string => {
     }
 };
 
+const getBookmarkTitleFromUrl = (url: string): string => {
+    try {
+        const hostname = new URL(url).hostname.replace(/^www\./, '');
+        const name = hostname.split('.')[0].replaceAll(/[_-]+/g, ' ');
+
+        return name === ''
+            ? hostname
+            : name.replace(/^\w/, (character) => character.toUpperCase());
+    } catch {
+        return url;
+    }
+};
+
+const parsePastedBookmarkText = (value: string): PastedBookmark[] => {
+    const bookmarks: PastedBookmark[] = [];
+    const seenUrls = new Set<string>();
+    const addBookmark = (urlValue: string, titleValue = '') => {
+        const url = normalizeUrl(urlValue.replaceAll(/[),.;]+$/g, ''));
+        if (url === undefined || seenUrls.has(url)) {
+            return;
+        }
+
+        seenUrls.add(url);
+        bookmarks.push({
+            title: titleValue.trim() || getBookmarkTitleFromUrl(url),
+            url,
+        });
+    };
+
+    for (const line of value.split(/\r?\n/)) {
+        const markdownLinks = [
+            ...line.matchAll(/\[([^\]]+)]\((https?:\/\/[^)]+)\)/gi),
+        ];
+        for (const match of markdownLinks) {
+            addBookmark(match[2], match[1]);
+        }
+
+        const lineWithoutMarkdown = line.replaceAll(
+            /\[.+?]\(https?:\/\/[^)]+\)/gi,
+            ''
+        );
+        const urlMatches = [
+            ...lineWithoutMarkdown.matchAll(
+                /(?:https?:\/\/|www\.)[^\s"'<>]+/gi
+            ),
+        ];
+        for (const match of urlMatches) {
+            const matchedUrl = match[0];
+            const title =
+                urlMatches.length === 1
+                    ? lineWithoutMarkdown
+                          .replace(matchedUrl, '')
+                          .replaceAll(/^[\s:|–—-]+|[\s:|–—-]+$/g, '')
+                    : '';
+            addBookmark(matchedUrl, title);
+        }
+
+        if (markdownLinks.length === 0 && urlMatches.length === 0) {
+            addBookmark(line.trim());
+        }
+    }
+
+    return bookmarks;
+};
+
+const parseClipboardBookmarks = (
+    clipboardData: DataTransfer
+): PastedBookmark[] => {
+    const bookmarks = parsePastedBookmarkText(
+        clipboardData.getData('text/plain')
+    );
+    const seenUrls = new Set(bookmarks.map((bookmark) => bookmark.url));
+    const html = clipboardData.getData('text/html');
+    if (html === '') {
+        return bookmarks;
+    }
+
+    const document = new DOMParser().parseFromString(html, 'text/html');
+    for (const anchor of document.querySelectorAll<HTMLAnchorElement>(
+        'a[href]'
+    )) {
+        const url = normalizeUrl(anchor.href);
+        if (url === undefined || seenUrls.has(url)) {
+            continue;
+        }
+
+        seenUrls.add(url);
+        bookmarks.push({
+            title: anchor.textContent.trim() || getBookmarkTitleFromUrl(url),
+            url,
+        });
+    }
+
+    return bookmarks;
+};
+
+interface InlineBookmarkTitleProps {
+    ariaLabel: string;
+    onSave: (title: string) => void;
+    title: string;
+}
+
+const InlineBookmarkTitle: React.FC<InlineBookmarkTitleProps> = ({
+    ariaLabel,
+    onSave,
+    title,
+}) => {
+    const [value, setValue] = useState(title);
+
+    useEffect(() => {
+        setValue(title);
+    }, [title]);
+
+    const save = () => {
+        const nextTitle = value.replaceAll(/\s+/g, ' ').trim();
+        if (nextTitle === '') {
+            setValue(title);
+        } else if (nextTitle !== title) {
+            onSave(nextTitle);
+        }
+    };
+
+    return (
+        <input
+            className='bookmark-workspace-inline-title'
+            type='text'
+            aria-label={ariaLabel}
+            value={value}
+            onChange={(event) => {
+                setValue(event.target.value);
+            }}
+            onBlur={save}
+            onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    event.currentTarget.blur();
+                } else if (event.key === 'Escape') {
+                    setValue(title);
+                    event.currentTarget.blur();
+                }
+            }}
+        />
+    );
+};
+
 export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
     bookmarkControls,
     onClose,
@@ -270,6 +421,8 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
     }>();
     const [draggedNode, setDraggedNode] = useState<DraggedNode>();
     const [dropTargetKey, setDropTargetKey] = useState<string>();
+    const [quickAddValue, setQuickAddValue] = useState('');
+    const [quickAddMessage, setQuickAddMessage] = useState('');
 
     const { bookmarkTree } = bookmarkControls;
     const decoratedTree = useMemo(
@@ -311,6 +464,26 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
     const isDraftDirty =
         editorDraft !== undefined &&
         serializeDraft(editorDraft) !== draftBaseline;
+
+    const addPastedBookmarks = (bookmarks: readonly PastedBookmark[]) => {
+        if (currentCategory === undefined || bookmarks.length === 0) {
+            setQuickAddMessage(t.bookmarkUrlInvalid);
+            return;
+        }
+
+        const addedCount = bookmarkControls.addBookmarksToLocation(
+            location,
+            bookmarks
+        );
+        setQuickAddValue('');
+        setQuickAddMessage(
+            addedCount === 0
+                ? t.bookmarksAlreadySaved
+                : locale === 'zh-TW'
+                  ? `已新增 ${addedCount} 個連結`
+                  : `${addedCount} ${addedCount === 1 ? 'link' : 'links'} added`
+        );
+    };
 
     const itemCountLabel = (count: number) =>
         locale === 'zh-TW'
@@ -1253,6 +1426,40 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                                 {breadcrumbLabels.slice(1).join(' / ')}
                             </div>
                         ) : undefined}
+                        <form
+                            className='bookmark-workspace-quick-add'
+                            onSubmit={(event) => {
+                                event.preventDefault();
+                                addPastedBookmarks(
+                                    parsePastedBookmarkText(quickAddValue)
+                                );
+                            }}
+                        >
+                            <ClipboardPaste aria-hidden='true' />
+                            <input
+                                type='text'
+                                aria-label={t.pasteLinks}
+                                placeholder={t.pasteLinks}
+                                value={quickAddValue}
+                                disabled={currentCategory === undefined}
+                                onChange={(event) => {
+                                    setQuickAddValue(event.target.value);
+                                    setQuickAddMessage('');
+                                }}
+                                onPaste={(event) => {
+                                    const bookmarks = parseClipboardBookmarks(
+                                        event.clipboardData
+                                    );
+                                    if (bookmarks.length === 0) {
+                                        return;
+                                    }
+
+                                    event.preventDefault();
+                                    addPastedBookmarks(bookmarks);
+                                }}
+                            />
+                            <span aria-live='polite'>{quickAddMessage}</span>
+                        </form>
                         <div className='bookmark-workspace-list'>
                             {bookmarkControls.isLoading ? (
                                 <div className='bookmark-workspace-skeleton-list large'>
@@ -1333,66 +1540,98 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                                                 setDropTargetKey(undefined);
                                             }}
                                         >
-                                            <button
-                                                className='bookmark-workspace-list-item'
-                                                type='button'
-                                                onClick={() => {
-                                                    if (isFolder) {
+                                            {isFolder ? (
+                                                <button
+                                                    className='bookmark-workspace-list-item'
+                                                    type='button'
+                                                    onClick={() => {
                                                         navigateToFolder(
                                                             folderLocation
                                                         );
-                                                    } else {
-                                                        editBookmark(
-                                                            location,
-                                                            node
-                                                        );
-                                                    }
-                                                }}
-                                            >
-                                                <span
-                                                    className='bookmark-workspace-item-icon'
-                                                    data-kind={
-                                                        isFolder
-                                                            ? 'folder'
-                                                            : 'bookmark'
-                                                    }
+                                                    }}
                                                 >
-                                                    {isFolder ? (
-                                                        createBookmarkIcon(
+                                                    <span
+                                                        className='bookmark-workspace-item-icon'
+                                                        data-kind='folder'
+                                                    >
+                                                        {createBookmarkIcon(
                                                             node.icon,
                                                             'icon'
-                                                        )
-                                                    ) : (
+                                                        )}
+                                                    </span>
+                                                    <span className='bookmark-workspace-item-copy'>
+                                                        <strong>
+                                                            {node.title}
+                                                        </strong>
+                                                        <small>
+                                                            {itemCountLabel(
+                                                                countBookmarks(
+                                                                    node.children
+                                                                )
+                                                            )}
+                                                        </small>
+                                                    </span>
+                                                </button>
+                                            ) : (
+                                                <div className='bookmark-workspace-list-item'>
+                                                    <span
+                                                        className='bookmark-workspace-item-icon'
+                                                        data-kind='bookmark'
+                                                    >
                                                         <LinkIcon aria-hidden='true' />
-                                                    )}
-                                                </span>
-                                                <span className='bookmark-workspace-item-copy'>
-                                                    <strong>
-                                                        {node.title}
-                                                    </strong>
-                                                    <small>
-                                                        {isFolder
-                                                            ? itemCountLabel(
-                                                                  countBookmarks(
-                                                                      node.children
-                                                                  )
-                                                              )
-                                                            : getBookmarkHost(
-                                                                  node.url
-                                                              )}
-                                                    </small>
-                                                </span>
-                                            </button>
+                                                    </span>
+                                                    <span className='bookmark-workspace-item-copy'>
+                                                        <InlineBookmarkTitle
+                                                            ariaLabel={
+                                                                t.bookmarkTitle
+                                                            }
+                                                            title={node.title}
+                                                            onSave={(title) => {
+                                                                bookmarkControls.updateBookmarkInLocation(
+                                                                    location,
+                                                                    node.id,
+                                                                    {
+                                                                        title,
+                                                                        url: node.url,
+                                                                    }
+                                                                );
+                                                            }}
+                                                        />
+                                                        <small>
+                                                            {getBookmarkHost(
+                                                                node.url
+                                                            )}
+                                                        </small>
+                                                    </span>
+                                                </div>
+                                            )}
                                             {isFolder ? undefined : (
-                                                <a
-                                                    className='bookmark-workspace-row-link'
-                                                    href={node.url}
-                                                    target='_blank'
-                                                    rel='noreferrer'
-                                                    aria-label={node.title}
-                                                >
-                                                    <ExternalLink aria-hidden='true' />
-                                                </a>
+                                                <div className='bookmark-workspace-row-actions'>
+                                                    <button
+                                                        className='bookmark-workspace-row-link'
+                                                        type='button'
+                                                        aria-label={
+                                                            t.editBookmark
+                                                        }
+                                                        onClick={() => {
+                                                            editBookmark(
+                                                                location,
+                                                                node
+                                                            );
+                                                        }}
+                                                    >
+                                                        <Pencil aria-hidden='true' />
+                                                    </button>
+                                                    <a
+                                                        className='bookmark-workspace-row-link'
+                                                        href={node.url}
+                                                        target='_blank'
+                                                        rel='noreferrer'
+                                                        aria-label={node.title}
+                                                    >
+                                                        <ExternalLink aria-hidden='true' />
+                                                    </a>
+                                                </div>
                                             )}
                                         </div>
                                     );

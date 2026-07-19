@@ -57,6 +57,10 @@ export interface BookmarkLocationInput {
 
 export interface BookmarkControls {
     addBookmark: (categoryIndex: number, bookmark: BookmarkInput) => boolean;
+    addBookmarksToLocation: (
+        location: BookmarkLocationInput,
+        bookmarks: readonly BookmarkInput[]
+    ) => number;
     addBookmarkToLocation: (
         location: BookmarkLocationInput,
         bookmark: BookmarkInput
@@ -1142,6 +1146,50 @@ export const useBookmarks = (
         [updateBookmarkLocation]
     );
 
+    const addBookmarksToLocation = useCallback(
+        (
+            location: BookmarkLocationInput,
+            bookmarkInputs: readonly BookmarkInput[]
+        ) => {
+            const existingUrls = new Set(
+                bookmarkTree.flatMap((category) =>
+                    category.links.map((bookmark) => bookmark.url.trim())
+                )
+            );
+            const bookmarks = bookmarkInputs.flatMap(
+                (bookmarkInput): BookmarkLinkData[] => {
+                    const title = normalizeInputText(bookmarkInput.title);
+                    const url = bookmarkInput.url.trim();
+                    if (title === '' || url === '' || existingUrls.has(url)) {
+                        return [];
+                    }
+
+                    existingUrls.add(url);
+                    return [
+                        {
+                            id: createBookmarkId(),
+                            title,
+                            type: 'link',
+                            url,
+                        },
+                    ];
+                }
+            );
+
+            if (bookmarks.length === 0) {
+                return 0;
+            }
+
+            return updateBookmarkLocation(location, (nodes) => [
+                ...nodes,
+                ...bookmarks,
+            ])
+                ? bookmarks.length
+                : 0;
+        },
+        [bookmarkTree, updateBookmarkLocation]
+    );
+
     const addBookmark = useCallback(
         (categoryIndex: number, bookmarkInput: BookmarkInput) =>
             addBookmarkToLocation(
@@ -1338,6 +1386,7 @@ export const useBookmarks = (
 
     return {
         addBookmark,
+        addBookmarksToLocation,
         addBookmarkToLocation,
         addCategory,
         addFolder,
