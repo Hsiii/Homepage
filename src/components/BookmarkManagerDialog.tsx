@@ -933,23 +933,15 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                     <div className='bookmark-workspace-title-group'>
                         <Bookmark aria-hidden='true' />
                         <h2 id={titleId}>{t.manageBookmarks}</h2>
-                        {bookmarkControls.status === undefined ? undefined : (
+                        {bookmarkControls.status?.type === 'error' ? (
                             <span
                                 className={`bookmark-workspace-operation-status ${bookmarkControls.status.type}`}
-                                role={
-                                    bookmarkControls.status.type === 'error'
-                                        ? 'alert'
-                                        : 'status'
-                                }
+                                role='alert'
                             >
-                                {bookmarkControls.status.type === 'error' ? (
-                                    <CircleAlert aria-hidden='true' />
-                                ) : (
-                                    <Check aria-hidden='true' />
-                                )}
+                                <CircleAlert aria-hidden='true' />
                                 {t[bookmarkControls.status.messageKey]}
                             </span>
-                        )}
+                        ) : undefined}
                     </div>
                     <div className='bookmark-workspace-header-actions'>
                         <input
@@ -976,7 +968,7 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                             onClick={() => importInputRef.current?.click()}
                         >
                             <Upload aria-hidden='true' />
-                            <span>{t.importBookmarks}</span>
+                            <span>{t.import}</span>
                         </button>
                         <button
                             className='bookmark-workspace-header-button'
@@ -984,7 +976,7 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                             onClick={bookmarkControls.exportBookmarks}
                         >
                             <Download aria-hidden='true' />
-                            <span>{t.exportBookmarks}</span>
+                            <span>{t.export}</span>
                         </button>
                         <button
                             className='bookmark-workspace-icon-button'
@@ -999,18 +991,32 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
 
                 <div className='bookmark-manager-body bookmark-workspace-grid'>
                     <aside className='bookmark-workspace-tree-pane'>
-                        <label className='bookmark-workspace-search'>
+                        <div
+                            className='bookmark-workspace-search quiet'
+                            role='search'
+                        >
                             <Search aria-hidden='true' />
-                            <span className='sr-only'>{t.bookmarkSearch}</span>
                             <input
                                 type='search'
+                                aria-label={t.bookmarkSearch}
                                 placeholder={t.bookmarkSearch}
                                 value={query}
                                 onChange={(event) => {
                                     setQuery(event.target.value);
                                 }}
                             />
-                        </label>
+                            {query === '' ? undefined : (
+                                <button
+                                    type='button'
+                                    aria-label={t.cancel}
+                                    onClick={() => {
+                                        setQuery('');
+                                    }}
+                                >
+                                    <X aria-hidden='true' />
+                                </button>
+                            )}
+                        </div>
                         <div className='bookmark-workspace-tree-heading'>
                             {rootCategoryIndex === -1 ? (
                                 <span>{t.bookmarks}</span>
