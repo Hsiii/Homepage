@@ -787,33 +787,29 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                             dropAtLocation(event, folderLocation);
                         }}
                     >
-                        {hasChildFolders ? (
-                            <button
-                                className='bookmark-workspace-tree-toggle'
-                                type='button'
-                                aria-label={node.title}
-                                aria-expanded={isExpanded}
-                                onClick={() => {
-                                    toggleExpanded(node.id);
-                                }}
-                            >
-                                {isExpanded ? (
-                                    <ChevronDown aria-hidden='true' />
-                                ) : (
-                                    <ChevronRight aria-hidden='true' />
-                                )}
-                            </button>
-                        ) : (
-                            <span className='bookmark-workspace-tree-toggle-spacer' />
-                        )}
                         <button
                             className='bookmark-workspace-tree-item'
                             type='button'
                             aria-current={isSelected ? 'page' : undefined}
+                            aria-expanded={
+                                hasChildFolders ? isExpanded : undefined
+                            }
                             onClick={() => {
-                                navigateToFolder(folderLocation);
+                                setLocation(folderLocation);
+                                if (hasChildFolders) {
+                                    toggleExpanded(node.id);
+                                }
                             }}
                         >
+                            <span className='bookmark-workspace-tree-chevron'>
+                                {hasChildFolders ? (
+                                    isExpanded ? (
+                                        <ChevronDown aria-hidden='true' />
+                                    ) : (
+                                        <ChevronRight aria-hidden='true' />
+                                    )
+                                ) : undefined}
+                            </span>
                             {createBookmarkIcon(node.icon, 'icon')}
                             <span>{node.title}</span>
                             <small>{countBookmarks(node.children)}</small>
@@ -860,8 +856,8 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
     const formTitle =
         editorDraft?.kind === 'category'
             ? editorDraft.mode === 'add'
-                ? t.newCategory
-                : t.editCategory
+                ? t.newFolder
+                : t.editFolder
             : editorDraft?.kind === 'folder'
               ? editorDraft.mode === 'add'
                   ? t.newFolder
@@ -1075,7 +1071,7 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                         </div>
                         <nav
                             className='bookmark-workspace-tree'
-                            aria-label={t.categories}
+                            aria-label={t.folders}
                         >
                             {bookmarkControls.isLoading ? (
                                 <div
@@ -1159,31 +1155,6 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                                                         );
                                                     }}
                                                 >
-                                                    {hasChildFolders ? (
-                                                        <button
-                                                            className='bookmark-workspace-tree-toggle'
-                                                            type='button'
-                                                            aria-label={
-                                                                category.category
-                                                            }
-                                                            aria-expanded={
-                                                                isExpanded
-                                                            }
-                                                            onClick={() => {
-                                                                toggleExpanded(
-                                                                    category.id
-                                                                );
-                                                            }}
-                                                        >
-                                                            {isExpanded ? (
-                                                                <ChevronDown aria-hidden='true' />
-                                                            ) : (
-                                                                <ChevronRight aria-hidden='true' />
-                                                            )}
-                                                        </button>
-                                                    ) : (
-                                                        <span className='bookmark-workspace-tree-toggle-spacer' />
-                                                    )}
                                                     <button
                                                         className='bookmark-workspace-tree-item'
                                                         type='button'
@@ -1192,12 +1163,33 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                                                                 ? 'page'
                                                                 : undefined
                                                         }
+                                                        aria-expanded={
+                                                            hasChildFolders
+                                                                ? isExpanded
+                                                                : undefined
+                                                        }
                                                         onClick={() => {
-                                                            navigateToCategory(
-                                                                categoryIndex
+                                                            setLocation(
+                                                                categoryLocation
                                                             );
+                                                            if (
+                                                                hasChildFolders
+                                                            ) {
+                                                                toggleExpanded(
+                                                                    category.id
+                                                                );
+                                                            }
                                                         }}
                                                     >
+                                                        <span className='bookmark-workspace-tree-chevron'>
+                                                            {hasChildFolders ? (
+                                                                isExpanded ? (
+                                                                    <ChevronDown aria-hidden='true' />
+                                                                ) : (
+                                                                    <ChevronRight aria-hidden='true' />
+                                                                )
+                                                            ) : undefined}
+                                                        </span>
                                                         {decoratedCategory.icon}
                                                         <span>
                                                             {category.category}
@@ -1241,11 +1233,7 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                                     <button
                                         className='bookmark-workspace-icon-button'
                                         type='button'
-                                        aria-label={
-                                            currentFolder === undefined
-                                                ? t.editCategory
-                                                : t.editFolder
-                                        }
+                                        aria-label={t.editFolder}
                                         onClick={() => {
                                             if (currentFolder === undefined) {
                                                 editCategory(
@@ -1292,21 +1280,10 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                                         <button
                                             type='button'
                                             role='menuitem'
-                                            disabled={
-                                                currentCategory === undefined
-                                            }
                                             onClick={beginAddFolder}
                                         >
                                             <FolderPlus aria-hidden='true' />
                                             {t.folder}
-                                        </button>
-                                        <button
-                                            type='button'
-                                            role='menuitem'
-                                            onClick={beginAddCategory}
-                                        >
-                                            <Plus aria-hidden='true' />
-                                            {t.category}
                                         </button>
                                     </div>
                                 ) : undefined}
@@ -1507,7 +1484,7 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                                         {editorDraft.kind === 'folder'
                                             ? t.folderName
                                             : editorDraft.kind === 'category'
-                                              ? t.categoryName
+                                              ? t.folderName
                                               : t.bookmarkTitle}
                                     </span>
                                     <input
@@ -1764,7 +1741,7 @@ export const BookmarkManagerDialog: React.FC<BookmarkManagerDialogProps> = ({
                                         >
                                             <Trash2 aria-hidden='true' />
                                             {editorDraft.kind === 'category'
-                                                ? t.deleteCategory
+                                                ? t.deleteFolder
                                                 : editorDraft.kind === 'folder'
                                                   ? t.deleteFolder
                                                   : t.deleteBookmark}
