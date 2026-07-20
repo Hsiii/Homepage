@@ -15,6 +15,7 @@ import { isBrowser } from '@/utils/browserEnv';
 
 const bookmarkApiPath = '/api/bookmarks';
 const guestBookmarkStorageKey = 'homepage.bookmarks';
+const userBookmarkStorageKeyPrefix = 'homepage.bookmarks.user';
 const bookmarkStorageVersion = 2;
 
 type BookmarkStatusMessageKey =
@@ -124,15 +125,15 @@ interface UseBookmarksOptions {
     initialBookmarkTree?: BookmarkCategoryData[];
 }
 
-const readGuestBookmarkTree = (): BookmarkCategoryData[] | undefined => {
+const readStoredBookmarkTree = (
+    storageKey: string
+): BookmarkCategoryData[] | undefined => {
     if (!isBrowser()) {
         return undefined;
     }
 
     try {
-        const storedValue = globalThis.localStorage.getItem(
-            guestBookmarkStorageKey
-        );
+        const storedValue = globalThis.localStorage.getItem(storageKey);
         if (storedValue === null) {
             return undefined;
         }
@@ -154,16 +155,41 @@ const readGuestBookmarkTree = (): BookmarkCategoryData[] | undefined => {
     }
 };
 
-const storeGuestBookmarkTree = (
+const storeBookmarkTree = (
+    storageKey: string,
     bookmarkTree: readonly BookmarkCategoryData[]
 ): void => {
     globalThis.localStorage.setItem(
-        guestBookmarkStorageKey,
+        storageKey,
         JSON.stringify({
             categories: bookmarkTree,
             version: bookmarkStorageVersion,
         })
     );
+};
+
+const getUserBookmarkStorageKey = (userId: string): string =>
+    `${userBookmarkStorageKeyPrefix}.${userId}`;
+
+const readGuestBookmarkTree = (): BookmarkCategoryData[] | undefined =>
+    readStoredBookmarkTree(guestBookmarkStorageKey);
+
+const readUserBookmarkTree = (
+    userId: string
+): BookmarkCategoryData[] | undefined =>
+    readStoredBookmarkTree(getUserBookmarkStorageKey(userId));
+
+const storeGuestBookmarkTree = (
+    bookmarkTree: readonly BookmarkCategoryData[]
+): void => {
+    storeBookmarkTree(guestBookmarkStorageKey, bookmarkTree);
+};
+
+const storeUserBookmarkTree = (
+    userId: string,
+    bookmarkTree: readonly BookmarkCategoryData[]
+): void => {
+    storeBookmarkTree(getUserBookmarkStorageKey(userId), bookmarkTree);
 };
 
 const normalizeInputText = (value: string): string =>
@@ -464,7 +490,16 @@ export const useBookmarks = (
                     },
                     method: 'POST',
                 });
-                await readBookmarkResponse(response);
+                const payload = await readBookmarkResponse(response);
+
+                try {
+                    storeUserBookmarkTree(
+                        remoteUserId,
+                        payload.categories ?? nextBookmarkTree
+                    );
+                } catch {
+                    // The remote copy remains authoritative if the cache fails.
+                }
 
                 if (saveOperation === saveOperationRef.current) {
                     setSaveState('saved');
@@ -512,6 +547,11 @@ export const useBookmarks = (
                 }
                 setSaveState('saved');
             } else {
+                try {
+                    storeUserBookmarkTree(remoteUserId, normalizedBookmarkTree);
+                } catch {
+                    // Saving remotely should not depend on the local cache.
+                }
                 saveOperationRef.current++;
                 const saveOperation = saveOperationRef.current;
                 setSaveState('saving');
@@ -552,7 +592,9 @@ export const useBookmarks = (
             return undefined;
         }
 
-        setBookmarkTree(emptyBookmarkTree);
+        const cachedBookmarkTree = readUserBookmarkTree(remoteUserId);
+
+        setBookmarkTree(cachedBookmarkTree ?? emptyBookmarkTree);
 
         let isCurrent = true;
         const loadMutationVersion = mutationVersionRef.current;
@@ -577,6 +619,12 @@ export const useBookmarks = (
 
                 if (payload.categories !== undefined) {
                     setBookmarkTree(payload.categories);
+
+                    try {
+                        storeUserBookmarkTree(remoteUserId, payload.categories);
+                    } catch {
+                        // The fresh remote data can still be used without caching.
+                    }
                 }
             } catch {
                 if (isCurrent) {
