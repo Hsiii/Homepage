@@ -236,11 +236,6 @@ export const useBookmarkSearch = (
             : undefined;
     const highlightedSearchResultIndex =
         requestedSearchResultIndex ?? defaultSearchResultIndex;
-    const selectedSlashCommand =
-        highlightedSearchResultIndex === undefined ||
-        highlightedSearchResultIndex >= slashCommandResults.length
-            ? undefined
-            : slashCommandResults[highlightedSearchResultIndex];
     const googleSearchResultIndex =
         searchResultIndexOffset + searchResults.length;
     const searchNavigationItemCount = hasSearchSuggestions
@@ -427,6 +422,40 @@ export const useBookmarkSearch = (
         }
     }, []);
 
+    const executeSearchValue = useCallback(
+        (value: string, keySequence: string) => {
+            const slashCommand = getSlashCommandResults(value).at(0);
+
+            if (isSlashCommandSearch(value)) {
+                if (slashCommand !== undefined) {
+                    executeSlashCommand(slashCommand);
+                }
+                return;
+            }
+
+            const results = getSearchResults(
+                flattenedSearchItems,
+                value,
+                keySequence
+            );
+            const result = results.at(requestedSearchResultIndex ?? 0);
+
+            if (result !== undefined) {
+                navigateToSearchResult(result);
+                return;
+            }
+
+            searchGoogle(value);
+        },
+        [
+            executeSlashCommand,
+            flattenedSearchItems,
+            navigateToSearchResult,
+            requestedSearchResultIndex,
+            searchGoogle,
+        ]
+    );
+
     const searchGoogleCurrentValue = useCallback(() => {
         searchGoogle(searchValue);
     }, [searchGoogle, searchValue]);
@@ -438,32 +467,8 @@ export const useBookmarkSearch = (
 
         const pendingSearch = pendingSearchRef.current;
         pendingSearchRef.current = undefined;
-        const slashCommand = getSlashCommandResults(pendingSearch.value).at(0);
-
-        if (slashCommand !== undefined) {
-            executeSlashCommand(slashCommand);
-            return;
-        }
-
-        const result = getSearchResults(
-            flattenedSearchItems,
-            pendingSearch.value,
-            pendingSearch.keySequence
-        ).at(0);
-
-        if (result !== undefined) {
-            navigateToSearchResult(result);
-            return;
-        }
-
-        searchGoogle(pendingSearch.value);
-    }, [
-        bookmarksLoading,
-        executeSlashCommand,
-        flattenedSearchItems,
-        navigateToSearchResult,
-        searchGoogle,
-    ]);
+        executeSearchValue(pendingSearch.value, pendingSearch.keySequence);
+    }, [bookmarksLoading, executeSearchValue]);
 
     const handleSearchKeyDown = useCallback(
         (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -522,54 +527,26 @@ export const useBookmarkSearch = (
                 return;
             }
 
+            const currentSearchValue = e.currentTarget.value;
+
             if (bookmarksLoading) {
                 e.preventDefault();
                 pendingSearchRef.current = {
                     keySequence: searchKeySequence,
-                    value: searchValue,
+                    value: currentSearchValue,
                 };
                 return;
             }
 
-            if (selectedSlashCommand) {
-                e.preventDefault();
-                executeSlashCommand(selectedSlashCommand);
-                return;
-            }
-
-            if (
-                hasGoogleSearchResult &&
-                highlightedSearchResultIndex === googleSearchResultIndex
-            ) {
-                e.preventDefault();
-                searchGoogle(searchValue);
-                return;
-            }
-
-            if (selectedSearchResult) {
-                e.preventDefault();
-                navigateToSearchResult(selectedSearchResult);
-                return;
-            }
-
-            if (hasGoogleSearchResult) {
-                e.preventDefault();
-                searchGoogle(searchValue);
-            }
+            e.preventDefault();
+            executeSearchValue(currentSearchValue, searchKeySequence);
         },
         [
             bookmarksLoading,
-            googleSearchResultIndex,
-            hasGoogleSearchResult,
             highlightedSearchResultIndex,
-            executeSlashCommand,
-            navigateToSearchResult,
-            searchGoogle,
+            executeSearchValue,
             searchNavigationItemCount,
             searchKeySequence,
-            searchValue,
-            selectedSearchResult,
-            selectedSlashCommand,
         ]
     );
 
@@ -609,35 +586,19 @@ export const useBookmarkSearch = (
     const handleSubmit = useCallback(
         (e: React.FormEvent) => {
             e.preventDefault();
+            const currentSearchValue = inputRef.current?.value ?? searchValue;
+
             if (bookmarksLoading) {
                 pendingSearchRef.current = {
                     keySequence: searchKeySequence,
-                    value: searchValue,
+                    value: currentSearchValue,
                 };
                 return;
             }
 
-            if (selectedSlashCommand) {
-                executeSlashCommand(selectedSlashCommand);
-                return;
-            }
-
-            navigateToSearchResult(selectedSearchResult);
-            if (!selectedSearchResult && hasGoogleSearchResult) {
-                searchGoogle(searchValue);
-            }
+            executeSearchValue(currentSearchValue, searchKeySequence);
         },
-        [
-            bookmarksLoading,
-            navigateToSearchResult,
-            executeSlashCommand,
-            hasGoogleSearchResult,
-            searchGoogle,
-            searchKeySequence,
-            searchValue,
-            selectedSearchResult,
-            selectedSlashCommand,
-        ]
+        [bookmarksLoading, executeSearchValue, searchKeySequence, searchValue]
     );
 
     const clearSearch = useCallback(() => {
