@@ -184,9 +184,8 @@ export const useBookmarkSearch = (
     const [inputFocused, setInputFocused] = useState(false);
     const [searchValue, setSearchValue] = useState('');
     const [searchKeySequence, setSearchKeySequence] = useState('');
-    const [searchResults, setSearchResults] = useState<LinkItem[]>([]);
     const [blockedFeedsLinks, setBlockedFeedsLinks] = useState<FeedsLink[]>([]);
-    const [highlightedSearchResultIndex, setHighlightedSearchResultIndex] =
+    const [requestedSearchResultIndex, setRequestedSearchResultIndex] =
         useState<number | undefined>(undefined);
     const [searchSuggestionsPosition, setSearchSuggestionsPosition] = useState<
         SearchSuggestionsPosition | undefined
@@ -194,15 +193,42 @@ export const useBookmarkSearch = (
     const searchSuggestionsPositionRef = useRef<
         SearchSuggestionsPosition | undefined
     >(undefined);
+    const flattenedSearchItems = useMemo<LinkItem[]>(
+        () => getSearchItems(bookmarkTree),
+        [bookmarkTree]
+    );
 
     const trimmedSearchValue = searchValue.trim();
     const hasSearchQuery = trimmedSearchValue !== '';
     const isSlashCommandQuery = isSlashCommandSearch(trimmedSearchValue);
     const slashCommandResults = getSlashCommandResults(searchValue);
+    const searchResults = useMemo(
+        () =>
+            hasSearchQuery && !isSlashCommandQuery
+                ? getSearchResults(
+                      flattenedSearchItems,
+                      trimmedSearchValue,
+                      searchKeySequence.trim()
+                  )
+                : [],
+        [
+            flattenedSearchItems,
+            hasSearchQuery,
+            isSlashCommandQuery,
+            searchKeySequence,
+            trimmedSearchValue,
+        ]
+    );
     const hasGoogleSearchResult = hasSearchQuery && !isSlashCommandQuery;
     const hasSearchSuggestions =
         hasGoogleSearchResult || slashCommandResults.length > 0;
     const searchResultIndexOffset = slashCommandResults.length;
+    const defaultSearchResultIndex =
+        slashCommandResults.length > 0 || searchResults.length > 0
+            ? 0
+            : undefined;
+    const highlightedSearchResultIndex =
+        requestedSearchResultIndex ?? defaultSearchResultIndex;
     const selectedSlashCommand =
         highlightedSearchResultIndex === undefined ||
         highlightedSearchResultIndex >= slashCommandResults.length
@@ -267,41 +293,6 @@ export const useBookmarkSearch = (
         },
         [executeFeedsCommand]
     );
-
-    const flattenedSearchItems = useMemo<LinkItem[]>(
-        () => getSearchItems(bookmarkTree),
-        [bookmarkTree]
-    );
-
-    useEffect(() => {
-        const query = searchValue.trim();
-
-        if (query === '') {
-            setSearchResults([]);
-            setHighlightedSearchResultIndex(undefined);
-            return undefined;
-        }
-
-        if (isSlashCommandSearch(query)) {
-            setSearchResults([]);
-            setHighlightedSearchResultIndex(
-                getSlashCommandResults(query).length > 0 ? 0 : undefined
-            );
-            return undefined;
-        }
-
-        const nextSearchResults = getSearchResults(
-            flattenedSearchItems,
-            query,
-            searchKeySequence
-        );
-
-        setSearchResults(nextSearchResults);
-        setHighlightedSearchResultIndex(
-            nextSearchResults.length > 0 ? 0 : undefined
-        );
-        return undefined;
-    }, [flattenedSearchItems, searchKeySequence, searchValue]);
 
     const updateSearchSuggestionsPosition = useCallback(() => {
         const rect =
@@ -437,11 +428,11 @@ export const useBookmarkSearch = (
         (e: React.KeyboardEvent<HTMLInputElement>) => {
             if (e.key === 'ArrowDown' && searchNavigationItemCount > 0) {
                 e.preventDefault();
-                setHighlightedSearchResultIndex((index) => {
+                setRequestedSearchResultIndex((index) => {
+                    const currentIndex =
+                        index ?? highlightedSearchResultIndex ?? -1;
                     const nextIndex =
-                        index === undefined
-                            ? 0
-                            : (index + 1) % searchNavigationItemCount;
+                        (currentIndex + 1) % searchNavigationItemCount;
                     return nextIndex;
                 });
                 return;
@@ -449,11 +440,13 @@ export const useBookmarkSearch = (
 
             if (e.key === 'ArrowUp' && searchNavigationItemCount > 0) {
                 e.preventDefault();
-                setHighlightedSearchResultIndex((index) => {
+                setRequestedSearchResultIndex((index) => {
+                    const currentIndex =
+                        index ?? highlightedSearchResultIndex ?? 0;
                     const nextIndex =
-                        index === undefined
+                        highlightedSearchResultIndex === undefined
                             ? searchNavigationItemCount - 1
-                            : (index - 1 + searchNavigationItemCount) %
+                            : (currentIndex - 1 + searchNavigationItemCount) %
                               searchNavigationItemCount;
                     return nextIndex;
                 });
@@ -464,6 +457,7 @@ export const useBookmarkSearch = (
                 e.preventDefault();
                 setSearchValue('');
                 setSearchKeySequence('');
+                setRequestedSearchResultIndex(undefined);
                 inputRef.current?.blur();
                 return;
             }
@@ -591,8 +585,7 @@ export const useBookmarkSearch = (
         setInputFocused(false);
         setSearchValue('');
         setSearchKeySequence('');
-        setSearchResults([]);
-        setHighlightedSearchResultIndex(undefined);
+        setRequestedSearchResultIndex(undefined);
     }, []);
 
     const handleSearchChange = useCallback(
@@ -601,6 +594,7 @@ export const useBookmarkSearch = (
             if (e.target.value === '') {
                 setSearchKeySequence('');
             }
+            setRequestedSearchResultIndex(undefined);
             setBlockedFeedsLinks([]);
         },
         []
@@ -615,11 +609,11 @@ export const useBookmarkSearch = (
     }, []);
 
     const highlightSearchResult = useCallback((resultIndex: number) => {
-        setHighlightedSearchResultIndex(resultIndex);
+        setRequestedSearchResultIndex(resultIndex);
     }, []);
 
     const highlightGoogleSearch = useCallback(() => {
-        setHighlightedSearchResultIndex(googleSearchResultIndex);
+        setRequestedSearchResultIndex(googleSearchResultIndex);
     }, [googleSearchResultIndex]);
 
     return {
