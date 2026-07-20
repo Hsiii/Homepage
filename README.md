@@ -48,10 +48,11 @@ Production runs on the Oracle VM behind Caddy. The app is built with Next.js
 standalone output locally, uploaded over SSH, and served by the Oracle Compose
 service from `/srv/platform/artifacts/homepage`.
 
-Deploy from a clean local checkout:
+Deploy from a clean local checkout. The command builds the app, pushes the current
+commit to GitHub, and deploys it to Oracle:
 
 ```bash
-bun run deploy:oracle
+bun deploy
 ```
 
 The container listens on `0.0.0.0:3102` and exposes `/api/health` for health

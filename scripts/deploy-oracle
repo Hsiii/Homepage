@@ -12,7 +12,13 @@ cleanup() {
 
 trap cleanup EXIT
 
+if [[ -n "$(git status --porcelain)" ]]; then
+    echo "Deploy aborted: commit or stash local changes first." >&2
+    exit 1
+fi
+
 bun run build:oracle
+git push
 
 cp -R dist/standalone/. "$tmp_dir/"
 mkdir -p "$tmp_dir/dist"

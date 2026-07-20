@@ -12,7 +12,7 @@
     "scripts": {
         "build": "next build",
         "build:oracle": "next build --webpack",
-        "deploy:oracle": "scripts/deploy-oracle",
+        "deploy": "scripts/deploy-oracle",
         "dev": "next dev --turbopack",
         "lint": "eslint .",
         "preview": "bun run build && next start",
