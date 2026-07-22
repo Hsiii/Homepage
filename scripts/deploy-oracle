@@ -1,40 +1,48 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+repository="Hsiii/Homepage"
+workflow="image.yml"
 host="${PLATFORM_HOST:-platform}"
-remote_artifact_dir="${PLATFORM_HOMEPAGE_ARTIFACT_DIR:-/srv/platform/artifacts/homepage}"
 remote_deploy_script="${PLATFORM_HOMEPAGE_DEPLOY_SCRIPT:-/srv/platform/operations/scripts/deploy-homepage}"
-tmp_dir="$(mktemp -d)"
 
-cleanup() {
-    rm -rf "$tmp_dir"
-}
+branch="$(git branch --show-current)"
 
-trap cleanup EXIT
-
-if [[ -n "$(git status --porcelain)" ]]; then
-    echo "Deploy aborted: commit or stash local changes first." >&2
+if [[ "$branch" != "main" ]]; then
+    echo "Deploy from main. Current branch is ${branch:-\(detached\)}." >&2
     exit 1
 fi
 
-bun run build:oracle
-git push
+if [[ -n "$(git status --porcelain)" ]]; then
+    echo "Commit or stash local changes before deploying." >&2
+    exit 1
+fi
 
-cp -R dist/standalone/. "$tmp_dir/"
-mkdir -p "$tmp_dir/dist"
-cp -R dist/static "$tmp_dir/dist/static"
-cp -R public "$tmp_dir/public"
+commit="$(git rev-parse HEAD)"
+remote_commit="$(git ls-remote --exit-code origin refs/heads/main | awk '{print $1}')"
 
-COPYFILE_DISABLE=1 tar --no-xattrs -C "$tmp_dir" -czf - . | ssh "$host" "
-    set -euo pipefail
-    mkdir -p \"$(dirname "$remote_artifact_dir")\"
-    next_dir=\"\$(mktemp -d \"${remote_artifact_dir}.XXXXXX\")\"
-    tar --warning=no-unknown-keyword -xzf - -C \"\$next_dir\"
-    rm -rf \"${remote_artifact_dir}.previous\"
-    if [ -d \"$remote_artifact_dir\" ]; then
-        mv \"$remote_artifact_dir\" \"${remote_artifact_dir}.previous\"
-    fi
-    mv \"\$next_dir\" \"$remote_artifact_dir\"
-"
+if [[ "$commit" != "$remote_commit" ]]; then
+    echo "Local main does not match origin/main. Merge changes through a PR, then update local main before deploying. This script never pushes code." >&2
+    exit 1
+fi
 
+run_id=""
+for _ in {1..30}; do
+    run_id="$(gh run list \
+        --repo "$repository" \
+        --workflow "$workflow" \
+        --commit "$commit" \
+        --limit 1 \
+        --json databaseId \
+        --jq '.[0].databaseId // empty')"
+    [[ -n "$run_id" ]] && break
+    sleep 2
+done
+
+if [[ -z "$run_id" ]]; then
+    echo "No $workflow run appeared for $commit." >&2
+    exit 1
+fi
+
+gh run watch "$run_id" --repo "$repository" --exit-status
 ssh "$host" "$remote_deploy_script"

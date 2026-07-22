@@ -44,12 +44,14 @@ bun dev
 
 ### Oracle Deployment
 
-Production runs on the Oracle VM behind Caddy. The app is built with Next.js
-standalone output locally, uploaded over SSH, and served by the Oracle Compose
-service from `/srv/platform/artifacts/homepage`.
+Production runs on the Oracle VM behind Caddy. Every push to `main` publishes
+`ghcr.io/hsiii/homepage` for Linux AMD64 and ARM64. Dependencies and standalone
+output are built inside the target Linux image, so production never receives
+native modules from the development Mac.
 
-Deploy from a clean local checkout. The command builds the app, pushes the current
-commit to GitHub, and deploys it to Oracle:
+Changes reach `main` through a pull request. Deploy from a clean local `main`
+that matches `origin/main`; the command waits for that commit's image and asks
+the Oracle platform to pull it. It never pushes code:
 
 ```bash
 bun run deploy
