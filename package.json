@@ -12,6 +12,7 @@
     "scripts": {
         "build": "next build",
         "build:oracle": "next build --webpack",
+        "db:copy": "node scripts/copy-database.ts",
         "db:migrate": "node scripts/migrate.ts",
         "db:verify": "node scripts/verify-database.ts",
         "deploy": "scripts/deploy-oracle",
@@ -19,7 +20,8 @@
         "lint": "eslint .",
         "preview": "bun run build && next start",
         "prepare": "husky",
-        "start": "next start"
+        "start": "next start",
+        "wallpapers:migrate": "node scripts/migrate-wallpapers.ts"
     },
     "lint-staged": {
         "*.{js,jsx,ts,tsx,css,scss,html,json,md,yml,yaml}": [

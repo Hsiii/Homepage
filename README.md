@@ -85,3 +85,5 @@ scoped to object read/write for that bucket. Configure `R2_ENDPOINT`, `R2_BUCKET
 During migration, `WALLPAPER_STORAGE_PROVIDER=vercel-blob` remains supported with
 the existing Blob token. Metadata is read through provider-neutral object keys,
 so the database is ready for copying objects to R2 and switching the provider.
+The non-destructive copy, byte-level verification, cutover, and rollback process
+is documented in [the persistence migration runbook](docs/persistence-migration.md).
