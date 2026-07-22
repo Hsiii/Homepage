@@ -32,6 +32,9 @@ RUN addgroup --system --gid 1001 nodejs \
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/dist/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/dist/static ./dist/static
+COPY --from=builder --chown=nextjs:nodejs /app/migrations ./migrations
+COPY --from=builder --chown=nextjs:nodejs /app/scripts/migrate.ts ./scripts/migrate.ts
+COPY --from=deps --chown=nextjs:nodejs /app/node_modules/postgres ./node_modules/postgres
 
 USER nextjs
 

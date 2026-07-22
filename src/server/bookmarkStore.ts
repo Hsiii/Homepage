@@ -9,29 +9,6 @@ interface BookmarkRow {
     categories: unknown;
 }
 
-let schemaReady: Promise<void> | undefined;
-
-const ensureBookmarkSchema = async (): Promise<void> => {
-    const sql = getDatabase();
-
-    // eslint-disable-next-line unicorn/template-indent
-    await sql`
-        create table if not exists user_bookmarks (
-            user_id text primary key,
-            categories jsonb not null
-                check (jsonb_typeof(categories) = 'array'),
-            version integer not null default 1,
-            created_at timestamptz not null default now(),
-            updated_at timestamptz not null default now()
-        )
-    `;
-};
-
-const ensureSchema = async (): Promise<void> => {
-    schemaReady ??= ensureBookmarkSchema();
-    await schemaReady;
-};
-
 const mapBookmarkRow = (row: BookmarkRow): BookmarkCategoryData[] => {
     const bookmarkTree = coerceBookmarkTree(row.categories);
 
@@ -55,8 +32,6 @@ const validateBookmarkTree = (value: unknown): BookmarkCategoryData[] => {
 export const getUserBookmarks = async (
     userId: string
 ): Promise<BookmarkCategoryData[] | undefined> => {
-    await ensureSchema();
-
     const rows = (await getDatabase()`
         select categories
         from user_bookmarks
@@ -77,8 +52,6 @@ export const saveUserBookmarks = async (
     value: unknown
 ): Promise<BookmarkCategoryData[]> => {
     const bookmarkTree = validateBookmarkTree(value);
-    await ensureSchema();
-
     const rows = (await getDatabase()`
         insert into user_bookmarks (user_id, categories)
         values (

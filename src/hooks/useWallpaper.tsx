@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@clerk/nextjs';
-import { upload } from '@vercel/blob/client';
 
 import { getCssUrlValue } from '@/utils/wallpaperStyle';
 import type {
@@ -346,33 +345,22 @@ export const useWallpaper = (
                     processed.contentType
                 );
                 const headers = await getAuthHeaders();
-                const blob = await upload(pathname, processed.blob, {
-                    access: 'public',
-                    contentType: processed.contentType,
-                    handleUploadUrl: wallpaperUploadApiPath,
+                const formData = new FormData();
+                formData.set(
+                    'file',
+                    processed.blob,
+                    pathname.split('/').at(-1) ?? 'wallpaper.webp'
+                );
+                formData.set('height', String(processed.height));
+                formData.set('pathname', pathname);
+                formData.set('width', String(processed.width));
+                setProgress(50);
+                const response = await fetch(wallpaperUploadApiPath, {
+                    body: formData,
                     headers,
-                    onUploadProgress: ({ percentage }) => {
-                        setProgress(percentage);
-                    },
-                });
-                const nextWallpaper: WallpaperAsset = {
-                    contentType: processed.contentType,
-                    downloadUrl: blob.downloadUrl,
-                    height: processed.height,
-                    pathname: blob.pathname,
-                    sizeBytes: processed.blob.size,
-                    uploadedAt: new Date().toISOString(),
-                    url: blob.url,
-                    width: processed.width,
-                };
-                const response = await fetch(wallpaperApiPath, {
-                    body: JSON.stringify(nextWallpaper),
-                    headers: {
-                        ...headers,
-                        'Content-Type': 'application/json',
-                    },
                     method: 'POST',
                 });
+                setProgress(100);
                 const payload = await readWallpaperResponse(response);
 
                 updateWallpaper(payload.wallpaper);

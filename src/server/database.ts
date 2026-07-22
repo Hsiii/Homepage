@@ -1,7 +1,7 @@
 import 'server-only';
 
-import { neon } from '@neondatabase/serverless';
-import type { NeonQueryFunction } from '@neondatabase/serverless';
+import postgres from 'postgres';
+import type { Sql } from 'postgres';
 
 import { ApiError } from '@/server/apiError';
 
@@ -12,9 +12,9 @@ const databaseUrlVariableNames = [
     'POSTGRES_URL_NON_POOLING',
 ] as const;
 
-let database: NeonQueryFunction<false, false> | undefined;
+let database: Sql | undefined;
 
-const readDatabaseUrl = (): string | undefined => {
+export const readDatabaseUrl = (): string | undefined => {
     for (const variableName of databaseUrlVariableNames) {
         const databaseUrl = process.env[variableName]?.trim();
 
@@ -42,7 +42,12 @@ const getDatabaseUrl = (): string => {
     );
 };
 
-export const getDatabase = (): NeonQueryFunction<false, false> => {
-    database ??= neon(getDatabaseUrl());
+export const getDatabase = (): Sql => {
+    database ??= postgres(getDatabaseUrl(), {
+        connect_timeout: 10,
+        idle_timeout: 20,
+        max: 10,
+        prepare: false,
+    });
     return database;
 };

@@ -19,8 +19,9 @@ A personal browser homepage for fast bookmark access across browsers with instan
 Core features work without an account. Location is requested only after clicking the
 location control. The selected Taiwan location is stored in a same-site cookie for
 SSR and mirrored in browser storage with weather/AQI caches. Guest bookmarks stay in
-browser local storage; signed-in bookmarks sync to Neon under the Clerk account.
-Wallpaper sync requires sign-in and uses Clerk, Neon, and Vercel Blob.
+browser local storage; signed-in bookmarks sync to PostgreSQL under the Clerk
+account. Wallpaper sync requires sign-in and uses private, authenticated object
+storage.
 
 ## Development
 
@@ -41,7 +42,9 @@ bun dev
   Node.js standalone server in production.
 - **SSR:** Hydrates location, weather, AQI, Clerk state, and signed-in wallpaper.
 - **Auth:** Clerk auth
-- **Storage:** Neon bookmarks and wallpaper metadata, Vercel Blob image storage.
+- **Storage:** Standard PostgreSQL for bookmarks and wallpaper metadata; local files
+  in development, Cloudflare R2 in production, and Vercel Blob as a migration-only
+  compatibility provider.
 - **External data:** OpenWeatherMap or Open-Meteo for weather; Taiwan MOENV for AQI.
 
 ### Oracle Deployment
@@ -61,3 +64,24 @@ bun run deploy
 
 The container listens on `0.0.0.0:3102` and exposes `/api/health` for health
 checks.
+
+### Persistence
+
+Schema changes are tracked in `migrations/` and never run from an application
+request. Set `DATABASE_URL` to any PostgreSQL connection string, then apply and
+verify migrations before starting the application:
+
+```bash
+bun run db:migrate
+bun run db:verify
+```
+
+Local wallpaper files are selected with
+`WALLPAPER_STORAGE_PROVIDER=local` and default to `.data/wallpapers`. Production
+uses `WALLPAPER_STORAGE_PROVIDER=r2` with a private bucket and an R2 API token
+scoped to object read/write for that bucket. Configure `R2_ENDPOINT`, `R2_BUCKET`,
+`R2_ACCESS_KEY_ID`, and `R2_SECRET_ACCESS_KEY`; do not put their values in Git.
+
+During migration, `WALLPAPER_STORAGE_PROVIDER=vercel-blob` remains supported with
+the existing Blob token. Metadata is read through provider-neutral object keys,
+so the database is ready for copying objects to R2 and switching the provider.

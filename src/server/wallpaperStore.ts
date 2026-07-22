@@ -1,10 +1,13 @@
 import 'server-only';
 
-import { del } from '@vercel/blob';
-
 import { ApiError } from '@/server/apiError';
 import { getDatabase, isDatabaseConfigured } from '@/server/database';
-import { getWallpaperBlobTokenOptions } from '@/server/wallpaperBlob';
+import {
+    deleteWallpaperObject,
+    getWallpaperStorageProvider,
+    wallpaperStorageProviders,
+} from '@/server/wallpaperStorage';
+import type { WallpaperStorageProvider } from '@/server/wallpaperStorage';
 import type { WallpaperAsset } from '../../shared/wallpaper';
 import {
     getWallpaperUploadPrefix,
@@ -15,49 +18,32 @@ import {
 
 interface WallpaperRow {
     content_type: string;
-    download_url: string;
     height: number;
-    pathname: string;
+    object_key: string;
     size_bytes: number;
+    storage_provider: string;
     updated_at: string;
-    url: string;
     width: number;
 }
 
-let schemaReady: Promise<void> | undefined;
+const getWallpaperUrl = (key: string, download = false): string => {
+    const parameters = new URLSearchParams({ key });
 
-const ensureWallpaperSchema = async (): Promise<void> => {
-    const sql = getDatabase();
+    if (download) {
+        parameters.set('download', '1');
+    }
 
-    // eslint-disable-next-line unicorn/template-indent
-    await sql`
-        create table if not exists user_wallpapers (
-            user_id text primary key,
-            url text not null,
-            download_url text not null,
-            pathname text not null,
-            content_type text not null,
-            size_bytes integer not null
-                check (size_bytes > 0 and size_bytes <= ${sql.unsafe(
-                    String(wallpaperMaxFileSizeBytes)
-                )}),
-            width integer not null
-                check (width > 0 and width <= ${sql.unsafe(
-                    String(wallpaperMaxDimensionPx)
-                )}),
-            height integer not null
-                check (height > 0 and height <= ${sql.unsafe(
-                    String(wallpaperMaxDimensionPx)
-                )}),
-            created_at timestamptz not null default now(),
-            updated_at timestamptz not null default now()
-        )
-    `;
+    return `/api/wallpaper-file?${parameters.toString()}`;
 };
 
-const ensureSchema = async (): Promise<void> => {
-    schemaReady ??= ensureWallpaperSchema();
-    await schemaReady;
+const parseStorageProvider = (value: string): WallpaperStorageProvider => {
+    if (
+        !wallpaperStorageProviders.includes(value as WallpaperStorageProvider)
+    ) {
+        throw new ApiError('Stored wallpaper provider is invalid.', 500);
+    }
+
+    return value as WallpaperStorageProvider;
 };
 
 const mapWallpaperRow = (row: WallpaperRow): WallpaperAsset => {
@@ -65,14 +51,16 @@ const mapWallpaperRow = (row: WallpaperRow): WallpaperAsset => {
         throw new ApiError('Stored wallpaper has an unsupported type.', 500);
     }
 
+    parseStorageProvider(row.storage_provider);
+
     return {
         contentType: row.content_type,
-        downloadUrl: row.download_url,
+        downloadUrl: getWallpaperUrl(row.object_key, true),
         height: row.height,
-        pathname: row.pathname,
+        pathname: row.object_key,
         sizeBytes: row.size_bytes,
         uploadedAt: row.updated_at,
-        url: row.url,
+        url: getWallpaperUrl(row.object_key),
         width: row.width,
     };
 };
@@ -108,27 +96,17 @@ const validateWallpaperAsset = (
     if (!asset.pathname.startsWith(expectedPrefix)) {
         throw new ApiError('Wallpaper path does not belong to this user.', 400);
     }
-
-    try {
-        const url = new URL(asset.url);
-        const downloadUrl = new URL(asset.downloadUrl);
-
-        if (
-            url.protocol !== 'https:' ||
-            downloadUrl.protocol !== 'https:' ||
-            !url.hostname.endsWith('.blob.vercel-storage.com') ||
-            !downloadUrl.hostname.endsWith('.blob.vercel-storage.com')
-        ) {
-            throw new ApiError('Wallpaper URL is not a Vercel Blob URL.', 400);
-        }
-    } catch (error) {
-        if (error instanceof ApiError) {
-            throw error;
-        }
-
-        throw new ApiError('Wallpaper URL is invalid.', 400);
-    }
 };
+
+const wallpaperColumns = `
+    storage_provider,
+    object_key,
+    content_type,
+    size_bytes,
+    width,
+    height,
+    updated_at::text
+`;
 
 export const getUserWallpaper = async (
     userId: string
@@ -137,52 +115,69 @@ export const getUserWallpaper = async (
         return undefined;
     }
 
-    await ensureSchema();
-
-    const rows = (await getDatabase()`
-        select
-            url,
-            download_url,
-            pathname,
-            content_type,
-            size_bytes,
-            width,
-            height,
-            updated_at::text
-        from user_wallpapers
-        where user_id = ${userId}
-        limit 1
-    `) as WallpaperRow[];
+    const rows = (await getDatabase().unsafe(
+        `select ${wallpaperColumns}
+         from user_wallpapers
+         where user_id = $1
+         limit 1`,
+        [userId]
+    )) as unknown as WallpaperRow[];
     const row = rows.at(0);
 
     return row === undefined ? undefined : mapWallpaperRow(row);
 };
 
+export const getUserWallpaperObject = async (
+    userId: string,
+    key: string
+): Promise<{
+    contentType: WallpaperAsset['contentType'];
+    provider: WallpaperStorageProvider;
+}> => {
+    const rows = (await getDatabase()`
+        select storage_provider, object_key, content_type
+        from user_wallpapers
+        where user_id = ${userId} and object_key = ${key}
+        limit 1
+    `) as unknown as WallpaperRow[];
+    const row = rows.at(0);
+
+    if (row === undefined || !isWallpaperContentType(row.content_type)) {
+        throw new ApiError('Wallpaper was not found.', 404);
+    }
+
+    return {
+        contentType: row.content_type,
+        provider: parseStorageProvider(row.storage_provider),
+    };
+};
+
 export const saveUserWallpaper = async (
     userId: string,
-    asset: WallpaperAsset
+    asset: WallpaperAsset,
+    provider = getWallpaperStorageProvider()
 ): Promise<WallpaperAsset> => {
     if (!isDatabaseConfigured()) {
         throw new ApiError('Wallpaper sync is not configured.', 503);
     }
 
     validateWallpaperAsset(userId, asset);
-    await ensureSchema();
 
     const previousRows = (await getDatabase()`
-        select url
+        select storage_provider, object_key
         from user_wallpapers
         where user_id = ${userId}
         limit 1
-    `) as Array<Pick<WallpaperRow, 'url'>>;
+    `) as unknown as WallpaperRow[];
     const previousRow = previousRows.at(0);
-
     const rows = (await getDatabase()`
         insert into user_wallpapers (
             user_id,
             url,
             download_url,
             pathname,
+            storage_provider,
+            object_key,
             content_type,
             size_bytes,
             width,
@@ -193,6 +188,8 @@ export const saveUserWallpaper = async (
             ${asset.url},
             ${asset.downloadUrl},
             ${asset.pathname},
+            ${provider},
+            ${asset.pathname},
             ${asset.contentType},
             ${asset.sizeBytes},
             ${asset.width},
@@ -202,21 +199,22 @@ export const saveUserWallpaper = async (
             url = excluded.url,
             download_url = excluded.download_url,
             pathname = excluded.pathname,
+            storage_provider = excluded.storage_provider,
+            object_key = excluded.object_key,
             content_type = excluded.content_type,
             size_bytes = excluded.size_bytes,
             width = excluded.width,
             height = excluded.height,
             updated_at = now()
         returning
-            url,
-            download_url,
-            pathname,
+            storage_provider,
+            object_key,
             content_type,
             size_bytes,
             width,
             height,
             updated_at::text
-    `) as WallpaperRow[];
+    `) as unknown as WallpaperRow[];
     const row = rows.at(0);
 
     if (row === undefined) {
@@ -224,15 +222,15 @@ export const saveUserWallpaper = async (
     }
 
     if (
-        previousRow?.url !== undefined &&
-        previousRow.url !== asset.url &&
-        previousRow.url.endsWith('.blob.vercel-storage.com')
+        previousRow !== undefined &&
+        previousRow.object_key !== asset.pathname
     ) {
-        await del(previousRow.url, getWallpaperBlobTokenOptions()).catch(
-            (error: unknown) => {
-                console.error('Failed to delete previous wallpaper:', error);
-            }
-        );
+        await deleteWallpaperObject(
+            parseStorageProvider(previousRow.storage_provider),
+            previousRow.object_key
+        ).catch((error: unknown) => {
+            console.error('Failed to delete previous wallpaper:', error);
+        });
     }
 
     return mapWallpaperRow(row);
@@ -243,23 +241,19 @@ export const clearUserWallpaper = async (userId: string): Promise<void> => {
         return;
     }
 
-    await ensureSchema();
-
     const rows = (await getDatabase()`
         delete from user_wallpapers
         where user_id = ${userId}
-        returning url
-    `) as Array<Pick<WallpaperRow, 'url'>>;
+        returning storage_provider, object_key
+    `) as unknown as WallpaperRow[];
     const row = rows.at(0);
 
-    if (
-        row?.url !== undefined &&
-        row.url.endsWith('.blob.vercel-storage.com')
-    ) {
-        await del(row.url, getWallpaperBlobTokenOptions()).catch(
-            (error: unknown) => {
-                console.error('Failed to delete wallpaper:', error);
-            }
-        );
+    if (row !== undefined) {
+        await deleteWallpaperObject(
+            parseStorageProvider(row.storage_provider),
+            row.object_key
+        ).catch((error: unknown) => {
+            console.error('Failed to delete wallpaper:', error);
+        });
     }
 };

@@ -12,6 +12,8 @@
     "scripts": {
         "build": "next build",
         "build:oracle": "next build --webpack",
+        "db:migrate": "node scripts/migrate.ts",
+        "db:verify": "node scripts/verify-database.ts",
         "deploy": "scripts/deploy-oracle",
         "dev": "next dev --turbopack",
         "lint": "eslint .",
@@ -28,11 +30,12 @@
         ]
     },
     "dependencies": {
+        "@aws-sdk/client-s3": "3.1092.0",
         "@clerk/nextjs": "^7.5.12",
-        "@neondatabase/serverless": "^1.1.0",
         "@vercel/blob": "^2.5.0",
         "lucide-react": "^1.21.0",
         "next": "^16.2.10",
+        "postgres": "3.4.9",
         "react": "^19.2.7",
         "react-dom": "^19.2.7",
         "server-only": "^0.0.1"
