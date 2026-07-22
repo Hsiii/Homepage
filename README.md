@@ -12,6 +12,8 @@ A personal browser homepage for fast bookmark access across browsers with instan
 - Sign in to upload a wallpaper; guests keep the default mountain scene.
 - Click the location control to sync the nearest Taiwan weather and AQI station.
 
+> After combining this with [HandyTab](https://github.com/Hsiii/handy-tab), opening any tabs feels like a breeze.
+
 ## Privacy
 
 Core features work without an account. Location is requested only after clicking the
