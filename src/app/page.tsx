@@ -1,11 +1,8 @@
 import type { ReactNode } from 'react';
 
+import { isSupabaseConfigured } from '@/lib/supabase/config';
 import { readInitialAppPreferences } from '@/server/preferences';
 import { HomePageClient } from './HomePageClient';
-
-const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
-const isClerkEnabled =
-    clerkPublishableKey !== undefined && clerkPublishableKey.trim() !== '';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,7 +16,7 @@ export default async function Page(): Promise<ReactNode> {
             initialPreferences={initialPreferences}
             initialWallpaper={undefined}
             initialWeather={undefined}
-            isClerkEnabled={isClerkEnabled}
+            isSupabaseEnabled={isSupabaseConfigured()}
         />
     );
 }

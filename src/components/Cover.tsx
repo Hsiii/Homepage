@@ -1,7 +1,7 @@
 import React, { lazy, Suspense, useState } from 'react';
-import { useAuth } from '@clerk/nextjs';
 import { Search, X } from 'lucide-react';
 
+import { useHomepageAuth } from '@/auth/AuthProvider';
 import { useBookmarks } from '@/hooks/useBookmarks';
 import type { BookmarkControls } from '@/hooks/useBookmarks';
 import { useBookmarkSearch } from '@/hooks/useBookmarkSearch';
@@ -34,7 +34,7 @@ interface CoverProps {
     initialPreferences: InitialAppPreferences;
     initialWallpaper: WallpaperAsset | undefined;
     initialWeather: WeatherData | undefined;
-    isClerkEnabled: boolean;
+    isSupabaseEnabled: boolean;
     onWallpaperChange: (wallpaper: WallpaperAsset | undefined) => void;
 }
 
@@ -48,7 +48,7 @@ const CoverContent: React.FC<CoverContentProps> = ({
     initialPreferences,
     initialWallpaper,
     initialWeather,
-    isClerkEnabled,
+    isSupabaseEnabled,
     onWallpaperChange,
 }) => {
     const { time } = useTime();
@@ -200,7 +200,7 @@ const CoverContent: React.FC<CoverContentProps> = ({
                     hidden={hideLinks}
                     initialPreferences={initialPreferences}
                     initialWallpaper={initialWallpaper}
-                    isClerkEnabled={isClerkEnabled}
+                    isSupabaseEnabled={isSupabaseEnabled}
                     isLockedOpen={isLinkPanelLocked}
                     isSearchNav={inputFocused}
                     highlightedLink={selectedSearchResult?.id}
@@ -218,7 +218,7 @@ const CoverContent: React.FC<CoverContentProps> = ({
 };
 
 const CoverWithRemoteBookmarks: React.FC<CoverProps> = (props) => {
-    const { getToken, isLoaded, isSignedIn, userId } = useAuth();
+    const { getToken, isLoaded, isSignedIn, userId } = useHomepageAuth();
     const bookmarkControls = useBookmarks({
         auth: {
             getToken,
@@ -239,7 +239,7 @@ const CoverWithLocalBookmarks: React.FC<CoverProps> = (props) => {
 };
 
 export const Cover: React.FC<CoverProps> = (props) => {
-    if (props.isClerkEnabled) {
+    if (props.isSupabaseEnabled) {
         return <CoverWithRemoteBookmarks {...props} />;
     }
 

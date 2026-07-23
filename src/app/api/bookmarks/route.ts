@@ -1,30 +1,9 @@
-import { auth } from '@clerk/nextjs/server';
-
 import { ApiError, createApiErrorResponse } from '@/server/apiError';
+import { requireAuthenticatedRequest } from '@/server/auth';
 import { getUserBookmarks, saveUserBookmarks } from '@/server/bookmarkStore';
-
-const clerkPublishableKey =
-    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ??
-    process.env.VITE_CLERK_PUBLISHABLE_KEY;
-const isClerkEnabled =
-    clerkPublishableKey !== undefined && clerkPublishableKey.trim() !== '';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
     typeof value === 'object' && value !== null;
-
-const requireUserId = async (): Promise<string> => {
-    if (!isClerkEnabled) {
-        throw new ApiError('Bookmark sync is not configured.', 503);
-    }
-
-    const { userId } = await auth();
-
-    if (userId === null) {
-        throw new ApiError('Sign in is required.', 401);
-    }
-
-    return userId;
-};
 
 const readBookmarkPayload = async (request: Request): Promise<unknown> => {
     const payload = (await request.json().catch(() => undefined)) as unknown;
@@ -38,10 +17,10 @@ const readBookmarkPayload = async (request: Request): Promise<unknown> => {
 
 export const GET = async (): Promise<Response> => {
     try {
-        const userId = await requireUserId();
+        const { client, userId } = await requireAuthenticatedRequest();
 
         return Response.json({
-            categories: await getUserBookmarks(userId),
+            categories: await getUserBookmarks(client, userId),
         });
     } catch (error) {
         return createApiErrorResponse(error);
@@ -50,11 +29,11 @@ export const GET = async (): Promise<Response> => {
 
 export const POST = async (request: Request): Promise<Response> => {
     try {
-        const userId = await requireUserId();
+        const { client, userId } = await requireAuthenticatedRequest();
         const categories = await readBookmarkPayload(request);
 
         return Response.json({
-            categories: await saveUserBookmarks(userId, categories),
+            categories: await saveUserBookmarks(client, userId, categories),
         });
     } catch (error) {
         return createApiErrorResponse(error);

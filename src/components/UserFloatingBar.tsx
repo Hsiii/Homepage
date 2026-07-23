@@ -1,14 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useClerk, useUser } from '@clerk/nextjs';
 import {
     LogIn,
     LogOut,
     Mail,
     Settings as SettingsIcon,
     UserRound,
-    UserRoundPlus,
 } from 'lucide-react';
 
+import { useHomepageAuth } from '@/auth/AuthProvider';
 import type { BookmarkControls } from '@/hooks/useBookmarks';
 import { useLocale } from '@/hooks/useLocale';
 import type { InitialAppPreferences } from '@/types/preferences';
@@ -22,7 +21,7 @@ interface UserFloatingBarProps {
     closeMenusSignal?: number;
     initialPreferences: InitialAppPreferences;
     initialWallpaper: WallpaperAsset | undefined;
-    isClerkEnabled: boolean;
+    isSupabaseEnabled: boolean;
     onWallpaperChange: (wallpaper: WallpaperAsset | undefined) => void;
     settingsPlacement?: 'above' | 'mobile';
     showSettingsInMenu?: boolean;
@@ -61,18 +60,19 @@ const UserFloatingBarContent: React.FC<CloseableMenuProps> = ({
     settingsPlacement = 'above',
     showSettingsInMenu = false,
 }) => {
-    const { isSignedIn, user } = useUser();
-    const { openSignIn, openSignUp, signOut } = useClerk();
+    const { isSignedIn, openSignIn, signOut, user } = useHomepageAuth();
     const { t } = useLocale(initialPreferences.locale);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
-    const emailAddress = user?.primaryEmailAddress?.emailAddress;
+    const emailAddress = user?.email;
     const displayName = getDisplayName(
         emailAddress,
-        user?.username ?? user?.fullName ?? user?.firstName
+        typeof user?.user_metadata.name === 'string'
+            ? user.user_metadata.name
+            : undefined
     );
-    const profileLabel = isSignedIn === true ? displayName : 'Guest';
+    const profileLabel = isSignedIn ? displayName : 'Guest';
 
     useEffect(() => {
         if (!isMenuOpen) {
@@ -119,9 +119,9 @@ const UserFloatingBarContent: React.FC<CloseableMenuProps> = ({
                     }}
                 >
                     <span className='user-avatar' aria-hidden>
-                        {user?.imageUrl !== undefined &&
-                        user.imageUrl !== '' ? (
-                            <img src={user.imageUrl} alt='' />
+                        {typeof user?.user_metadata.avatar_url === 'string' &&
+                        user.user_metadata.avatar_url !== '' ? (
+                            <img src={user.user_metadata.avatar_url} alt='' />
                         ) : (
                             <UserRound className='icon' size={20} />
                         )}
@@ -198,18 +198,6 @@ const UserFloatingBarContent: React.FC<CloseableMenuProps> = ({
                                 >
                                     <LogIn className='icon' size={16} />
                                     <span>Sign in</span>
-                                </button>
-                                <button
-                                    className='user-menu-action'
-                                    type='button'
-                                    role='menuitem'
-                                    onClick={() => {
-                                        setIsMenuOpen(false);
-                                        openSignUp();
-                                    }}
-                                >
-                                    <UserRoundPlus className='icon' size={16} />
-                                    <span>Create account</span>
                                 </button>
                             </>
                         )}
@@ -299,7 +287,7 @@ const UserFloatingBarFallback: React.FC<CloseableMenuProps> = ({
                     <div className='user-menu' role='menu'>
                         <div className='user-menu-email'>
                             <Mail className='icon' size={16} />
-                            <span>Missing Clerk publishable key</span>
+                            <span>Supabase is not configured</span>
                         </div>
                         {showSettingsInMenu ? (
                             <button
@@ -339,12 +327,12 @@ export const UserFloatingBar: React.FC<UserFloatingBarProps> = ({
     closeMenusSignal,
     initialPreferences,
     initialWallpaper,
-    isClerkEnabled,
+    isSupabaseEnabled,
     onWallpaperChange,
     settingsPlacement,
     showSettingsInMenu,
 }) => {
-    if (isClerkEnabled) {
+    if (isSupabaseEnabled) {
         return (
             <UserFloatingBarContent
                 bookmarkControls={bookmarkControls}

@@ -114,7 +114,7 @@ interface BookmarkApiResponse {
 }
 
 interface BookmarkAuthState {
-    getToken: () => Promise<null | string>;
+    getToken: () => Promise<string | undefined>;
     isLoaded: boolean;
     isSignedIn: boolean | undefined;
     userId: null | string | undefined;

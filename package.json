@@ -12,16 +12,12 @@
     "scripts": {
         "build": "next build",
         "build:oracle": "next build --webpack",
-        "db:copy": "node scripts/copy-database.ts",
-        "db:migrate": "node scripts/migrate.ts",
-        "db:verify": "node scripts/verify-database.ts",
         "deploy": "scripts/deploy-oracle",
         "dev": "next dev --turbopack",
         "lint": "eslint .",
         "preview": "bun run build && next start",
         "prepare": "husky",
-        "start": "next start",
-        "wallpapers:migrate": "node scripts/migrate-wallpapers.ts"
+        "start": "next start"
     },
     "lint-staged": {
         "*.{js,jsx,ts,tsx,css,scss,html,json,md,yml,yaml}": [
@@ -32,12 +28,10 @@
         ]
     },
     "dependencies": {
-        "@aws-sdk/client-s3": "3.1092.0",
-        "@clerk/nextjs": "^7.5.12",
-        "@vercel/blob": "^2.5.0",
+        "@supabase/ssr": "0.12.3",
+        "@supabase/supabase-js": "2.110.8",
         "lucide-react": "^1.21.0",
         "next": "^16.2.10",
-        "postgres": "3.4.9",
         "react": "^19.2.7",
         "react-dom": "^19.2.7",
         "server-only": "^0.0.1"

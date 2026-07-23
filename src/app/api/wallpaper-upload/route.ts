@@ -1,10 +1,7 @@
-import { auth } from '@clerk/nextjs/server';
-
 import { ApiError, createApiErrorResponse } from '@/server/apiError';
-import { isDatabaseConfigured } from '@/server/database';
+import { requireAuthenticatedRequest } from '@/server/auth';
 import {
     deleteWallpaperObject,
-    getWallpaperStorageProvider,
     writeWallpaperObject,
 } from '@/server/wallpaperStorage';
 import { saveUserWallpaper } from '@/server/wallpaperStore';
@@ -15,16 +12,6 @@ import {
     wallpaperMaxDimensionPx,
     wallpaperMaxFileSizeBytes,
 } from '../../../../shared/wallpaper';
-
-const requireUserId = async (): Promise<string> => {
-    const { userId } = await auth();
-
-    if (userId === null) {
-        throw new ApiError('Sign in is required.', 401);
-    }
-
-    return userId;
-};
 
 const readInteger = (formData: FormData, name: string): number => {
     const value = Number(formData.get(name));
@@ -38,11 +25,7 @@ const readInteger = (formData: FormData, name: string): number => {
 
 export const POST = async (request: Request): Promise<Response> => {
     try {
-        const userId = await requireUserId();
-
-        if (!isDatabaseConfigured()) {
-            throw new ApiError('Wallpaper sync is not configured.', 503);
-        }
+        const { client, userId } = await requireAuthenticatedRequest();
 
         const formData = await request.formData();
         const file = formData.get('file');
@@ -71,8 +54,7 @@ export const POST = async (request: Request): Promise<Response> => {
             );
         }
 
-        const provider = getWallpaperStorageProvider();
-        await writeWallpaperObject(provider, pathname, file, file.type);
+        await writeWallpaperObject(client, pathname, file, file.type);
 
         const asset: WallpaperAsset = {
             contentType: file.type,
@@ -92,10 +74,10 @@ export const POST = async (request: Request): Promise<Response> => {
 
         try {
             return Response.json({
-                wallpaper: await saveUserWallpaper(userId, asset, provider),
+                wallpaper: await saveUserWallpaper(client, userId, asset),
             });
         } catch (error) {
-            await deleteWallpaperObject(provider, pathname).catch(
+            await deleteWallpaperObject(client, pathname).catch(
                 () => undefined
             );
             throw error;

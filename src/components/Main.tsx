@@ -13,7 +13,7 @@ interface MainProps {
     initialPreferences: InitialAppPreferences;
     initialWallpaper: WallpaperAsset | undefined;
     initialWeather: WeatherData | undefined;
-    isClerkEnabled: boolean;
+    isSupabaseEnabled: boolean;
     onWallpaperChange: (wallpaper: WallpaperAsset | undefined) => void;
 }
 
@@ -23,7 +23,7 @@ export const Main: React.FC<MainProps> = ({
     initialPreferences,
     initialWallpaper,
     initialWeather,
-    isClerkEnabled,
+    isSupabaseEnabled,
     onWallpaperChange,
 }) => (
     <>
@@ -34,7 +34,7 @@ export const Main: React.FC<MainProps> = ({
                 initialPreferences={initialPreferences}
                 initialWallpaper={initialWallpaper}
                 initialWeather={initialWeather}
-                isClerkEnabled={isClerkEnabled}
+                isSupabaseEnabled={isSupabaseEnabled}
                 onWallpaperChange={onWallpaperChange}
             />
         </main>

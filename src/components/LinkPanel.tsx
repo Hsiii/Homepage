@@ -16,7 +16,7 @@ import { UserFloatingBar } from './UserFloatingBar';
 interface LinkPanelProps {
     hidden: boolean;
     bookmarkControls: BookmarkControls;
-    isClerkEnabled: boolean;
+    isSupabaseEnabled: boolean;
     isLockedOpen: boolean;
     isSearchNav: boolean;
     highlightedLink?: string;
@@ -39,7 +39,7 @@ const areFolderPathsEqual = (
 export const LinkPanel: React.FC<LinkPanelProps> = ({
     hidden,
     bookmarkControls,
-    isClerkEnabled,
+    isSupabaseEnabled,
     isLockedOpen,
     isSearchNav,
     highlightedLink,
@@ -196,7 +196,7 @@ export const LinkPanel: React.FC<LinkPanelProps> = ({
                 closeMenusSignal={mouseLeaveCloseSignal}
                 initialPreferences={initialPreferences}
                 initialWallpaper={initialWallpaper}
-                isClerkEnabled={isClerkEnabled}
+                isSupabaseEnabled={isSupabaseEnabled}
                 onWallpaperChange={onWallpaperChange}
                 settingsPlacement='mobile'
                 showSettingsInMenu
@@ -269,7 +269,7 @@ export const LinkPanel: React.FC<LinkPanelProps> = ({
                     closeMenusSignal={mouseLeaveCloseSignal}
                     initialPreferences={initialPreferences}
                     initialWallpaper={initialWallpaper}
-                    isClerkEnabled={isClerkEnabled}
+                    isSupabaseEnabled={isSupabaseEnabled}
                     onWallpaperChange={onWallpaperChange}
                 />
             </div>

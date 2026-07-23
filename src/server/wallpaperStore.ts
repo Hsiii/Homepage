@@ -1,13 +1,10 @@
 import 'server-only';
 
+import type { SupabaseClient } from '@supabase/supabase-js';
+
 import { ApiError } from '@/server/apiError';
-import { getDatabase, isDatabaseConfigured } from '@/server/database';
-import {
-    deleteWallpaperObject,
-    getWallpaperStorageProvider,
-    wallpaperStorageProviders,
-} from '@/server/wallpaperStorage';
-import type { WallpaperStorageProvider } from '@/server/wallpaperStorage';
+import { deleteWallpaperObject } from '@/server/wallpaperStorage';
+import type { Database } from '@/types/database';
 import type { WallpaperAsset } from '../../shared/wallpaper';
 import {
     getWallpaperUploadPrefix,
@@ -21,7 +18,6 @@ interface WallpaperRow {
     height: number;
     object_key: string;
     size_bytes: number;
-    storage_provider: string;
     updated_at: string;
     width: number;
 }
@@ -36,22 +32,10 @@ const getWallpaperUrl = (key: string, download = false): string => {
     return `/api/wallpaper-file?${parameters.toString()}`;
 };
 
-const parseStorageProvider = (value: string): WallpaperStorageProvider => {
-    if (
-        !wallpaperStorageProviders.includes(value as WallpaperStorageProvider)
-    ) {
-        throw new ApiError('Stored wallpaper provider is invalid.', 500);
-    }
-
-    return value as WallpaperStorageProvider;
-};
-
 const mapWallpaperRow = (row: WallpaperRow): WallpaperAsset => {
     if (!isWallpaperContentType(row.content_type)) {
         throw new ApiError('Stored wallpaper has an unsupported type.', 500);
     }
-
-    parseStorageProvider(row.storage_provider);
 
     return {
         contentType: row.content_type,
@@ -92,168 +76,122 @@ const validateWallpaperAsset = (
         throw new ApiError('Wallpaper dimensions are not supported.', 400);
     }
 
-    const expectedPrefix = `${getWallpaperUploadPrefix(userId)}/`;
-    if (!asset.pathname.startsWith(expectedPrefix)) {
+    if (!asset.pathname.startsWith(`${getWallpaperUploadPrefix(userId)}/`)) {
         throw new ApiError('Wallpaper path does not belong to this user.', 400);
     }
 };
 
-const wallpaperColumns = `
-    storage_provider,
-    object_key,
-    content_type,
-    size_bytes,
-    width,
-    height,
-    updated_at::text
-`;
+const wallpaperColumns =
+    'object_key, content_type, size_bytes, width, height, updated_at';
 
 export const getUserWallpaper = async (
+    client: SupabaseClient<Database>,
     userId: string
 ): Promise<WallpaperAsset | undefined> => {
-    if (!isDatabaseConfigured()) {
-        return undefined;
+    const { data, error } = await client
+        .from('user_wallpapers')
+        .select(wallpaperColumns)
+        .eq('user_id', userId)
+        .maybeSingle();
+
+    if (error !== null) {
+        throw new ApiError('Wallpaper could not be loaded.', 502);
     }
 
-    const rows = (await getDatabase().unsafe(
-        `select ${wallpaperColumns}
-         from user_wallpapers
-         where user_id = $1
-         limit 1`,
-        [userId]
-    )) as unknown as WallpaperRow[];
-    const row = rows.at(0);
-
-    return row === undefined ? undefined : mapWallpaperRow(row);
+    return data === null ? undefined : mapWallpaperRow(data as WallpaperRow);
 };
 
 export const getUserWallpaperObject = async (
+    client: SupabaseClient<Database>,
     userId: string,
     key: string
-): Promise<{
-    contentType: WallpaperAsset['contentType'];
-    provider: WallpaperStorageProvider;
-}> => {
-    const rows = (await getDatabase()`
-        select storage_provider, object_key, content_type
-        from user_wallpapers
-        where user_id = ${userId} and object_key = ${key}
-        limit 1
-    `) as unknown as WallpaperRow[];
-    const row = rows.at(0);
+): Promise<WallpaperAsset['contentType']> => {
+    const { data, error } = await client
+        .from('user_wallpapers')
+        .select('content_type, object_key')
+        .eq('user_id', userId)
+        .eq('object_key', key)
+        .maybeSingle();
 
-    if (row === undefined || !isWallpaperContentType(row.content_type)) {
+    if (
+        error !== null ||
+        data === null ||
+        !isWallpaperContentType(data.content_type)
+    ) {
         throw new ApiError('Wallpaper was not found.', 404);
     }
 
-    return {
-        contentType: row.content_type,
-        provider: parseStorageProvider(row.storage_provider),
-    };
+    return data.content_type;
 };
 
 export const saveUserWallpaper = async (
+    client: SupabaseClient<Database>,
     userId: string,
-    asset: WallpaperAsset,
-    provider = getWallpaperStorageProvider()
+    asset: WallpaperAsset
 ): Promise<WallpaperAsset> => {
-    if (!isDatabaseConfigured()) {
-        throw new ApiError('Wallpaper sync is not configured.', 503);
-    }
-
     validateWallpaperAsset(userId, asset);
 
-    const previousRows = (await getDatabase()`
-        select storage_provider, object_key
-        from user_wallpapers
-        where user_id = ${userId}
-        limit 1
-    `) as unknown as WallpaperRow[];
-    const previousRow = previousRows.at(0);
-    const rows = (await getDatabase()`
-        insert into user_wallpapers (
-            user_id,
-            url,
-            download_url,
-            pathname,
-            storage_provider,
-            object_key,
-            content_type,
-            size_bytes,
-            width,
-            height
-        )
-        values (
-            ${userId},
-            ${asset.url},
-            ${asset.downloadUrl},
-            ${asset.pathname},
-            ${provider},
-            ${asset.pathname},
-            ${asset.contentType},
-            ${asset.sizeBytes},
-            ${asset.width},
-            ${asset.height}
-        )
-        on conflict (user_id) do update set
-            url = excluded.url,
-            download_url = excluded.download_url,
-            pathname = excluded.pathname,
-            storage_provider = excluded.storage_provider,
-            object_key = excluded.object_key,
-            content_type = excluded.content_type,
-            size_bytes = excluded.size_bytes,
-            width = excluded.width,
-            height = excluded.height,
-            updated_at = now()
-        returning
-            storage_provider,
-            object_key,
-            content_type,
-            size_bytes,
-            width,
-            height,
-            updated_at::text
-    `) as unknown as WallpaperRow[];
-    const row = rows.at(0);
+    const { data: previous, error: previousError } = await client
+        .from('user_wallpapers')
+        .select('object_key')
+        .eq('user_id', userId)
+        .maybeSingle();
 
-    if (row === undefined) {
-        throw new ApiError('Wallpaper could not be saved.', 500);
+    if (previousError !== null) {
+        throw new ApiError('Wallpaper metadata could not be loaded.', 502);
     }
 
-    if (
-        previousRow !== undefined &&
-        previousRow.object_key !== asset.pathname
-    ) {
-        await deleteWallpaperObject(
-            parseStorageProvider(previousRow.storage_provider),
-            previousRow.object_key
-        ).catch((error: unknown) => {
-            console.error('Failed to delete previous wallpaper:', error);
-        });
+    const { data, error } = await client
+        .from('user_wallpapers')
+        .upsert(
+            {
+                content_type: asset.contentType,
+                height: asset.height,
+                object_key: asset.pathname,
+                size_bytes: asset.sizeBytes,
+                updated_at: new Date().toISOString(),
+                user_id: userId,
+                width: asset.width,
+            },
+            { onConflict: 'user_id' }
+        )
+        .select(wallpaperColumns)
+        .single();
+
+    if (error !== null) {
+        throw new ApiError('Wallpaper could not be saved.', 502);
     }
 
-    return mapWallpaperRow(row);
+    if (previous !== null && previous.object_key !== asset.pathname) {
+        await deleteWallpaperObject(client, previous.object_key).catch(
+            (deleteError: unknown) => {
+                console.error(
+                    'Failed to delete previous wallpaper:',
+                    deleteError
+                );
+            }
+        );
+    }
+
+    return mapWallpaperRow(data as WallpaperRow);
 };
 
-export const clearUserWallpaper = async (userId: string): Promise<void> => {
-    if (!isDatabaseConfigured()) {
-        return;
+export const clearUserWallpaper = async (
+    client: SupabaseClient<Database>,
+    userId: string
+): Promise<void> => {
+    const { data, error } = await client
+        .from('user_wallpapers')
+        .delete()
+        .eq('user_id', userId)
+        .select('object_key')
+        .maybeSingle();
+
+    if (error !== null) {
+        throw new ApiError('Wallpaper could not be removed.', 502);
     }
 
-    const rows = (await getDatabase()`
-        delete from user_wallpapers
-        where user_id = ${userId}
-        returning storage_provider, object_key
-    `) as unknown as WallpaperRow[];
-    const row = rows.at(0);
-
-    if (row !== undefined) {
-        await deleteWallpaperObject(
-            parseStorageProvider(row.storage_provider),
-            row.object_key
-        ).catch((error: unknown) => {
-            console.error('Failed to delete wallpaper:', error);
-        });
+    if (data !== null) {
+        await deleteWallpaperObject(client, data.object_key);
     }
 };

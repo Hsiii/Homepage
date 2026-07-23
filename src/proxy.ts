@@ -1,18 +1,17 @@
-import { clerkMiddleware } from '@clerk/nextjs/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
-const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
-const isClerkConfigured =
-    clerkPublishableKey !== undefined && clerkPublishableKey.trim() !== '';
+import { isSupabaseConfigured } from '@/lib/supabase/config';
+import { updateSession } from '@/lib/supabase/proxy';
 
-const passThrough = () => NextResponse.next();
-
-export default isClerkConfigured ? clerkMiddleware() : passThrough;
+export const proxy = async (request: NextRequest): Promise<NextResponse> =>
+    isSupabaseConfigured()
+        ? await updateSession(request)
+        : NextResponse.next({ request });
 
 export const config = {
     matcher: [
         '/((?!api/health$|_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
         '/(api(?!/health$)|trpc)(.*)',
-        '/__clerk/(.*)',
     ],
 };

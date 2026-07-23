@@ -1,23 +1,11 @@
 import 'server-only';
 
+import type { SupabaseClient } from '@supabase/supabase-js';
+
 import { ApiError } from '@/server/apiError';
-import { getDatabase } from '@/server/database';
 import type { BookmarkCategoryData } from '@/types/bookmarks';
+import type { Database, Json } from '@/types/database';
 import { coerceBookmarkTree } from '@/utils/bookmarks';
-
-interface BookmarkRow {
-    categories: unknown;
-}
-
-const mapBookmarkRow = (row: BookmarkRow): BookmarkCategoryData[] => {
-    const bookmarkTree = coerceBookmarkTree(row.categories);
-
-    if (bookmarkTree === undefined) {
-        throw new ApiError('Stored bookmarks are invalid.', 500);
-    }
-
-    return bookmarkTree;
-};
 
 const validateBookmarkTree = (value: unknown): BookmarkCategoryData[] => {
     const bookmarkTree = coerceBookmarkTree(value);
@@ -30,45 +18,44 @@ const validateBookmarkTree = (value: unknown): BookmarkCategoryData[] => {
 };
 
 export const getUserBookmarks = async (
+    client: SupabaseClient<Database>,
     userId: string
 ): Promise<BookmarkCategoryData[] | undefined> => {
-    const rows = (await getDatabase()`
-        select categories
-        from user_bookmarks
-        where user_id = ${userId}
-        limit 1
-    `) as BookmarkRow[];
-    const row = rows.at(0);
+    const { data, error } = await client
+        .from('user_bookmarks')
+        .select('categories')
+        .eq('user_id', userId)
+        .maybeSingle();
 
-    if (row === undefined) {
-        return undefined;
+    if (error !== null) {
+        throw new ApiError('Bookmarks could not be loaded.', 502);
     }
 
-    return mapBookmarkRow(row);
+    return data === null ? undefined : validateBookmarkTree(data.categories);
 };
 
 export const saveUserBookmarks = async (
+    client: SupabaseClient<Database>,
     userId: string,
     value: unknown
 ): Promise<BookmarkCategoryData[]> => {
     const bookmarkTree = validateBookmarkTree(value);
-    const rows = (await getDatabase()`
-        insert into user_bookmarks (user_id, categories)
-        values (
-            ${userId},
-            ${JSON.stringify(bookmarkTree)}::jsonb
+    const { data, error } = await client
+        .from('user_bookmarks')
+        .upsert(
+            {
+                categories: bookmarkTree as unknown as Json,
+                updated_at: new Date().toISOString(),
+                user_id: userId,
+            },
+            { onConflict: 'user_id' }
         )
-        on conflict (user_id) do update set
-            categories = excluded.categories,
-            version = user_bookmarks.version + 1,
-            updated_at = now()
-        returning categories
-    `) as BookmarkRow[];
-    const row = rows.at(0);
+        .select('categories')
+        .single();
 
-    if (row === undefined) {
-        throw new ApiError('Bookmarks could not be saved.', 500);
+    if (error !== null) {
+        throw new ApiError('Bookmarks could not be saved.', 502);
     }
 
-    return mapBookmarkRow(row);
+    return validateBookmarkTree(data.categories);
 };

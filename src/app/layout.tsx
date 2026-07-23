@@ -1,5 +1,4 @@
 import type { CSSProperties, ReactNode } from 'react';
-import { ClerkProvider } from '@clerk/nextjs';
 import type { Metadata, Viewport } from 'next';
 import { Quicksand as loadQuicksand } from 'next/font/google';
 
@@ -11,6 +10,7 @@ import '@/components/Main.css';
 import '@/components/Mountains.css';
 import '@/components/Weather.css';
 
+import { AuthProvider } from '@/auth/AuthProvider';
 import {
     defaultLocale,
     localeCookieName,
@@ -24,9 +24,9 @@ import {
     themeResolvedStorageKey,
     themeStorageKey,
 } from '@/constants/theme';
+import { isSupabaseConfigured } from '@/lib/supabase/config';
 import { readInitialAppPreferences } from '@/server/preferences';
 
-const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 const quicksand = loadQuicksand({
     display: 'swap',
     subsets: ['latin'],
@@ -238,16 +238,9 @@ export default async function RootLayout({
         </html>
     );
 
-    if (
-        clerkPublishableKey === undefined ||
-        clerkPublishableKey.trim() === ''
-    ) {
-        return documentMarkup;
-    }
-
-    return (
-        <ClerkProvider publishableKey={clerkPublishableKey}>
-            {documentMarkup}
-        </ClerkProvider>
+    return isSupabaseConfigured() ? (
+        <AuthProvider>{documentMarkup}</AuthProvider>
+    ) : (
+        documentMarkup
     );
 }

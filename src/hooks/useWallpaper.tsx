@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useAuth } from '@clerk/nextjs';
 
+import { useHomepageAuth } from '@/auth/AuthProvider';
 import { getCssUrlValue } from '@/utils/wallpaperStyle';
 import type {
     WallpaperAsset,
@@ -235,7 +235,7 @@ export const useWallpaper = (
     initialWallpaper?: WallpaperAsset,
     onWallpaperChange?: (wallpaper: WallpaperAsset | undefined) => void
 ): WallpaperControls => {
-    const { getToken, isLoaded, isSignedIn, userId } = useAuth();
+    const { getToken, isLoaded, isSignedIn, userId } = useHomepageAuth();
     const [wallpaper, setWallpaper] = useState<WallpaperAsset | undefined>(
         initialWallpaper
     );

@@ -14,7 +14,7 @@ interface HomePageClientProps {
     initialPreferences: InitialAppPreferences;
     initialWallpaper: WallpaperAsset | undefined;
     initialWeather: WeatherData | undefined;
-    isClerkEnabled: boolean;
+    isSupabaseEnabled: boolean;
 }
 
 export const HomePageClient: React.FC<HomePageClientProps> = ({
@@ -23,7 +23,7 @@ export const HomePageClient: React.FC<HomePageClientProps> = ({
     initialPreferences,
     initialWallpaper,
     initialWeather,
-    isClerkEnabled,
+    isSupabaseEnabled,
 }) => {
     const [wallpaper, setWallpaper] = useState(initialWallpaper);
 
@@ -34,7 +34,7 @@ export const HomePageClient: React.FC<HomePageClientProps> = ({
             initialPreferences={initialPreferences}
             initialWallpaper={wallpaper}
             initialWeather={initialWeather}
-            isClerkEnabled={isClerkEnabled}
+            isSupabaseEnabled={isSupabaseEnabled}
             onWallpaperChange={setWallpaper}
         />
     );
