@@ -5,7 +5,6 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
 export const GET = async (request: NextRequest): Promise<NextResponse> => {
-    const redirectUrl = new URL('/', request.url);
     const code = request.nextUrl.searchParams.get('code');
     const tokenHash = request.nextUrl.searchParams.get('token_hash');
     const type = request.nextUrl.searchParams.get(
@@ -17,7 +16,10 @@ export const GET = async (request: NextRequest): Promise<NextResponse> => {
         const { error } = await supabase.auth.exchangeCodeForSession(code);
 
         if (error === null) {
-            return NextResponse.redirect(redirectUrl);
+            return new NextResponse(undefined, {
+                headers: { location: '/' },
+                status: 303,
+            });
         }
     } else if (tokenHash !== null && type !== null) {
         const { error } = await supabase.auth.verifyOtp({
@@ -26,10 +28,15 @@ export const GET = async (request: NextRequest): Promise<NextResponse> => {
         });
 
         if (error === null) {
-            return NextResponse.redirect(redirectUrl);
+            return new NextResponse(undefined, {
+                headers: { location: '/' },
+                status: 303,
+            });
         }
     }
 
-    redirectUrl.searchParams.set('auth_error', 'invalid_link');
-    return NextResponse.redirect(redirectUrl);
+    return new NextResponse(undefined, {
+        headers: { location: '/?auth_error=invalid_link' },
+        status: 303,
+    });
 };

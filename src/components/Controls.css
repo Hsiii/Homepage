@@ -1688,31 +1688,6 @@
     }
 }
 
-.auth-dialog-form {
-    display: grid;
-    gap: 0.75rem;
-
-    label {
-        font: var(--fontBoldSm);
-    }
-
-    input {
-        min-height: 2.75rem;
-        padding: 0.5rem 0.75rem;
-        border: 1px solid var(--clr-text-alpha-2);
-        border-radius: 0.75rem;
-        background-color: var(--clr-text-alpha-2);
-        color: var(--clr-text);
-        font: var(--fontBaseSm);
-
-        &:focus-visible {
-            border-color: var(--clr-primary);
-            outline: 2px solid var(--clr-primary-alpha);
-            outline-offset: 2px;
-        }
-    }
-}
-
 .auth-dialog-submit {
     min-height: 2.75rem;
     padding: 0.5rem 1rem;
@@ -1732,32 +1707,6 @@
     margin: 0;
     color: var(--clr-aqi-unhealthy);
     font: var(--fontBaseSm);
-}
-
-.auth-dialog-message {
-    padding: 0.75rem;
-    border-radius: 0.75rem;
-    background-color: var(--clr-text-alpha-2);
-    color: var(--clr-text);
-
-    display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-
-    .icon {
-        color: var(--clr-primary);
-        flex: 0 0 auto;
-    }
-
-    div {
-        display: grid;
-        gap: 0.25rem;
-    }
-
-    span {
-        color: var(--clr-text-alpha);
-        font: var(--fontBaseSm);
-    }
 }
 
 .settings-control {
