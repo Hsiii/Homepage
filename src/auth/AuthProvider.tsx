@@ -5,12 +5,11 @@ import React, {
     useCallback,
     useContext,
     useEffect,
-    useId,
     useMemo,
     useState,
 } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
-import { Mail, X } from 'lucide-react';
+import { X } from 'lucide-react';
 
 import { createClient } from '@/lib/supabase/client';
 
@@ -31,11 +30,8 @@ const SignInDialog: React.FC<{
     isOpen: boolean;
 }> = ({ close, isOpen }) => {
     const supabase = useMemo(() => createClient(), []);
-    const emailId = useId();
-    const [email, setEmail] = useState('');
     const [error, setError] = useState<string>();
-    const [isSending, setIsSending] = useState(false);
-    const [isSent, setIsSent] = useState(false);
+    const [isSigningIn, setIsSigningIn] = useState(false);
 
     if (!isOpen) {
         return undefined;
@@ -54,13 +50,13 @@ const SignInDialog: React.FC<{
             <div
                 className='auth-dialog'
                 role='dialog'
-                aria-labelledby={`${emailId}-title`}
+                aria-labelledby='auth-dialog-title'
                 aria-modal='true'
             >
                 <div className='auth-dialog-header'>
                     <div>
                         <span className='auth-dialog-eyebrow'>Homepage</span>
-                        <h2 id={`${emailId}-title`}>Sign in by email</h2>
+                        <h2 id='auth-dialog-title'>Sign in</h2>
                     </div>
                     <button
                         className='auth-dialog-close'
@@ -71,74 +67,42 @@ const SignInDialog: React.FC<{
                         <X className='icon' size={20} />
                     </button>
                 </div>
-                {isSent ? (
-                    <div className='auth-dialog-message' role='status'>
-                        <Mail className='icon' size={20} />
-                        <div>
-                            <strong>Check your inbox</strong>
-                            <span>
-                                Use the secure link sent to {email.trim()}.
-                            </span>
-                        </div>
-                    </div>
-                ) : (
-                    <form
-                        className='auth-dialog-form'
-                        onSubmit={(event) => {
-                            event.preventDefault();
-                            setError(undefined);
-                            setIsSending(true);
+                <button
+                    className='auth-dialog-submit'
+                    type='button'
+                    disabled={isSigningIn}
+                    onClick={() => {
+                        setError(undefined);
+                        setIsSigningIn(true);
 
-                            supabase.auth
-                                .signInWithOtp({
-                                    email: email.trim(),
-                                    options: {
-                                        emailRedirectTo: `${globalThis.location.origin}/auth/callback`,
-                                        shouldCreateUser: false,
-                                    },
-                                })
-                                .then(({ error: signInError }) => {
-                                    if (signInError !== null) {
-                                        throw signInError;
-                                    }
-                                    setIsSent(true);
-                                })
-                                .catch((signInError: unknown) => {
-                                    setError(
-                                        signInError instanceof Error
-                                            ? signInError.message
-                                            : 'Sign-in email could not be sent.'
-                                    );
-                                })
-                                .finally(() => {
-                                    setIsSending(false);
-                                });
-                        }}
-                    >
-                        <label htmlFor={emailId}>Email address</label>
-                        <input
-                            id={emailId}
-                            type='email'
-                            autoComplete='email'
-                            required
-                            value={email}
-                            onChange={(event) => {
-                                setEmail(event.target.value);
-                            }}
-                        />
-                        {error === undefined ? undefined : (
-                            <p className='auth-dialog-error' role='alert'>
-                                {error}
-                            </p>
-                        )}
-                        <button
-                            className='auth-dialog-submit'
-                            type='submit'
-                            disabled={isSending}
-                        >
-                            {isSending ? 'Sending…' : 'Email me a sign-in link'}
-                        </button>
-                    </form>
+                        supabase.auth
+                            .signInWithOAuth({
+                                provider: 'google',
+                                options: {
+                                    redirectTo: `${globalThis.location.origin}/auth/callback`,
+                                },
+                            })
+                            .then(({ error: signInError }) => {
+                                if (signInError !== null) {
+                                    throw signInError;
+                                }
+                            })
+                            .catch((signInError: unknown) => {
+                                setError(
+                                    signInError instanceof Error
+                                        ? signInError.message
+                                        : 'Google sign-in could not be started.'
+                                );
+                                setIsSigningIn(false);
+                            });
+                    }}
+                >
+                    {isSigningIn ? 'Opening Google…' : 'Continue with Google'}
+                </button>
+                {error === undefined ? undefined : (
+                    <p className='auth-dialog-error' role='alert'>
+                        {error}
+                    </p>
                 )}
             </div>
         </div>
